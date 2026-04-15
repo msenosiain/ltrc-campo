@@ -18,6 +18,20 @@ export const routes: Routes = [
   { path: 'auth/forgot-password', component: ForgotPasswordComponent },
   { path: 'auth/reset-password', component: ResetPasswordComponent },
   {
+    path: 'player-fee/result',
+    loadComponent: () =>
+      import('./player-fees/pages/player-fee-result/player-fee-result.component').then(
+        (m) => m.PlayerFeeResultComponent
+      ),
+  },
+  {
+    path: 'player-fee/:token',
+    loadComponent: () =>
+      import('./player-fees/pages/player-fee-page/player-fee-page.component').then(
+        (m) => m.PlayerFeePageComponent
+      ),
+  },
+  {
     path: 'pay/result',
     loadComponent: () =>
       import('./payments/pages/payment-result/payment-result.component').then(

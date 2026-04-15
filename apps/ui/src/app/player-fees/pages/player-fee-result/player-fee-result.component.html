@@ -1,0 +1,52 @@
+<div class="result-page">
+  <mat-card class="result-card">
+    <mat-card-header class="club-header">
+      <img src="/escudo.png" alt="Escudo Los Tordos RC" class="club-crest" />
+    </mat-card-header>
+    <mat-card-content>
+
+      @if (state === 'confirming') {
+        <div class="result result--confirming">
+          <mat-spinner diameter="48" />
+          <p>Verificando pago...</p>
+        </div>
+      }
+
+      @if (state === 'approved') {
+        <div class="result result--approved">
+          <span class="result-icon">✓</span>
+          <h2>¡Pago registrado!</h2>
+          <p>Tu derecho de jugador fue procesado correctamente. Podés cerrar esta ventana.</p>
+        </div>
+      }
+
+      @if (state === 'pending') {
+        <div class="result result--pending">
+          <span class="result-icon">⏳</span>
+          <h2>Pago pendiente</h2>
+          <p>Tu pago está siendo procesado. Te notificaremos cuando se confirme.</p>
+        </div>
+      }
+
+      @if (state === 'rejected') {
+        <div class="result result--rejected">
+          <span class="result-icon">✗</span>
+          <h2>Pago rechazado</h2>
+          <p>No se pudo procesar el pago. Podés intentarlo nuevamente.</p>
+          <button mat-raised-button color="primary" onclick="history.back()">
+            Volver a intentar
+          </button>
+        </div>
+      }
+
+      @if (state === 'error') {
+        <div class="result result--error">
+          <span class="result-icon">!</span>
+          <h2>Ocurrió un error</h2>
+          <p>No pudimos verificar el estado del pago. Contactá al club.</p>
+        </div>
+      }
+
+    </mat-card-content>
+  </mat-card>
+</div>

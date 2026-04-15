@@ -1,0 +1,244 @@
+.fee-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  padding: 16px;
+}
+
+.fee-card {
+  width: 100%;
+  max-width: 480px;
+
+  mat-card-header {
+    margin-bottom: 16px;
+  }
+}
+
+.club-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.club-crest {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 0;
+}
+
+.status-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  border-radius: 8px;
+  text-align: center;
+
+  .status-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+  }
+
+  &--expired {
+    background: #fff3e0;
+    color: #e65100;
+  }
+
+  &--error {
+    background: #ffebee;
+    color: #c62828;
+  }
+}
+
+.fee-info {
+  padding: 16px 0;
+
+  .season-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mat-app-primary, #1976d2);
+    margin: 0 0 4px;
+  }
+
+  .concept {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  .description {
+    font-size: 14px;
+    color: #555;
+    margin: 0 0 8px;
+  }
+
+  .expires {
+    font-size: 12px;
+    color: #888;
+    margin: 0;
+  }
+}
+
+.dni-form {
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .dni-hint {
+    font-size: 14px;
+    color: #555;
+    margin: 0;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.already-paid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+  gap: 8px;
+  text-align: center;
+
+  .paid-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #2e7d32;
+  }
+
+  .paid-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2e7d32;
+    margin: 0;
+  }
+
+  .paid-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .paid-detail {
+    font-size: 14px;
+    color: #555;
+    margin: 0;
+  }
+}
+
+.player-confirmed {
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #2e7d32;
+  }
+
+  &__icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  &__title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  &__details {
+    background: #e8f5e9;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+
+  .detail-label { color: #555; }
+  .detail-value { font-weight: 600; }
+}
+
+.amounts {
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  mat-divider {
+    margin: 6px 0;
+  }
+}
+
+.amount-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+
+  &--discount {
+    color: #2e7d32;
+    font-size: 13px;
+  }
+
+  &--fee {
+    color: #888;
+    font-size: 13px;
+  }
+
+  &--total {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .total-amount {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1976d2;
+  }
+}
+
+.pay-button {
+  height: 48px;
+  font-size: 16px;
+  margin-top: 8px;
+
+  mat-spinner {
+    display: inline-block;
+    margin-right: 8px;
+  }
+}
+
+.error-text {
+  color: #c62828;
+  font-size: 13px;
+  margin: 0;
+}
