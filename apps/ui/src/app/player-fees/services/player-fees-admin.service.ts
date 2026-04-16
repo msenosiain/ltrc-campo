@@ -33,6 +33,20 @@ export interface PlayerFeeConfigPayload {
   blocks: { name: string; categories: CategoryEnum[]; amount: number }[];
 }
 
+export interface BduarRow {
+  documento: string;
+  apellido: string;
+  nombre: string;
+  fechaNac?: string;
+  sexo?: string;
+  puesto?: string;
+  peso?: string;
+  estatura?: string;
+  email?: string;
+  oSocial?: string;
+  estado?: string;
+}
+
 export interface FamilyGroupPayload {
   name: string;
   sport: SportEnum;
@@ -114,7 +128,9 @@ export class PlayerFeesAdminService {
 
   // ── BDUAR import ──────────────────────────────────────────────────────────
 
-  importBduar(records: { dni: string; fichajeBDUAR: boolean }[], season: string, sport: SportEnum) {
-    return this.http.post<{ updated: number }>(this.url('import/bduar'), { records, season, sport });
+  importBduar(rows: BduarRow[], season: string) {
+    return this.http.post<{ total: number; created: number; updated: number; recordsSet: number }>(
+      this.url('import/bduar'), { rows, season }
+    );
   }
 }

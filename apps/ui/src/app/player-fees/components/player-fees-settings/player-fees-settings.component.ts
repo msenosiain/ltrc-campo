@@ -2,6 +2,7 @@ import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angula
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { debounceTime, switchMap } from 'rxjs/operators';
 import { of, Subject } from 'rxjs';
@@ -26,7 +27,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
 import { CategoryEnum, IFamilyGroup, IPlayerFeeConfig, Player, SportEnum } from '@ltrc-campo/shared-api-model';
 import { categoryOptions, getCategoryLabel } from '../../../common/category-options';
 import { sportOptions } from '../../../common/sport-options';
-import { PlayerFeesAdminService, PlayerFeeConfigPayload } from '../../services/player-fees-admin.service';
+import { PlayerFeesAdminService, PlayerFeeConfigPayload, BduarRow } from '../../services/player-fees-admin.service';
 import { PlayersService } from '../../../players/services/players.service';
 
 @Component({
@@ -406,5 +407,84 @@ export class PlayerFeesSettingsComponent implements OnInit {
     if (order === 1) return '100%';
     if (order === 2) return '75%';
     return '50%';
+  }
+
+  // ── Import BDUAR ──────────────────────────────────────────────────────────
+
+  readonly bduarSeasonOptions = (() => {
+    const y = new Date().getFullYear();
+    return [String(y + 1), String(y), String(y - 1)];
+  })();
+
+  bduarSeason = signal(String(new Date().getFullYear()));
+  bduarRows = signal<BduarRow[]>([]);
+  bduarFileName = signal('');
+  bduarImporting = signal(false);
+  bduarResult = signal<{ total: number; created: number; updated: number; recordsSet: number } | null>(null);
+
+  private readonly COLUMN_MAP: Record<string, keyof BduarRow> = {
+    documento: 'documento', doc: 'documento', dni: 'documento',
+    apellido: 'apellido',
+    nombre: 'nombre',
+    'fecha nac.': 'fechaNac', 'fecha nac': 'fechaNac', fechanac: 'fechaNac',
+    'fecha de nacimiento': 'fechaNac',
+    sexo: 'sexo',
+    puesto: 'puesto', posicion: 'puesto', posición: 'puesto',
+    peso: 'peso',
+    estatura: 'estatura', altura: 'estatura',
+    email: 'email', 'e-mail': 'email', correo: 'email',
+    'o. social': 'oSocial', osocial: 'oSocial', 'obra social': 'oSocial',
+    estado: 'estado', habilitacion: 'estado', habilitación: 'estado',
+  };
+
+  onBduarFileChange(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.bduarFileName.set(file.name);
+    this.bduarRows.set([]);
+    this.bduarResult.set(null);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target!.result as ArrayBuffer);
+      const wb = XLSX.read(data, { type: 'array', cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      const rows: BduarRow[] = raw
+        .map((r) => {
+          const mapped: Partial<BduarRow> = {};
+          for (const key of Object.keys(r)) {
+            const field = this.COLUMN_MAP[key.toLowerCase().trim()];
+            if (field) mapped[field] = String(r[key] ?? '').trim();
+          }
+          return mapped as BduarRow;
+        })
+        .filter((r) => r.documento && r.nombre);
+
+      this.bduarRows.set(rows);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  runBduarImport(): void {
+    const rows = this.bduarRows();
+    if (!rows.length) return;
+    this.bduarImporting.set(true);
+    this.bduarResult.set(null);
+    this.adminService.importBduar(rows, this.bduarSeason())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.bduarResult.set(res);
+          this.bduarImporting.set(false);
+          this.bduarRows.set([]);
+          this.bduarFileName.set('');
+        },
+        error: () => {
+          this.bduarImporting.set(false);
+          this.snackBar.open('Error al importar', 'Cerrar', { duration: 4000 });
+        },
+      });
   }
 }

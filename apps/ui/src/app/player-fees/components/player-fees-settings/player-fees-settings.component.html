@@ -254,6 +254,80 @@
 
   <mat-divider />
 
+  <!-- ── Importar BDUAR ─────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h3 class="section-header__title">Importar desde BDUAR</h3>
+    </div>
+    <mat-card class="form-card">
+      <mat-card-content>
+        <p class="bduar-hint">
+          Subí el Excel exportado desde BDUAR. Se crearán o actualizarán jugadores y,
+          si el estado es <strong>Confirmada</strong>, se marcará la habilitación completa.
+        </p>
+        <div class="form-row bduar-controls">
+          <mat-form-field appearance="outline" class="field-sm">
+            <mat-label>Temporada</mat-label>
+            <mat-select [value]="bduarSeason()" (selectionChange)="bduarSeason.set($event.value)">
+              @for (s of bduarSeasonOptions; track s) {
+                <mat-option [value]="s">{{ s }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="bduar-file-picker">
+            <button mat-stroked-button type="button" (click)="bduarInput.click()">
+              <mat-icon>upload_file</mat-icon>
+              {{ bduarFileName() || 'Seleccionar archivo Excel' }}
+            </button>
+            <input #bduarInput type="file" accept=".xlsx,.xls,.csv" hidden (change)="onBduarFileChange($event)" />
+          </div>
+        </div>
+
+        @if (bduarRows().length > 0) {
+          <div class="bduar-preview">
+            <span class="bduar-preview__count">
+              <mat-icon>check_circle</mat-icon>
+              {{ bduarRows().length }} jugadores encontrados
+            </span>
+            <div class="bduar-preview__sample">
+              @for (r of bduarRows().slice(0, 3); track r.documento) {
+                <span class="bduar-chip">{{ r.apellido }}, {{ r.nombre }} ({{ r.documento }})</span>
+              }
+              @if (bduarRows().length > 3) {
+                <span class="bduar-chip bduar-chip--more">+{{ bduarRows().length - 3 }} más</span>
+              }
+            </div>
+          </div>
+        }
+
+        @if (bduarResult(); as res) {
+          <div class="bduar-result">
+            <mat-icon class="bduar-result__icon">task_alt</mat-icon>
+            <span>
+              Importación completada — <strong>{{ res.total }}</strong> procesados:
+              <strong>{{ res.created }}</strong> creados,
+              <strong>{{ res.updated }}</strong> actualizados,
+              <strong>{{ res.recordsSet }}</strong> habilitaciones seteadas.
+            </span>
+          </div>
+        }
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button mat-flat-button color="primary" type="button"
+          [disabled]="bduarRows().length === 0 || bduarImporting()"
+          (click)="runBduarImport()">
+          @if (bduarImporting()) { Importando… } @else { Importar }
+        </button>
+      </mat-card-actions>
+      @if (bduarImporting()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+    </mat-card>
+  </section>
+
+  <mat-divider />
+
   <!-- ── Grupos familiares ────────────────────────────────────────── -->
   <section class="section">
     <div class="section-header">
