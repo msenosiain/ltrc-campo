@@ -165,6 +165,17 @@
         <span matListItemTitle>Evaluaciones</span>
       </a>
 
+      <a
+        *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH]"
+        mat-list-item
+        routerLink="player-fees"
+        routerLinkActive="active-link"
+        (click)="onNavClick()"
+      >
+        <mat-icon matListItemIcon>badge</mat-icon>
+        <span matListItemTitle>Derechos</span>
+      </a>
+
       <mat-divider class="sidenav-divider" />
 
       <a

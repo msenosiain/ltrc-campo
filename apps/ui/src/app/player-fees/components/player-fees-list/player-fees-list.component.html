@@ -1,0 +1,182 @@
+<div class="player-fees-list">
+  <div class="list-header">
+    <h2 class="list-header__title">Derechos de Jugador</h2>
+    <div class="header-actions">
+      @if (activeConfig()) {
+        <button mat-stroked-button type="button" (click)="copyPaymentLink()" matTooltip="Copiar link público de pago">
+          <mat-icon>link</mat-icon>
+          Copiar link de pago
+        </button>
+      }
+      <button
+        *ltrcAllowedRoles="[RoleEnum.ADMIN]"
+        mat-stroked-button
+        type="button"
+        (click)="goToSettings()"
+      >
+        <mat-icon>settings</mat-icon>
+        Configurar
+      </button>
+    </div>
+  </div>
+
+  <form class="search-form" [formGroup]="filterForm">
+    <div class="filters-row filters-row--open">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Temporada</mat-label>
+        <mat-select formControlName="season">
+          @for (s of seasonOptions; track s) {
+            <mat-option [value]="s">{{ s }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (availableSports().length > 1) {
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Deporte</mat-label>
+          <mat-select formControlName="sport">
+            @for (s of availableSports(); track s.id) {
+              <mat-option [value]="s.id">{{ s.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+
+      @if (availableCategories().length > 1) {
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Categoría</mat-label>
+          <mat-select formControlName="category">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (cat of availableCategories(); track cat.id) {
+              <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    </div>
+  </form>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (rows().length > 0) {
+    <div class="stats-bar">
+      <span class="stat">
+        <span class="stat__label">Total</span>
+        <span class="stat__value">{{ stats().total }}</span>
+      </span>
+      <span class="stat-sep">·</span>
+      <span class="stat">
+        <span class="stat__label">Pagados</span>
+        <span class="stat__value stat__value--paid">{{ stats().pagados }}</span>
+      </span>
+      <span class="stat-sep">·</span>
+      <span class="stat">
+        <span class="stat__label">Habilitados</span>
+        <span class="stat__value stat__value--enabled">{{ stats().habilitados }}</span>
+      </span>
+    </div>
+
+    <div class="table-wrapper mat-elevation-z2">
+      <table mat-table [dataSource]="rows()" class="fees-table">
+
+        <ng-container matColumnDef="player">
+          <th mat-header-cell *matHeaderCellDef>Jugador</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="player-name">{{ row.playerName }}</div>
+            <div class="player-dni">{{ row.playerDni }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="category">
+          <th mat-header-cell *matHeaderCellDef>Categoría</th>
+          <td mat-cell *matCellDef="let row">{{ row.category }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="feePaid">
+          <th mat-header-cell *matHeaderCellDef>Pago</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.feePaid) {
+              <span class="badge badge--paid" [matTooltip]="row.feeAmount ? ('$' + (row.feeAmount | number:'1.0-0')) : ''">Pagado</span>
+            } @else {
+              <span class="badge badge--pending">Pendiente</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fichaMedica">
+          <th mat-header-cell *matHeaderCellDef>Ficha Médica</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox
+              [checked]="row.fichaMedica"
+              (change)="toggleRecord(row, 'fichaMedica', $event.checked)"
+            />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="cursosAprobados">
+          <th mat-header-cell *matHeaderCellDef>Cursos</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox
+              [checked]="row.cursosAprobados"
+              (change)="toggleRecord(row, 'cursosAprobados', $event.checked)"
+            />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fichajeBDUAR">
+          <th mat-header-cell *matHeaderCellDef>BDUAR</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox
+              [checked]="row.fichajeBDUAR"
+              (change)="toggleRecord(row, 'fichajeBDUAR', $event.checked)"
+            />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fichajeUnion">
+          <th mat-header-cell *matHeaderCellDef>Unión</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox
+              [checked]="row.fichajeUnion"
+              (change)="toggleRecord(row, 'fichajeUnion', $event.checked)"
+            />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fondoSolidarioPagado">
+          <th mat-header-cell *matHeaderCellDef>Fondo Sol.</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.fondoSolidarioPagado !== undefined) {
+              <mat-checkbox
+                [checked]="row.fondoSolidarioPagado"
+                (change)="toggleRecord(row, 'fondoSolidarioPagado', $event.checked)"
+              />
+            } @else {
+              <span class="na">—</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="habilitado">
+          <th mat-header-cell *matHeaderCellDef>Habilitado</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.habilitado) {
+              <span class="badge badge--enabled">Sí</span>
+            } @else {
+              <span class="badge badge--disabled">No</span>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns();"></tr>
+      </table>
+    </div>
+  }
+
+  @if (!loading() && rows().length === 0 && filterForm.get('sport')?.value) {
+    <p class="empty-state">No hay jugadores para los filtros seleccionados.</p>
+  }
+</div>

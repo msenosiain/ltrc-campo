@@ -1,0 +1,388 @@
+<div class="settings-page">
+  <div class="page-header">
+    <button mat-icon-button (click)="goToList()" matTooltip="Volver a la lista">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h2 class="page-header__title">Configuración — Derechos de Jugador</h2>
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <!-- ── Configuraciones ────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h3 class="section-header__title">Configuraciones de cobro</h3>
+      @if (!configFormOpen()) {
+        <button mat-stroked-button type="button" (click)="openNewConfig()">
+          <mat-icon>add</mat-icon>
+          Nueva configuración
+        </button>
+      }
+    </div>
+
+    @if (configFormOpen()) {
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>{{ editingConfigId() ? 'Editar configuración' : 'Nueva configuración' }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="configForm" class="config-form">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="field-sm">
+                <mat-label>Temporada</mat-label>
+                <input matInput formControlName="season" placeholder="2026" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field-sm">
+                <mat-label>Deporte</mat-label>
+                <mat-select formControlName="sport">
+                  @for (s of sportOptions; track s.id) {
+                    <mat-option [value]="s.id">{{ s.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field-lg">
+                <mat-label>Etiqueta</mat-label>
+                <input matInput formControlName="label" placeholder="Derecho de Jugador 2026" />
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="field-lg">
+                <mat-label>Descripción</mat-label>
+                <input matInput formControlName="description" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field-sm">
+                <mat-label>Vencimiento</mat-label>
+                <input matInput [matDatepicker]="expPicker" formControlName="expiresAt" />
+                <mat-datepicker-toggle matIconSuffix [for]="expPicker" />
+                <mat-datepicker #expPicker />
+              </mat-form-field>
+            </div>
+
+            <div class="form-row form-row--checks">
+              <mat-checkbox formControlName="addMpFee">Sumar comisión MercadoPago</mat-checkbox>
+              <mat-checkbox formControlName="familyDiscount">Descuento hermanos</mat-checkbox>
+            </div>
+
+            <mat-divider class="section-divider" />
+
+            <h4 class="blocks-title">Bloques de precio</h4>
+            <div formArrayName="blocks">
+              @for (block of blocks.controls; track $index) {
+                <div [formGroupName]="$index" class="block-row">
+                  <mat-form-field appearance="outline" class="field-sm">
+                    <mat-label>Nombre bloque</mat-label>
+                    <input matInput formControlName="name" placeholder="PS / M19 / Infantiles" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="field-lg">
+                    <mat-label>Categorías</mat-label>
+                    <mat-select formControlName="categories" multiple>
+                      @for (cat of availableCategoryOptions($index); track cat.id) {
+                        <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="field-sm">
+                    <mat-label>Monto ($)</mat-label>
+                    <input matInput type="number" formControlName="amount" min="0" />
+                  </mat-form-field>
+
+                  @if (blocks.length > 1) {
+                    <button mat-icon-button type="button" (click)="removeBlock($index)" matTooltip="Eliminar bloque">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+            <button mat-stroked-button type="button" (click)="addBlock()" class="add-block-btn">
+              <mat-icon>add</mat-icon>
+              Agregar bloque
+            </button>
+          </form>
+        </mat-card-content>
+        <mat-card-actions align="end">
+          <button mat-button type="button" (click)="closeConfigForm()">Cancelar</button>
+          <button mat-flat-button color="primary" type="button" [disabled]="configForm.invalid || savingConfig()" (click)="saveConfig()">
+            {{ savingConfig() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    }
+
+    @if (configs().length > 0) {
+      <div class="config-filters">
+        <mat-form-field appearance="outline" class="field-sm">
+          <mat-label>Buscar</mat-label>
+          <input matInput [value]="configFilterTerm()"
+            (input)="configFilterTerm.set($any($event.target).value); configPage.set(0)"
+            placeholder="Etiqueta o temporada" />
+          @if (configFilterTerm()) {
+            <button mat-icon-button matSuffix type="button" (click)="configFilterTerm.set(''); configPage.set(0)">
+              <mat-icon>close</mat-icon>
+            </button>
+          } @else {
+            <mat-icon matSuffix>search</mat-icon>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field-sm">
+          <mat-label>Deporte</mat-label>
+          <mat-select [value]="configSportFilter()" (selectionChange)="configSportFilter.set($event.value); configPage.set(0)">
+            <mat-option [value]="null">Todos</mat-option>
+            @for (s of sportOptions; track s.id) {
+              <mat-option [value]="s.id">{{ s.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="table-wrapper mat-elevation-z1">
+        <table mat-table [dataSource]="pagedConfigs()" class="configs-table" multiTemplateDataRows>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let c">
+              <span class="status-chip" [class.status-chip--active]="c.active">
+                {{ c.active ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="label">
+            <th mat-header-cell *matHeaderCellDef>Etiqueta</th>
+            <td mat-cell *matCellDef="let c" class="label-cell">{{ c.label }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="sport">
+            <th mat-header-cell *matHeaderCellDef>Deporte</th>
+            <td mat-cell *matCellDef="let c">{{ sportLabel(c.sport) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="season">
+            <th mat-header-cell *matHeaderCellDef>Temporada</th>
+            <td mat-cell *matCellDef="let c">{{ c.season }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="blocks">
+            <th mat-header-cell *matHeaderCellDef>Bloques</th>
+            <td mat-cell *matCellDef="let c" class="blocks-inline-cell">{{ blocksInline(c.blocks) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="expires">
+            <th mat-header-cell *matHeaderCellDef>Vence</th>
+            <td mat-cell *matCellDef="let c">{{ c.expiresAt | date:'dd/MM/yy' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let c" class="actions-cell">
+              <button mat-icon-button type="button" matTooltip="Editar"
+                (click)="openEditConfig(c); $event.stopPropagation()">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button type="button"
+                [matTooltip]="c.active ? 'Desactivar' : 'Activar'"
+                (click)="toggleActive(c); $event.stopPropagation()">
+                <mat-icon>{{ c.active ? 'pause_circle' : 'play_circle' }}</mat-icon>
+              </button>
+              <button mat-icon-button type="button" matTooltip="Eliminar" color="warn"
+                (click)="deleteConfig(c); $event.stopPropagation()">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <!-- Detalle expandido -->
+          <ng-container matColumnDef="expandedDetail">
+            <td mat-cell *matCellDef="let c" [attr.colspan]="7" class="detail-cell">
+              @if (expandedConfig()?.id === c.id) {
+                <div class="config-detail">
+                  @for (block of c.blocks; track block.name) {
+                    <div class="detail-block">
+                      <span class="detail-block__name">{{ block.name }}</span>
+                      <span class="detail-block__amount">${{ block.amount | number:'1.0-0' }}</span>
+                      <span class="detail-block__cats">{{ categoriesLabel(block.categories) }}</span>
+                    </div>
+                  }
+                  <div class="detail-flags">
+                    @if (c.addMpFee) { <mat-icon class="flag-icon">percent</mat-icon><span>Comisión MercadoPago</span> }
+                    @if (c.familyDiscount) { <mat-icon class="flag-icon">family_restroom</mat-icon><span>Descuento hermanos</span> }
+                  </div>
+                </div>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="['status','label','sport','season','blocks','expires','actions']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['status','label','sport','season','blocks','expires','actions'];"
+              class="config-row"
+              [class.config-row--expanded]="expandedConfig()?.id === row.id"
+              (click)="toggleExpand(row)">
+          </tr>
+          <tr mat-row *matRowDef="let row; columns: ['expandedDetail'];"
+              class="detail-row"
+              [class.detail-row--visible]="expandedConfig()?.id === row.id">
+          </tr>
+        </table>
+      </div>
+
+      @if (filteredConfigs().length === 0) {
+        <p class="empty-state">Sin resultados.</p>
+      }
+
+      @if (filteredConfigs().length > configPageSize) {
+        <mat-paginator
+          [length]="filteredConfigs().length"
+          [pageSize]="configPageSize"
+          [pageIndex]="configPage()"
+          (page)="configPage.set($event.pageIndex)"
+          hidePageSize>
+        </mat-paginator>
+      }
+    } @else if (!loading()) {
+      <p class="empty-state">No hay configuraciones. Creá la primera.</p>
+    }
+  </section>
+
+  <mat-divider />
+
+  <!-- ── Grupos familiares ────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h3 class="section-header__title">Grupos familiares (Rugby)</h3>
+      @if (!familyFormOpen()) {
+        <button mat-stroked-button type="button" (click)="openNewFamily()">
+          <mat-icon>add</mat-icon>
+          Nuevo grupo
+        </button>
+      }
+    </div>
+
+    @if (familyFormOpen()) {
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>{{ editingFamilyId() ? 'Editar grupo' : 'Nuevo grupo familiar' }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="familyForm" class="family-form">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="field-lg">
+                <mat-label>Nombre del grupo</mat-label>
+                <input matInput formControlName="name" placeholder="Familia García" />
+              </mat-form-field>
+            </div>
+
+            <h4 class="blocks-title">Miembros</h4>
+            <div formArrayName="members">
+              @for (member of familyMembers.controls; track $index) {
+                <div [formGroupName]="$index" class="member-row">
+                  <span class="member-order">{{ $index + 1 }}° ({{ discountLabel($index + 1) }})</span>
+
+                  <mat-form-field appearance="outline" class="field-lg">
+                    <mat-label>Jugador</mat-label>
+                    <input
+                      matInput
+                      [value]="member.get('playerName')?.value"
+                      (input)="onPlayerSearch($any($event.target).value)"
+                      [matAutocomplete]="playerAuto"
+                      placeholder="Buscar por nombre o apodo"
+                    />
+                    <mat-autocomplete #playerAuto="matAutocomplete" (optionSelected)="selectPlayer($index, $event.option.value)">
+                      @for (p of availablePlayerResults($index); track p.id) {
+                        <mat-option [value]="p">
+                          {{ p.name || p.nickName }} — {{ p.idNumber }}
+                        </mat-option>
+                      }
+                    </mat-autocomplete>
+                  </mat-form-field>
+
+                  @if (familyMembers.length > 2) {
+                    <button mat-icon-button type="button" (click)="removeMember($index)" matTooltip="Quitar"
+                      [disabled]="$index < 2 && familyMembers.length === 2">
+                      <mat-icon>remove_circle_outline</mat-icon>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+            <button mat-stroked-button type="button" (click)="addMember()">
+              <mat-icon>add</mat-icon>
+              Agregar miembro
+            </button>
+          </form>
+        </mat-card-content>
+        <mat-card-actions align="end">
+          <button mat-button type="button" (click)="closeFamilyForm()">Cancelar</button>
+          <button mat-flat-button color="primary" type="button" [disabled]="familyForm.invalid || savingFamily()" (click)="saveFamily()">
+            {{ savingFamily() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    }
+
+    @if (families().length > 0) {
+      <mat-form-field appearance="outline" class="family-filter-field">
+        <mat-label>Buscar por grupo o jugador</mat-label>
+        <input matInput [value]="familyFilter()" (input)="familyFilter.set($any($event.target).value)" />
+        @if (familyFilter()) {
+          <button mat-icon-button matSuffix type="button" (click)="familyFilter.set('')">
+            <mat-icon>close</mat-icon>
+          </button>
+        } @else {
+          <mat-icon matSuffix>search</mat-icon>
+        }
+      </mat-form-field>
+
+      <div class="table-wrapper mat-elevation-z1">
+        <table mat-table [dataSource]="filteredFamilies()" class="families-table">
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Grupo</th>
+            <td mat-cell *matCellDef="let f">{{ f.name }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="members">
+            <th mat-header-cell *matHeaderCellDef>Miembros</th>
+            <td mat-cell *matCellDef="let f" class="members-cell">
+              @for (m of f.members; track m.playerId; let i = $index) {
+                <span class="member-inline">
+                  {{ m.playerName ?? '?' }}<span class="member-discount">({{ discountLabel(m.order) }})</span>
+                </span>
+                @if (i < f.members.length - 1) { <span class="member-sep">·</span> }
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let f" class="actions-cell">
+              <button mat-icon-button type="button" matTooltip="Editar" (click)="openEditFamily(f)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button type="button" matTooltip="Eliminar" color="warn" (click)="deleteFamily(f)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="['name','members','actions']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['name','members','actions'];"></tr>
+        </table>
+      </div>
+
+      @if (filteredFamilies().length === 0) {
+        <p class="empty-state">Sin resultados para "{{ familyFilter() }}".</p>
+      }
+    } @else if (!loading()) {
+      <p class="empty-state">No hay grupos familiares registrados.</p>
+    }
+  </section>
+</div>

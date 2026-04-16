@@ -77,8 +77,30 @@ export class PlayerFeesService {
 
   // ── Config ────────────────────────────────────────────────────────────────
 
+  private mapConfig(doc: any) {
+    return {
+      id: doc._id?.toString() ?? doc.id,
+      season: doc.season,
+      sport: doc.sport,
+      feeType: doc.feeType,
+      label: doc.label,
+      description: doc.description,
+      addMpFee: doc.addMpFee,
+      mpFeeRate: doc.mpFeeRate,
+      expiresAt: doc.expiresAt,
+      active: doc.active,
+      linkToken: doc.linkToken,
+      familyDiscount: doc.familyDiscount,
+      blocks: doc.blocks ?? [],
+      priceTiers: doc.priceTiers,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    };
+  }
+
   async listConfigs() {
-    return this.configModel.find().sort({ season: -1, sport: 1 }).lean();
+    const docs = await this.configModel.find().sort({ season: -1, sport: 1 }).lean();
+    return docs.map(d => this.mapConfig(d));
   }
 
   async createConfig(dto: CreatePlayerFeeConfigDto, userId: string) {
@@ -102,7 +124,7 @@ export class PlayerFeesService {
       active: false,
       createdBy: new Types.ObjectId(userId),
     });
-    return config;
+    return this.mapConfig(config.toObject());
   }
 
   async updateConfig(id: string, dto: UpdatePlayerFeeConfigDto) {
@@ -124,21 +146,23 @@ export class PlayerFeesService {
     }
     const config = await this.configModel.findByIdAndUpdate(id, update, { new: true });
     if (!config) throw new NotFoundException('Configuración no encontrada');
-    return config;
+    return this.mapConfig(config.toObject());
   }
 
   async activateConfig(id: string) {
     const config = await this.configModel.findById(id);
     if (!config) throw new NotFoundException('Configuración no encontrada');
     config.active = true;
-    return config.save();
+    await config.save();
+    return this.mapConfig(config.toObject());
   }
 
   async deactivateConfig(id: string) {
     const config = await this.configModel.findById(id);
     if (!config) throw new NotFoundException('Configuración no encontrada');
     config.active = false;
-    return config.save();
+    await config.save();
+    return this.mapConfig(config.toObject());
   }
 
   async deleteConfig(id: string) {
@@ -154,11 +178,27 @@ export class PlayerFeesService {
   // ── Family groups ─────────────────────────────────────────────────────────
 
   async listFamilyGroups() {
-    return this.familyGroupModel
+    const groups = await this.familyGroupModel
       .find()
       .populate({ path: 'members.playerId', select: 'name idNumber' })
       .sort({ name: 1 })
       .lean();
+    return groups.map((g: any) => this.mapFamilyGroup(g));
+  }
+
+  private mapFamilyGroup(g: any) {
+    return {
+      id: g._id?.toString() ?? g.id,
+      name: g.name,
+      sport: g.sport,
+      createdAt: g.createdAt,
+      updatedAt: g.updatedAt,
+      members: (g.members ?? []).map((m: any) => ({
+        playerId: m.playerId?._id?.toString() ?? m.playerId?.toString(),
+        playerName: m.playerId?.name ?? null,
+        order: m.order,
+      })),
+    };
   }
 
   async createFamilyGroup(dto: CreateFamilyGroupDto, userId: string) {
@@ -166,12 +206,13 @@ export class PlayerFeesService {
       playerId: new Types.ObjectId(m.playerId),
       order: m.order,
     }));
-    return this.familyGroupModel.create({
+    const group = await this.familyGroupModel.create({
       name: dto.name,
       sport: dto.sport,
       members,
       createdBy: new Types.ObjectId(userId),
     });
+    return this.mapFamilyGroup(group.toObject());
   }
 
   async updateFamilyGroup(id: string, dto: CreateFamilyGroupDto) {
@@ -185,7 +226,7 @@ export class PlayerFeesService {
       { new: true }
     );
     if (!group) throw new NotFoundException('Grupo familiar no encontrado');
-    return group;
+    return this.mapFamilyGroup(group.toObject());
   }
 
   async deleteFamilyGroup(id: string) {
@@ -303,6 +344,49 @@ export class PlayerFeesService {
         habilitado,
       };
     });
+  }
+
+  async getPlayerStatus(playerId: string, season: string): Promise<IPlayerFeeStatusRow[]> {
+    const player = await this.playerModel
+      .findById(playerId)
+      .select('name idNumber category sport')
+      .lean();
+    if (!player) return [];
+
+    const sport = (player as any).sport as SportEnum;
+    const cat = (player as any).category as CategoryEnum;
+    const pid = (player as any)._id.toString();
+    const needsFondoSolidario = sport === SportEnum.RUGBY && FONDO_SOLIDARIO_CATEGORIES.has(cat);
+
+    const [payment, record] = await Promise.all([
+      this.paymentModel.findOne({ playerId: (player as any)._id, season, sport, status: PlayerFeeStatusEnum.APPROVED }).lean(),
+      this.seasonRecordModel.findOne({ playerId: (player as any)._id, season, sport }).lean(),
+    ]);
+
+    const feePaid = !!payment;
+    const fichaMedica = record?.fichaMedica ?? false;
+    const cursosAprobados = record?.cursosAprobados ?? false;
+    const fichajeBDUAR = record?.fichajeBDUAR ?? false;
+    const fichajeUnion = record?.fichajeUnion ?? false;
+    const fondoSolidarioPagado = needsFondoSolidario ? (record?.fondoSolidarioPagado ?? false) : undefined;
+    const habilitado = feePaid && fichaMedica && cursosAprobados && fichajeBDUAR && fichajeUnion &&
+      (!needsFondoSolidario || fondoSolidarioPagado === true);
+
+    return [{
+      playerId: pid,
+      playerName: (player as any).name,
+      playerDni: (player as any).idNumber ?? '',
+      category: cat,
+      feePaid,
+      feeAmount: (payment as any)?.finalAmount,
+      feePaidAt: (payment as any)?.paidAt,
+      fichaMedica,
+      cursosAprobados,
+      fichajeBDUAR,
+      fichajeUnion,
+      fondoSolidarioPagado,
+      habilitado,
+    }];
   }
 
   async getStats(season: string, sport: SportEnum) {

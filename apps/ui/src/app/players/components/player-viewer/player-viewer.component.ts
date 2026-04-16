@@ -42,6 +42,8 @@ import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
 import { AvailabilityDialogComponent, AvailabilityDialogResult } from '../availability-dialog/availability-dialog.component';
+import { PlayerFeesAdminService } from '../../../player-fees/services/player-fees-admin.service';
+import { IPlayerFeeStatusRow } from '@ltrc-campo/shared-api-model';
 
 @Component({
   selector: 'ltrc-player-viewer',
@@ -68,6 +70,7 @@ export class PlayerViewerComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly playerFeesService = inject(PlayerFeesAdminService);
 
   RoleEnum = RoleEnum;
   readonly PlayerStatusEnum = PlayerStatusEnum;
@@ -76,6 +79,8 @@ export class PlayerViewerComponent implements OnInit {
   matchHistory: Match[] = [];
   matchHistoryLoading = signal(false);
   isOwnProfile = signal(false);
+  feeStatus = signal<IPlayerFeeStatusRow | null>(null);
+  readonly currentSeason = String(new Date().getFullYear());
 
   ngOnInit(): void {
     const playerId = this.route.snapshot.paramMap.get('id');
@@ -95,6 +100,7 @@ export class PlayerViewerComponent implements OnInit {
           this.loading.set(false);
           this.loadMatchHistory(playerId);
           this.checkOwnProfile(player);
+          this.loadFeeStatus(playerId);
         },
         error: () => { this.loading.set(false); this.router.navigate(['/players']); },
       });
@@ -127,6 +133,15 @@ export class PlayerViewerComponent implements OnInit {
       },
       error: () => { this.matchHistoryLoading.set(false); },
     });
+  }
+
+  private loadFeeStatus(playerId: string): void {
+    this.playerFeesService.getPlayerStatus(playerId, this.currentSeason)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => this.feeStatus.set(rows[0] ?? null),
+        error: () => {},
+      });
   }
 
   openAvailabilityDialog(): void {

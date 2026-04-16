@@ -123,6 +123,11 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./reports/reports.routes').then((m) => m.REPORTS_ROUTES),
       },
+      {
+        path: 'player-fees',
+        loadChildren: () =>
+          import('./player-fees/player-fees.routes').then((m) => m.PLAYER_FEES_ROUTES),
+      },
       { path: 'set-password', component: SetPasswordComponent },
     ],
   },

@@ -113,6 +113,15 @@ export class PlayerFeesController {
 
   // ── Status + Stats ────────────────────────────────────────────────────────
 
+  @Get('player-status/:playerId')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
+  getPlayerStatus(
+    @Param('playerId') playerId: string,
+    @Query('season') season: string,
+  ) {
+    return this.service.getPlayerStatus(playerId, season);
+  }
+
   @Get('status')
   @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
   getStatus(

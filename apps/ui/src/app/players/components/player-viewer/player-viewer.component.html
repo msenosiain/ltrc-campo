@@ -275,6 +275,50 @@
   </mat-card>
   }
 
+  <!-- DERECHO DE JUGADOR -->
+  @if (feeStatus()) {
+  <mat-card class="section-card">
+    <mat-card-content>
+      <div class="section-title-row">
+        <p class="section-title">Derecho {{ currentSeason }}</p>
+        @if (feeStatus()!.habilitado) {
+          <span class="fee-badge fee-badge--ok">Habilitado</span>
+        } @else {
+          <span class="fee-badge fee-badge--nok">No habilitado</span>
+        }
+      </div>
+      <div class="fee-checks">
+        <div class="fee-check" [class.fee-check--ok]="feeStatus()!.feePaid">
+          <mat-icon>{{ feeStatus()!.feePaid ? 'check_circle' : 'cancel' }}</mat-icon>
+          <span>Derecho pagado</span>
+        </div>
+        <div class="fee-check" [class.fee-check--ok]="feeStatus()!.fichaMedica">
+          <mat-icon>{{ feeStatus()!.fichaMedica ? 'check_circle' : 'cancel' }}</mat-icon>
+          <span>Ficha médica</span>
+        </div>
+        <div class="fee-check" [class.fee-check--ok]="feeStatus()!.cursosAprobados">
+          <mat-icon>{{ feeStatus()!.cursosAprobados ? 'check_circle' : 'cancel' }}</mat-icon>
+          <span>Cursos aprobados</span>
+        </div>
+        <div class="fee-check" [class.fee-check--ok]="feeStatus()!.fichajeBDUAR">
+          <mat-icon>{{ feeStatus()!.fichajeBDUAR ? 'check_circle' : 'cancel' }}</mat-icon>
+          <span>Fichaje BDUAR</span>
+        </div>
+        <div class="fee-check" [class.fee-check--ok]="feeStatus()!.fichajeUnion">
+          <mat-icon>{{ feeStatus()!.fichajeUnion ? 'check_circle' : 'cancel' }}</mat-icon>
+          <span>Fichaje Unión</span>
+        </div>
+        @if (feeStatus()!.fondoSolidarioPagado !== undefined) {
+          <div class="fee-check" [class.fee-check--ok]="feeStatus()!.fondoSolidarioPagado">
+            <mat-icon>{{ feeStatus()!.fondoSolidarioPagado ? 'check_circle' : 'cancel' }}</mat-icon>
+            <span>Fondo solidario</span>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+  }
+
   <!-- HISTORIAL DE PARTIDOS -->
   <mat-card class="section-card">
     <mat-card-content>

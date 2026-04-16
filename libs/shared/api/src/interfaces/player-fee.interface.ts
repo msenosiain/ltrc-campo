@@ -34,7 +34,7 @@ export interface IPlayerFeeConfig {
 export interface IFamilyGroupMember {
   playerId: string;
   playerName?: string;
-  order: 1 | 2 | 3;
+  order: number;
 }
 
 export interface IFamilyGroup {
