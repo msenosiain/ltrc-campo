@@ -88,12 +88,17 @@ export class PlayerFeesListComponent implements OnInit {
     };
   });
 
+  readonly hasCursos = computed(() =>
+    this.rows().some(r => r.cursosAprobados !== undefined)
+  );
+
   readonly hasFondoSolidario = computed(() =>
     this.rows().some(r => r.fondoSolidarioPagado !== undefined)
   );
 
   readonly displayedColumns = computed(() => {
-    const cols = ['player', 'category', 'feePaid', 'fichaMedica', 'cursosAprobados', 'fichajeBDUAR', 'fichajeUnion'];
+    const cols = ['player', 'category', 'feePaid', 'fichaMedica', 'fichajeBDUAR'];
+    if (this.hasCursos()) cols.push('cursosAprobados');
     if (this.hasFondoSolidario()) cols.push('fondoSolidarioPagado');
     cols.push('habilitado');
     return cols;

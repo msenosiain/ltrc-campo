@@ -311,11 +311,13 @@ export class PlayerFeesService {
       const cat = player.category as CategoryEnum;
       const needsFondoSolidario = sport === SportEnum.RUGBY && FONDO_SOLIDARIO_CATEGORIES.has(cat);
 
+      const needsCursos = sport === SportEnum.RUGBY && FONDO_SOLIDARIO_CATEGORIES.has(cat);
+
       const feePaid = !!payment;
       const fichaMedica = record?.fichaMedica ?? false;
-      const cursosAprobados = record?.cursosAprobados ?? false;
       const fichajeBDUAR = record?.fichajeBDUAR ?? false;
       const fichajeUnion = record?.fichajeUnion ?? false;
+      const cursosAprobados = needsCursos ? (record?.cursosAprobados ?? false) : undefined;
       const fondoSolidarioPagado = needsFondoSolidario
         ? (record?.fondoSolidarioPagado ?? false)
         : undefined;
@@ -323,9 +325,8 @@ export class PlayerFeesService {
       const habilitado =
         feePaid &&
         fichaMedica &&
-        cursosAprobados &&
         fichajeBDUAR &&
-        fichajeUnion &&
+        (!needsCursos || cursosAprobados === true) &&
         (!needsFondoSolidario || fondoSolidarioPagado === true);
 
       return {
@@ -337,9 +338,9 @@ export class PlayerFeesService {
         feeAmount: payment?.finalAmount,
         feePaidAt: payment?.paidAt,
         fichaMedica,
-        cursosAprobados,
         fichajeBDUAR,
         fichajeUnion,
+        cursosAprobados,
         fondoSolidarioPagado,
         habilitado,
       };
@@ -363,13 +364,19 @@ export class PlayerFeesService {
       this.seasonRecordModel.findOne({ playerId: (player as any)._id, season, sport }).lean(),
     ]);
 
+    const needsCursos = sport === SportEnum.RUGBY && FONDO_SOLIDARIO_CATEGORIES.has(cat);
+
     const feePaid = !!payment;
     const fichaMedica = record?.fichaMedica ?? false;
-    const cursosAprobados = record?.cursosAprobados ?? false;
     const fichajeBDUAR = record?.fichajeBDUAR ?? false;
     const fichajeUnion = record?.fichajeUnion ?? false;
+    const cursosAprobados = needsCursos ? (record?.cursosAprobados ?? false) : undefined;
     const fondoSolidarioPagado = needsFondoSolidario ? (record?.fondoSolidarioPagado ?? false) : undefined;
-    const habilitado = feePaid && fichaMedica && cursosAprobados && fichajeBDUAR && fichajeUnion &&
+    const habilitado =
+      feePaid &&
+      fichaMedica &&
+      fichajeBDUAR &&
+      (!needsCursos || cursosAprobados === true) &&
       (!needsFondoSolidario || fondoSolidarioPagado === true);
 
     return [{
@@ -381,9 +388,9 @@ export class PlayerFeesService {
       feeAmount: (payment as any)?.finalAmount,
       feePaidAt: (payment as any)?.paidAt,
       fichaMedica,
-      cursosAprobados,
       fichajeBDUAR,
       fichajeUnion,
+      cursosAprobados,
       fondoSolidarioPagado,
       habilitado,
     }];

@@ -122,10 +122,10 @@ export interface IPlayerFeeStatusRow {
   feePaidAt?: Date;
   // Habilitación
   fichaMedica: boolean;
-  cursosAprobados: boolean;
   fichajeBDUAR: boolean;
   fichajeUnion: boolean;
-  fondoSolidarioPagado?: boolean;  // solo si aplica (M15→PS rugby)
+  cursosAprobados?: boolean;       // solo M15→PS rugby
+  fondoSolidarioPagado?: boolean;  // solo M15→PS rugby
   // Estado general
   habilitado: boolean;
 }
