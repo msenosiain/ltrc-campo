@@ -29,23 +29,48 @@ import {
   IPlayerFeeStatusRow,
 } from '@ltrc-campo/shared-api-model';
 
-// Rugby categories that require fondo solidario (M15 → PS)
-const FONDO_SOLIDARIO_CATEGORIES = new Set<CategoryEnum>([
+// Rugby categories M15 → PS: requieren cursos obligatorios y fondo solidario
+const RUGBY_M15_PLUS = new Set<CategoryEnum>([
   CategoryEnum.M15,
   CategoryEnum.M16,
   CategoryEnum.M17,
   CategoryEnum.M19,
-  CategoryEnum.PRE_DECIMA,
-  CategoryEnum.DECIMA,
-  CategoryEnum.NOVENA,
-  CategoryEnum.OCTAVA,
-  CategoryEnum.SEPTIMA,
-  CategoryEnum.SEXTA,
-  CategoryEnum.QUINTA,
-  CategoryEnum.CUARTA,
   CategoryEnum.PLANTEL_SUPERIOR,
-  CategoryEnum.MASTER,
 ]);
+
+// Orden lógico de categorías para mostrar en listas (mayor → menor)
+const CATEGORY_ORDER: CategoryEnum[] = [
+  CategoryEnum.PLANTEL_SUPERIOR,
+  CategoryEnum.M19,
+  CategoryEnum.M17,
+  CategoryEnum.M16,
+  CategoryEnum.M15,
+  CategoryEnum.M14,
+  CategoryEnum.M13,
+  CategoryEnum.M12,
+  CategoryEnum.M11,
+  CategoryEnum.M10,
+  CategoryEnum.M9,
+  CategoryEnum.M8,
+  CategoryEnum.M7,
+  CategoryEnum.M6,
+  CategoryEnum.M5,
+  // Hockey
+  CategoryEnum.CUARTA,
+  CategoryEnum.QUINTA,
+  CategoryEnum.SEXTA,
+  CategoryEnum.SEPTIMA,
+  CategoryEnum.OCTAVA,
+  CategoryEnum.NOVENA,
+  CategoryEnum.DECIMA,
+  CategoryEnum.PRE_DECIMA,
+  CategoryEnum.MASTER,
+];
+
+const categoryIndex = (cat: string) => {
+  const i = CATEGORY_ORDER.indexOf(cat as CategoryEnum);
+  return i === -1 ? 999 : i;
+};
 
 @Injectable()
 export class PlayerFeesService {
@@ -276,7 +301,7 @@ export class PlayerFeesService {
       this.playerModel
         .find(playerQuery)
         .select('name idNumber category')
-        .sort({ category: 1, name: 1 })
+        .sort({ name: 1 })
         .lean(),
       this.configModel
         .find({ season, sport, active: true })
@@ -309,9 +334,9 @@ export class PlayerFeesService {
       const payment = paymentMap.get(pid);
       const record = recordMap.get(pid);
       const cat = player.category as CategoryEnum;
-      const needsFondoSolidario = sport === SportEnum.RUGBY && FONDO_SOLIDARIO_CATEGORIES.has(cat);
+      const needsFondoSolidario = sport === SportEnum.RUGBY && RUGBY_M15_PLUS.has(cat);
 
-      const needsCursos = sport === SportEnum.RUGBY && FONDO_SOLIDARIO_CATEGORIES.has(cat);
+      const needsCursos = sport === SportEnum.RUGBY && RUGBY_M15_PLUS.has(cat);
 
       const feePaid = !!payment;
       const fichaMedica = record?.fichaMedica ?? false;
@@ -344,6 +369,9 @@ export class PlayerFeesService {
         fondoSolidarioPagado,
         habilitado,
       };
+    }).sort((a, b) => {
+      const catDiff = categoryIndex(a.category) - categoryIndex(b.category);
+      return catDiff !== 0 ? catDiff : a.playerName.localeCompare(b.playerName, 'es');
     });
   }
 
@@ -357,14 +385,14 @@ export class PlayerFeesService {
     const sport = (player as any).sport as SportEnum;
     const cat = (player as any).category as CategoryEnum;
     const pid = (player as any)._id.toString();
-    const needsFondoSolidario = sport === SportEnum.RUGBY && FONDO_SOLIDARIO_CATEGORIES.has(cat);
+    const needsFondoSolidario = sport === SportEnum.RUGBY && RUGBY_M15_PLUS.has(cat);
 
     const [payment, record] = await Promise.all([
       this.paymentModel.findOne({ playerId: (player as any)._id, season, sport, status: PlayerFeeStatusEnum.APPROVED }).lean(),
       this.seasonRecordModel.findOne({ playerId: (player as any)._id, season, sport }).lean(),
     ]);
 
-    const needsCursos = sport === SportEnum.RUGBY && FONDO_SOLIDARIO_CATEGORIES.has(cat);
+    const needsCursos = sport === SportEnum.RUGBY && RUGBY_M15_PLUS.has(cat);
 
     const feePaid = !!payment;
     const fichaMedica = record?.fichaMedica ?? false;

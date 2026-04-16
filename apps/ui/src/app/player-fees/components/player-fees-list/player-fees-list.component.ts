@@ -16,7 +16,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DecimalPipe } from '@angular/common';
 import { CategoryEnum, IPlayerFeeConfig, IPlayerFeeStatusRow, RoleEnum, SportEnum } from '@ltrc-campo/shared-api-model';
-import { CategoryOption, getCategoryOptionsBySport } from '../../../common/category-options';
+import { CategoryOption, getCategoryLabel, getCategoryOptionsBySport } from '../../../common/category-options';
 import { UserFilterContextService } from '../../../common/services/user-filter-context.service';
 import { PlayerFeesAdminService } from '../../services/player-fees-admin.service';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
@@ -176,6 +176,8 @@ export class PlayerFeesListComponent implements OnInit {
         },
       });
   }
+
+  readonly getCategoryLabel = getCategoryLabel;
 
   goToSettings(): void {
     this.router.navigate(['/dashboard/player-fees/settings']);

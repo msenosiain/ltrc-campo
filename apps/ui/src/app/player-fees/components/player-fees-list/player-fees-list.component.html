@@ -91,7 +91,7 @@
 
         <ng-container matColumnDef="category">
           <th mat-header-cell *matHeaderCellDef>Categoría</th>
-          <td mat-cell *matCellDef="let row">{{ row.category }}</td>
+          <td mat-cell *matCellDef="let row">{{ getCategoryLabel(row.category) }}</td>
         </ng-container>
 
         <ng-container matColumnDef="feePaid">
