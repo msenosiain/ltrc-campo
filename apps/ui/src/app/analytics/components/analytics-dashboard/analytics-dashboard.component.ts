@@ -4,6 +4,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
@@ -18,6 +20,7 @@ import {
   NonCompByCategory,
   PaymentStats,
 } from '../../services/analytics.service';
+import { PlayerFeesAdminService, PlayerFeeStats } from '../../../player-fees/services/player-fees-admin.service';
 
 type Period = '1m' | '3m' | '6m';
 type SportFilter = 'all' | SportEnum;

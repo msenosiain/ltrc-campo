@@ -178,7 +178,7 @@
 
           <ng-container matColumnDef="expires">
             <th mat-header-cell *matHeaderCellDef>Vence</th>
-            <td mat-cell *matCellDef="let c">{{ c.expiresAt | date:'dd/MM/yy' }}</td>
+            <td mat-cell *matCellDef="let c">{{ c.expiresAt | date:'dd/MM/yy':'UTC' }}</td>
           </ng-container>
 
           <ng-container matColumnDef="actions">

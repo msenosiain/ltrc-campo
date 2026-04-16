@@ -7,6 +7,7 @@ export interface PlayerFeeStats {
   total: number;
   pagados: number;
   habilitados: number;
+  byCategory: Record<string, { total: number; pagados: number; habilitados: number }>;
 }
 
 export interface UpdateSeasonRecordPayload {

@@ -2,6 +2,7 @@ import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angula
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { format } from 'date-fns';
 import { debounceTime, switchMap } from 'rxjs/operators';
 import { of, Subject } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
@@ -184,7 +185,7 @@ export class PlayerFeesSettingsComponent implements OnInit {
       label: config.label,
       description: config.description ?? '',
       addMpFee: config.addMpFee,
-      expiresAt: new Date(config.expiresAt),
+      expiresAt: new Date((config.expiresAt as unknown as string).slice(0, 10) + 'T12:00:00Z'),
       familyDiscount: config.familyDiscount,
     });
     while (this.blocks.length) this.blocks.removeAt(0);
@@ -233,7 +234,7 @@ export class PlayerFeesSettingsComponent implements OnInit {
       label: v.label,
       description: v.description || undefined,
       addMpFee: v.addMpFee,
-      expiresAt: (v.expiresAt as Date).toISOString().split('T')[0],
+      expiresAt: format(v.expiresAt as Date, 'yyyy-MM-dd'),
       familyDiscount: v.familyDiscount,
       blocks: v.blocks,
     };
