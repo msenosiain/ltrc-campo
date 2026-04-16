@@ -53,6 +53,20 @@
           </mat-select>
         </mat-form-field>
       }
+
+      <mat-form-field appearance="outline" class="filter-field filter-field--name">
+        <mat-label>Buscar jugador</mat-label>
+        <input matInput [value]="nameFilter()"
+          (input)="nameFilter.set($any($event.target).value)"
+          placeholder="Nombre o DNI" />
+        @if (nameFilter()) {
+          <button mat-icon-button matSuffix type="button" (click)="nameFilter.set('')">
+            <mat-icon>close</mat-icon>
+          </button>
+        } @else {
+          <mat-icon matSuffix>search</mat-icon>
+        }
+      </mat-form-field>
     </div>
   </form>
 
@@ -60,7 +74,7 @@
     <mat-progress-bar mode="indeterminate" />
   }
 
-  @if (rows().length > 0) {
+  @if (filteredRows().length > 0) {
     <div class="stats-bar">
       <span class="stat">
         <span class="stat__label">Total</span>
@@ -79,7 +93,7 @@
     </div>
 
     <div class="table-wrapper mat-elevation-z2">
-      <table mat-table [dataSource]="rows()" class="fees-table">
+      <table mat-table [dataSource]="filteredRows()" class="fees-table">
 
         <ng-container matColumnDef="player">
           <th mat-header-cell *matHeaderCellDef>Jugador</th>
@@ -180,7 +194,7 @@
     </div>
   }
 
-  @if (!loading() && rows().length === 0 && filterForm.get('sport')?.value) {
+  @if (!loading() && filteredRows().length === 0 && filterForm.get('sport')?.value) {
     <p class="empty-state">No hay jugadores para los filtros seleccionados.</p>
   }
 </div>

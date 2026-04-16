@@ -76,11 +76,21 @@ export class PlayerFeesListComponent implements OnInit {
   });
 
   rows = signal<IPlayerFeeStatusRow[]>([]);
+  nameFilter = signal('');
   loading = signal(false);
   configs = signal<IPlayerFeeConfig[]>([]);
 
+  readonly filteredRows = computed(() => {
+    const term = this.nameFilter().toLowerCase().trim();
+    if (!term) return this.rows();
+    return this.rows().filter(r =>
+      r.playerName?.toLowerCase().includes(term) ||
+      r.playerDni?.includes(term)
+    );
+  });
+
   readonly stats = computed(() => {
-    const all = this.rows();
+    const all = this.filteredRows();
     return {
       total: all.length,
       pagados: all.filter(r => r.feePaid).length,
@@ -89,11 +99,11 @@ export class PlayerFeesListComponent implements OnInit {
   });
 
   readonly hasCursos = computed(() =>
-    this.rows().some(r => r.cursosAprobados !== undefined)
+    this.filteredRows().some(r => r.cursosAprobados !== undefined)
   );
 
   readonly hasFondoSolidario = computed(() =>
-    this.rows().some(r => r.fondoSolidarioPagado !== undefined)
+    this.filteredRows().some(r => r.fondoSolidarioPagado !== undefined)
   );
 
   readonly displayedColumns = computed(() => {

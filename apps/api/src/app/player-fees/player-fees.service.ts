@@ -371,7 +371,7 @@ export class PlayerFeesService {
       };
     }).sort((a, b) => {
       const catDiff = categoryIndex(a.category) - categoryIndex(b.category);
-      return catDiff !== 0 ? catDiff : a.playerName.localeCompare(b.playerName, 'es');
+      return catDiff !== 0 ? catDiff : (a.playerName ?? '').localeCompare(b.playerName ?? '', 'es');
     });
   }
 
