@@ -1,11 +1,22 @@
 <div class="player-fees-list">
   <div class="list-header">
     <h2 class="list-header__title">Derechos de Jugador</h2>
-    <div class="header-actions">
+    <div class="list-header__actions">
       @if (activeConfig()) {
         <button mat-stroked-button type="button" (click)="copyPaymentLink()" matTooltip="Copiar link público de pago">
           <mat-icon>link</mat-icon>
           Copiar link de pago
+        </button>
+      }
+      @if (filterForm.get('sport')?.value) {
+        <button
+          *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER]"
+          mat-stroked-button
+          type="button"
+          (click)="openManualPayment()"
+        >
+          <mat-icon>payments</mat-icon>
+          Pago manual
         </button>
       }
       <button
@@ -20,11 +31,12 @@
     </div>
   </div>
 
+
   <form class="search-form" [formGroup]="filterForm">
     <div class="filters-row filters-row--open">
       <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Temporada</mat-label>
-        <mat-select formControlName="season">
+        <mat-select formControlName="season" (selectionChange)="onFilterChange()">
           @for (s of seasonOptions; track s) {
             <mat-option [value]="s">{{ s }}</mat-option>
           }
@@ -34,7 +46,7 @@
       @if (availableSports().length > 1) {
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Deporte</mat-label>
-          <mat-select formControlName="sport">
+          <mat-select formControlName="sport" (selectionChange)="onSportChange()">
             @for (s of availableSports(); track s.id) {
               <mat-option [value]="s.id">{{ s.label }}</mat-option>
             }
@@ -45,7 +57,7 @@
       @if (availableCategories().length > 1) {
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Categoría</mat-label>
-          <mat-select formControlName="category">
+          <mat-select formControlName="category" (selectionChange)="onFilterChange()">
             <mat-option [value]="null">Todas</mat-option>
             @for (cat of availableCategories(); track cat.id) {
               <mat-option [value]="cat.id">{{ cat.label }}</mat-option>

@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   HostListener,
   inject,
   OnInit,
@@ -39,10 +40,11 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
 import { AvailabilityDialogComponent, AvailabilityDialogResult } from '../availability-dialog/availability-dialog.component';
 import { PlayerFeesAdminService } from '../../../player-fees/services/player-fees-admin.service';
+import { PlayerEligibilityEditorComponent } from '../../../player-fees/components/player-eligibility-editor/player-eligibility-editor.component';
 import { IPlayerFeeStatusRow } from '@ltrc-campo/shared-api-model';
 
 @Component({
@@ -57,6 +59,7 @@ import { IPlayerFeeStatusRow } from '@ltrc-campo/shared-api-model';
     MatSnackBarModule,
     DatePipe,
     AllowedRolesDirective,
+    PlayerEligibilityEditorComponent,
   ],
   templateUrl: './player-viewer.component.html',
   styleUrl: './player-viewer.component.scss',
@@ -74,8 +77,15 @@ export class PlayerViewerComponent implements OnInit {
 
   RoleEnum = RoleEnum;
   readonly PlayerStatusEnum = PlayerStatusEnum;
+  readonly SportEnum = SportEnum;
   player?: Player;
   loading = signal(false);
+
+  private readonly currentUser = toSignal(this.authService.user$);
+  readonly isAdmin = computed(() => {
+    const user = this.currentUser();
+    return !!user?.roles?.includes(RoleEnum.ADMIN);
+  });
   matchHistory: Match[] = [];
   matchHistoryLoading = signal(false);
   isOwnProfile = signal(false);

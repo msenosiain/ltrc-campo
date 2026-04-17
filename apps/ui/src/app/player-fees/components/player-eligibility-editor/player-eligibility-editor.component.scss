@@ -1,0 +1,81 @@
+.eligibility-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .season-field {
+      width: 120px;
+    }
+  }
+}
+
+.eligibility-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #fce8e8;
+  color: #c62828;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &--ok {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+}
+
+.eligibility-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eligibility-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 4px 0;
+
+  &--disabled {
+    cursor: default;
+    opacity: 0.7;
+  }
+
+  &__label {
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__hint {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.5);
+  }
+}
+
+.saving-bar {
+  margin-top: 4px;
+}
+
+.eligibility-empty {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.5);
+  margin: 0;
+  font-style: italic;
+}

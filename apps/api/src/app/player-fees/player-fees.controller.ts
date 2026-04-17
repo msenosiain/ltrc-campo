@@ -21,6 +21,7 @@ import { UpdatePlayerFeeConfigDto } from './dto/update-player-fee-config.dto';
 import { CreateFamilyGroupDto } from './dto/create-family-group.dto';
 import { UpdateSeasonRecordDto } from './dto/update-season-record.dto';
 import { BduarImportDto } from './dto/bduar-import.dto';
+import { RecordManualFeePaymentDto } from './dto/record-manual-fee-payment.dto';
 
 @Controller('player-fees')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -109,6 +110,24 @@ export class PlayerFeesController {
   @Roles(RoleEnum.ADMIN)
   importBduar(@Body() dto: BduarImportDto, @Req() req: Request) {
     return this.service.importFromBduar(dto, (req as any).user.userId);
+  }
+
+  // ── Manual payment ───────────────────────────────────────────────────────
+
+  @Get('manual-payment/preview')
+  @Roles(RoleEnum.ADMIN, RoleEnum.MANAGER)
+  previewManualPayment(
+    @Query('playerId') playerId: string,
+    @Query('season') season: string,
+    @Query('sport') sport: SportEnum,
+  ) {
+    return this.service.previewManualPayment(playerId, season, sport);
+  }
+
+  @Post('manual-payment')
+  @Roles(RoleEnum.ADMIN, RoleEnum.MANAGER)
+  recordManualPayment(@Body() dto: RecordManualFeePaymentDto) {
+    return this.service.recordManualPayment(dto);
   }
 
   // ── Status + Stats ────────────────────────────────────────────────────────

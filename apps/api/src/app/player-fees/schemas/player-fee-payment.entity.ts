@@ -4,7 +4,8 @@ import { PlayerFeeStatusEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 export class PlayerFeePaymentEntity extends Document {
   id: string;
   playerId: Types.ObjectId;
-  configId: Types.ObjectId;
+  configId?: Types.ObjectId;
+  paymentMethod?: string;
   season: string;
   sport: SportEnum;
   originalAmount: number;

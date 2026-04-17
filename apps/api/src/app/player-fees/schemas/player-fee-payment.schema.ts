@@ -6,7 +6,8 @@ import { PlayerEntity } from '../../players/schemas/player.entity';
 export const PlayerFeePaymentSchema = new Schema<PlayerFeePaymentEntity>(
   {
     playerId: { type: Types.ObjectId, ref: PlayerEntity.name, required: true, index: true },
-    configId: { type: Types.ObjectId, ref: 'PlayerFeeConfigEntity', required: true, index: true },
+    configId: { type: Types.ObjectId, ref: 'PlayerFeeConfigEntity', required: false, index: true, sparse: true },
+    paymentMethod: { type: String },
     season: { type: String, required: true },
     sport: { type: String, enum: Object.values(SportEnum), required: true },
     originalAmount: { type: Number, required: true },

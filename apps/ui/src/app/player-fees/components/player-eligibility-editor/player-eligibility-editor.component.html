@@ -1,0 +1,83 @@
+<div class="eligibility-editor">
+  <div class="eligibility-editor__header">
+    <mat-form-field appearance="outline" class="season-field">
+      <mat-label>Season</mat-label>
+      <mat-select [value]="season()" (selectionChange)="onSeasonChange($event.value)">
+        @for (s of seasonOptions; track s) {
+          <mat-option [value]="s">{{ s }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (status()) {
+      <span class="eligibility-badge" [class.eligibility-badge--ok]="status()!.habilitado">
+        <mat-icon>{{ status()!.habilitado ? 'verified' : 'cancel' }}</mat-icon>
+        {{ status()!.habilitado ? 'Habilitado' : 'No habilitado' }}
+      </span>
+    }
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  } @else {
+    <div class="eligibility-checks">
+      <label class="eligibility-check eligibility-check--disabled">
+        <mat-checkbox [checked]="status()?.feePaid ?? false" [disabled]="true" />
+        <span class="eligibility-check__label">
+          Derecho pagado
+          <span class="eligibility-check__hint">(registrado por pago)</span>
+        </span>
+      </label>
+
+      <label class="eligibility-check">
+        <mat-checkbox
+          [checked]="status()?.fichajeBDUAR ?? false"
+          [disabled]="saving()"
+          (change)="toggle('fichajeBDUAR', $event.checked)"
+        />
+        <span class="eligibility-check__label">Registro BDUAR</span>
+      </label>
+
+      <label class="eligibility-check">
+        <mat-checkbox
+          [checked]="status()?.fichaMedica ?? false"
+          [disabled]="saving()"
+          (change)="toggle('fichaMedica', $event.checked)"
+        />
+        <span class="eligibility-check__label">Ficha médica</span>
+      </label>
+
+      @if (hasCursos()) {
+        <label class="eligibility-check">
+          <mat-checkbox
+            [checked]="status()?.cursosAprobados ?? false"
+            [disabled]="saving()"
+            (change)="toggle('cursosAprobados', $event.checked)"
+          />
+          <span class="eligibility-check__label">Cursos obligatorios</span>
+        </label>
+      }
+
+      @if (hasFondo()) {
+        <label class="eligibility-check">
+          <mat-checkbox
+            [checked]="status()?.fondoSolidarioPagado ?? false"
+            [disabled]="saving()"
+            (change)="toggle('fondoSolidarioPagado', $event.checked)"
+          />
+          <span class="eligibility-check__label">Fondo solidario</span>
+        </label>
+      }
+    </div>
+
+    @if (saving()) {
+      <mat-progress-bar mode="indeterminate" class="saving-bar" />
+    }
+
+    @if (!status() && !loading()) {
+      <p class="eligibility-empty">
+        No data for {{ season() }}. Fields will be created on first change.
+      </p>
+    }
+  }
+</div>

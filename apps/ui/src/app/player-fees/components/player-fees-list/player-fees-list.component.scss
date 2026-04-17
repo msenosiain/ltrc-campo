@@ -1,34 +1,13 @@
+@use '../../../common/styles/list-layout';
+
 .player-fees-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-}
-
-.list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-
-  &__title {
-    margin: 0;
-    font-size: 1.4rem;
-    font-weight: 500;
-  }
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .search-form {
-  background: var(--mat-sys-surface-container-low, #f5f5f5);
-  border-radius: 8px;
-  padding: 12px 16px;
+  margin-bottom: 4px;
 }
 
 .filters-row {
@@ -39,9 +18,31 @@
 }
 
 .filter-field {
-  flex: 1;
-  min-width: 140px;
-  max-width: 220px;
+  width: 200px;
+
+  &--name {
+    width: 280px;
+  }
+}
+
+@media (max-width: 767px) {
+  .filters-row {
+    display: none;
+
+    &--open {
+      display: flex;
+    }
+  }
+
+  .filter-field {
+    flex: 1 1 calc(50% - 6px);
+    width: auto;
+
+    &--name {
+      flex: 1 1 100%;
+      width: auto;
+    }
+  }
 }
 
 .stats-bar {

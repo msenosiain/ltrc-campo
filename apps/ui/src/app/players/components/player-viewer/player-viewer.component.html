@@ -275,8 +275,18 @@
   </mat-card>
   }
 
-  <!-- DERECHO DE JUGADOR -->
-  @if (feeStatus()) {
+  <!-- DERECHO DE JUGADOR — editable for admins/managers, read-only for others -->
+  @if (isAdmin()) {
+  <mat-card class="section-card">
+    <mat-card-content>
+      <p class="section-title">Derecho de jugador</p>
+      <ltrc-player-eligibility-editor
+        [playerId]="player.id!"
+        [sport]="player.sport ?? SportEnum.RUGBY"
+      />
+    </mat-card-content>
+  </mat-card>
+  } @else if (feeStatus()) {
   <mat-card class="section-card">
     <mat-card-content>
       <div class="section-title-row">

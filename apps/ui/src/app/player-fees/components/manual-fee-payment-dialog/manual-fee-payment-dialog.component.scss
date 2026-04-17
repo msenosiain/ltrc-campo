@@ -1,0 +1,76 @@
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 340px;
+  padding-top: 4px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.option-name {
+  display: block;
+}
+
+.option-dni {
+  display: block;
+  font-size: 0.78rem;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.amount-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: #f5f5f5;
+  margin-bottom: 4px;
+}
+
+.amount-breakdown {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+
+  &--total {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+}
+
+.amount-label {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.6);
+  flex: 1;
+}
+
+.amount-original {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.5);
+  text-decoration: line-through;
+}
+
+.amount-discount-label {
+  color: #2e7d32;
+}
+
+.amount-discount-reason {
+  font-size: 0.78rem;
+  color: #2e7d32;
+  font-style: italic;
+}
+
+.amount-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.amount-unknown {
+  font-size: 0.85rem;
+  color: #f57c00;
+}

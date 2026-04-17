@@ -18,6 +18,7 @@ import { CreatePlayerFeeConfigDto } from './dto/create-player-fee-config.dto';
 import { UpdatePlayerFeeConfigDto } from './dto/update-player-fee-config.dto';
 import { CreateFamilyGroupDto } from './dto/create-family-group.dto';
 import { UpdateSeasonRecordDto } from './dto/update-season-record.dto';
+import { RecordManualFeePaymentDto } from './dto/record-manual-fee-payment.dto';
 import { BduarImportDto } from './dto/bduar-import.dto';
 import { ConfirmPlayerFeeDto } from './dto/validate-player-fee.dto';
 import {
@@ -288,6 +289,85 @@ export class PlayerFeesService {
       playerId: new Types.ObjectId(playerId),
       season,
       sport,
+    });
+  }
+
+  // ── Manual payment ───────────────────────────────────────────────────────
+
+  async previewManualPayment(playerId: string, season: string, sport: SportEnum) {
+    const player = await this.playerModel.findById(playerId).select('category').lean();
+    if (!player) throw new NotFoundException('Jugador no encontrado');
+
+    const config = await this.configModel.findOne({ season, sport, active: true }).lean();
+    if (!config) return { originalAmount: null, discountPct: null, discountReason: null, finalAmount: null };
+
+    const resolved = this.resolveAmountForCategory(config as any, player.category as CategoryEnum);
+    if (!resolved) return { originalAmount: null, discountPct: null, discountReason: null, finalAmount: null };
+
+    const discount = config.familyDiscount
+      ? await this.resolveFamilyDiscount((config as any)._id.toString(), playerId, sport)
+      : null;
+
+    const originalAmount = resolved.amount;
+    const discountPct = discount?.discountPct ?? 0;
+    const finalAmount = discountPct
+      ? Math.round(originalAmount * (1 - discountPct / 100))
+      : originalAmount;
+
+    return {
+      originalAmount,
+      discountPct: discountPct || null,
+      discountReason: discount?.discountReason ?? null,
+      finalAmount,
+    };
+  }
+
+  async recordManualPayment(dto: RecordManualFeePaymentDto): Promise<void> {
+    const existing = await this.paymentModel.findOne({
+      playerId: new Types.ObjectId(dto.playerId),
+      season: dto.season,
+      sport: dto.sport,
+      status: PlayerFeeStatusEnum.APPROVED,
+    });
+    if (existing) throw new ConflictException('El jugador ya tiene el derecho pagado para esta temporada');
+
+    const player = await this.playerModel.findById(dto.playerId).select('category').lean();
+    if (!player) throw new NotFoundException('Jugador no encontrado');
+
+    const config = await this.configModel.findOne({ season: dto.season, sport: dto.sport, active: true }).lean();
+
+    let originalAmount = 0;
+    let discountPct = 0;
+    let discountReason: string | undefined;
+    let finalAmount = 0;
+
+    if (config) {
+      const resolved = this.resolveAmountForCategory(config as any, player.category as CategoryEnum);
+      if (resolved) {
+        originalAmount = resolved.amount;
+        const discount = config.familyDiscount
+          ? await this.resolveFamilyDiscount((config as any)._id.toString(), dto.playerId, dto.sport)
+          : null;
+        discountPct = discount?.discountPct ?? 0;
+        discountReason = discount?.discountReason;
+        finalAmount = discountPct
+          ? Math.round(originalAmount * (1 - discountPct / 100))
+          : originalAmount;
+      }
+    }
+
+    await this.paymentModel.create({
+      playerId: new Types.ObjectId(dto.playerId),
+      ...(config ? { configId: (config as any)._id } : {}),
+      season: dto.season,
+      sport: dto.sport,
+      originalAmount,
+      discountPct: discountPct || undefined,
+      discountReason,
+      finalAmount,
+      status: PlayerFeeStatusEnum.APPROVED,
+      paymentMethod: dto.method,
+      paidAt: new Date(),
     });
   }
 
@@ -741,8 +821,10 @@ export class PlayerFeesService {
 
       if (isConfirmada) {
         const now = new Date();
+        const playerId = (player as any)._id;
+
         await this.seasonRecordModel.findOneAndUpdate(
-          { playerId: (player as any)._id, season: dto.season, sport: SportEnum.RUGBY },
+          { playerId, season: dto.season, sport: SportEnum.RUGBY },
           {
             $set: {
               fichaMedica: true,
@@ -758,6 +840,33 @@ export class PlayerFeesService {
           },
           { upsert: true, new: true }
         );
+
+        const existingPayment = await this.paymentModel.findOne({
+          playerId,
+          season: dto.season,
+          sport: SportEnum.RUGBY,
+          status: PlayerFeeStatusEnum.APPROVED,
+        });
+
+        if (!existingPayment) {
+          const config = await this.configModel.findOne({
+            season: dto.season,
+            sport: SportEnum.RUGBY,
+            active: true,
+          });
+          await this.paymentModel.create({
+            playerId,
+            ...(config ? { configId: config._id } : {}),
+            season: dto.season,
+            sport: SportEnum.RUGBY,
+            originalAmount: 0,
+            finalAmount: 0,
+            status: PlayerFeeStatusEnum.APPROVED,
+            paymentMethod: 'bduar',
+            paidAt: now,
+          });
+        }
+
         recordsSet++;
       }
     }

@@ -74,12 +74,16 @@ export class SessionSearchComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.initialFilters) {
-      const { fromDate, toDate, ...rest } = this.initialFilters as TrainingSessionFilters;
-      this.searchForm.patchValue({
-        ...rest,
-        fromDate: fromDate ? new Date(fromDate + 'T12:00:00Z') : null,
-        toDate: toDate ? new Date(toDate + 'T12:00:00Z') : null,
-      }, { emitEvent: false });
+      const { fromDate, toDate, ...rest } = this
+        .initialFilters as TrainingSessionFilters;
+      this.searchForm.patchValue(
+        {
+          ...rest,
+          fromDate: fromDate ? new Date(fromDate + 'T12:00:00Z') : null,
+          toDate: toDate ? new Date(toDate + 'T12:00:00Z') : null,
+        },
+        { emitEvent: false }
+      );
     }
 
     this.filterContext.filterContext$

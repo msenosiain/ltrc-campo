@@ -78,6 +78,19 @@ export class PlayerFeesAdminService {
     return this.http.get<PlayerFeeStats>(this.url('stats'), { params: { season, sport } });
   }
 
+  previewManualPayment(playerId: string, season: string, sport: SportEnum) {
+    return this.http.get<{
+      originalAmount: number | null;
+      discountPct: number | null;
+      discountReason: string | null;
+      finalAmount: number | null;
+    }>(this.url('manual-payment/preview'), { params: { playerId, season, sport } });
+  }
+
+  recordManualPayment(data: { playerId: string; season: string; sport: SportEnum; method: string }) {
+    return this.http.post<void>(this.url('manual-payment'), data);
+  }
+
   updateSeasonRecord(playerId: string, data: UpdateSeasonRecordPayload) {
     return this.http.patch<IPlayerSeasonRecord>(this.url(`season-record/${playerId}`), data);
   }
