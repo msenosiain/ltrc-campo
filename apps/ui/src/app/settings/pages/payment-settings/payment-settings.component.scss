@@ -1,0 +1,88 @@
+.settings-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.settings-header {
+  margin-bottom: 24px;
+}
+
+.settings-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.settings-subtitle {
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.methods-card {
+  mat-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+  }
+
+  .saving-spinner {
+    margin-left: auto;
+  }
+}
+
+.method-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+}
+
+.method-icon {
+  color: var(--mat-sys-primary);
+  flex-shrink: 0;
+}
+
+.method-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.method-label {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.method-description {
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.loading-center {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.toggle--on {
+  ::ng-deep .mdc-switch__track::after { background: #1b5e20 !important; }
+  ::ng-deep .mdc-switch__handle::after { background: #388e3c !important; }
+}
+
+.toggle--off {
+  ::ng-deep .mdc-switch__track::before { background: #b71c1c !important; }
+  ::ng-deep .mdc-switch__handle::after { background: #e53935 !important; }
+}
+

@@ -29,3 +29,13 @@
     font-size: 0.9rem;
   }
 }
+
+.toggle--on {
+  ::ng-deep .mdc-switch__track::after { background: #1b5e20 !important; }
+  ::ng-deep .mdc-switch__handle::after { background: #388e3c !important; }
+}
+
+.toggle--off {
+  ::ng-deep .mdc-switch__track::before { background: #b71c1c !important; }
+  ::ng-deep .mdc-switch__handle::after { background: #e53935 !important; }
+}

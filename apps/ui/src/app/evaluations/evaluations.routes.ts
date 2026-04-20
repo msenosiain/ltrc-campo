@@ -12,18 +12,6 @@ export const EVALUATIONS_ROUTES: Routes = [
     data: { title: 'Evaluaciones' },
   },
   {
-    path: 'settings',
-    loadComponent: () =>
-      import('./components/evaluation-settings/evaluation-settings.component').then(
-        (m) => m.EvaluationSettingsComponent
-      ),
-    canActivate: [hasRoleGuard],
-    data: {
-      title: 'Configuración de evaluaciones',
-      allowedRoles: [RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER],
-    },
-  },
-  {
     path: 'player/:playerId',
     loadComponent: () =>
       import('./components/player-evaluation-history/player-evaluation-history.component').then(

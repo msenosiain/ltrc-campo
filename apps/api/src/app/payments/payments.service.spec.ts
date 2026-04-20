@@ -20,6 +20,7 @@ import * as MercadoPago from 'mercadopago';
 import { PaymentsService } from './payments.service';
 import { PaymentLinkEntity } from './schemas/payment-link.entity';
 import { PaymentEntity } from './schemas/payment.entity';
+import { PAYMENT_CONFIG_MODEL } from './schemas/payment-config.entity';
 import { PlayerEntity } from '../players/schemas/player.entity';
 import { MatchEntity } from '../matches/schemas/match.entity';
 import { TripEntity } from '../trips/schemas/trip.entity';
@@ -71,6 +72,7 @@ const makeMockModel = () => ({
   findById: jest.fn(),
   findOne: jest.fn(),
   findByIdAndUpdate: jest.fn(),
+  findOneAndUpdate: jest.fn(),
   find: jest.fn(),
   distinct: jest.fn(),
   countDocuments: jest.fn(),
@@ -85,6 +87,7 @@ let mockPaymentModel: ReturnType<typeof makeMockModel>;
 let mockPlayerModel: ReturnType<typeof makeMockModel>;
 let mockMatchModel: ReturnType<typeof makeMockModel>;
 let mockTripModel: ReturnType<typeof makeMockModel>;
+let mockPaymentConfigModel: ReturnType<typeof makeMockModel>;
 
 // ── suite ─────────────────────────────────────────────────────────────────────
 
@@ -98,6 +101,9 @@ describe('PaymentsService', () => {
 
     mockLinkModel = makeMockModel();
     mockPaymentModel = makeMockModel();
+    mockPaymentConfigModel = makeMockModel();
+    mockPaymentConfigModel.findOne.mockReturnValue({ lean: jest.fn().mockResolvedValue(null) });
+    mockPaymentConfigModel.findOneAndUpdate.mockReturnValue({ lean: jest.fn().mockResolvedValue({ excludedPaymentTypes: [] }) });
     mockPlayerModel = makeMockModel();
     mockMatchModel = makeMockModel();
     mockTripModel = makeMockModel();
@@ -110,6 +116,7 @@ describe('PaymentsService', () => {
         PaymentsService,
         { provide: getModelToken(PaymentLinkEntity.name), useValue: mockLinkModel },
         { provide: getModelToken(PaymentEntity.name), useValue: mockPaymentModel },
+        { provide: getModelToken(PAYMENT_CONFIG_MODEL), useValue: mockPaymentConfigModel },
         { provide: getModelToken(PlayerEntity.name), useValue: mockPlayerModel },
         { provide: getModelToken(MatchEntity.name), useValue: mockMatchModel },
         { provide: getModelToken(TripEntity.name), useValue: mockTripModel },
@@ -159,8 +166,9 @@ describe('PaymentsService', () => {
   // ── getConfig ───────────────────────────────────────────────────────────────
 
   describe('getConfig()', () => {
-    it('should return mpFeeRate', () => {
-      expect(service.getConfig()).toEqual({ mpFeeRate: expect.any(Number) });
+    it('should return mpFeeRate and excludedPaymentTypes', async () => {
+      const result = await service.getConfig();
+      expect(result).toEqual({ mpFeeRate: expect.any(Number), excludedPaymentTypes: [] });
     });
   });
 

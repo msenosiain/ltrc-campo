@@ -6,7 +6,6 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { Router } from '@angular/router';
 import { CategoryEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 import { EvaluationsService } from '../../services/evaluations.service';
 import { getCategoryLabel, getCategoryOptionsBySport } from '../../../common/category-options';
@@ -36,7 +35,6 @@ interface CategorySettingsRow {
 export class EvaluationSettingsComponent implements OnInit {
   private readonly evaluationsService = inject(EvaluationsService);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   loading = signal(false);
@@ -80,10 +78,6 @@ export class EvaluationSettingsComponent implements OnInit {
           this.snackBar.open('Error al guardar', 'Cerrar', { duration: 4000 });
         },
       });
-  }
-
-  goBack(): void {
-    this.router.navigate(['/dashboard/evaluations']);
   }
 
   private buildRows(

@@ -68,12 +68,15 @@ export class EvaluationsService {
   }
 
   async findByCategory(
-    category: CategoryEnum,
-    sport: SportEnum,
+    category: CategoryEnum | undefined,
+    sport: SportEnum | undefined,
     period: string,
   ): Promise<PlayerEvaluationEntity[]> {
+    const query: Record<string, unknown> = { period };
+    if (category) query['category'] = category;
+    if (sport) query['sport'] = sport;
     return this.evaluationModel
-      .find({ category, sport, period })
+      .find(query)
       .populate('player', 'name nickName')
       .sort({ 'player.name': 1 })
       .exec();

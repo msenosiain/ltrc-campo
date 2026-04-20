@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, DestroyRef, signal, computed } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { startWith } from 'rxjs';
+import { debounceTime, startWith } from 'rxjs';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -87,7 +87,6 @@ export class EvaluationsListComponent implements OnInit {
   evaluations: PlayerEvaluation[] = [];
   loading = signal(false);
   searched = false;
-  filtersExpanded = false;
 
   get periodOptions(): { value: string; label: string }[] {
     const now = new Date();
@@ -122,16 +121,20 @@ export class EvaluationsListComponent implements OnInit {
       .subscribe(() => {
         const currentCat = this.filterForm.get('category')?.value;
         if (currentCat && !this.availableCategories().some(c => c.id === currentCat)) {
-          this.filterForm.get('category')?.setValue(null);
+          this.filterForm.get('category')?.setValue(null, { emitEvent: false });
         }
         this.evaluations = [];
         this.searched = false;
       });
+
+    this.filterForm.valueChanges
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.search());
   }
 
   search(): void {
     const { sport, category, period } = this.filterForm.value;
-    if (!category || !sport || !period) return;
+    if (!period) return;
     this.loading.set(true);
     this.evaluationsService
       .getByCategory(category, sport, period)
@@ -158,10 +161,6 @@ export class EvaluationsListComponent implements OnInit {
   goToHistory(eval_: PlayerEvaluation): void {
     const p = eval_.player as any;
     this.router.navigate(['/dashboard/evaluations/player', p?.id ?? p?._id ?? p]);
-  }
-
-  goToSettings(): void {
-    this.router.navigate(['/dashboard/evaluations/settings']);
   }
 
   delete(eval_: PlayerEvaluation): void {

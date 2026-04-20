@@ -13,6 +13,7 @@ import PDFDocument from 'pdfkit';
 import MercadoPagoConfig, { Payment as MpPayment, Preference } from 'mercadopago';
 import { PaymentLinkEntity } from './schemas/payment-link.entity';
 import { PaymentEntity } from './schemas/payment.entity';
+import { PaymentConfigEntity, PAYMENT_CONFIG_MODEL } from './schemas/payment-config.entity';
 import { PlayerEntity } from '../players/schemas/player.entity';
 import { MatchEntity } from '../matches/schemas/match.entity';
 import { TripEntity } from '../trips/schemas/trip.entity';
@@ -41,6 +42,8 @@ export class PaymentsService {
     private readonly paymentLinkModel: Model<PaymentLinkEntity>,
     @InjectModel(PaymentEntity.name)
     private readonly paymentModel: Model<PaymentEntity>,
+    @InjectModel(PAYMENT_CONFIG_MODEL)
+    private readonly paymentConfigModel: Model<PaymentConfigEntity>,
     @InjectModel(PlayerEntity.name)
     private readonly playerModel: Model<PlayerEntity>,
     @InjectModel(MatchEntity.name)
@@ -73,8 +76,21 @@ export class PaymentsService {
     return { mpFeeRate: this.mpFeeRate, grossAmount, mpFeeAmount, netAmount };
   }
 
-  getConfig() {
-    return { mpFeeRate: this.mpFeeRate };
+  async getConfig() {
+    const config = await this.paymentConfigModel.findOne().lean();
+    return {
+      mpFeeRate: this.mpFeeRate,
+      excludedPaymentTypes: config?.excludedPaymentTypes ?? [],
+    };
+  }
+
+  async updatePaymentConfig(excludedPaymentTypes: string[]) {
+    const config = await this.paymentConfigModel.findOneAndUpdate(
+      {},
+      { excludedPaymentTypes },
+      { upsert: true, new: true }
+    ).lean();
+    return { excludedPaymentTypes: config?.excludedPaymentTypes ?? [] };
   }
 
   async getFieldOptions() {
@@ -265,6 +281,9 @@ export class PaymentsService {
     );
 
     // Crea preferencia en MP
+    const paymentConfig = await this.paymentConfigModel.findOne().lean();
+    const excludedTypes = paymentConfig?.excludedPaymentTypes ?? [];
+
     const preference = new Preference(this.mpClient);
     const mpResponse = await preference.create({
       body: {
@@ -283,6 +302,11 @@ export class PaymentsService {
           identification: { type: 'DNI', number: player.idNumber },
         },
         external_reference: externalReference,
+        ...(excludedTypes.length > 0 ? {
+          payment_methods: {
+            excluded_payment_types: excludedTypes.map((id) => ({ id })),
+          },
+        } : {}),
         back_urls: {
           success: `${this.appBaseUrl}/pay/result`,
           failure: `${this.appBaseUrl}/pay/result`,

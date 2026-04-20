@@ -47,14 +47,13 @@ export class EvaluationsService {
 
   // Evaluations
   getByCategory(
-    category: CategoryEnum,
-    sport: SportEnum,
+    category: CategoryEnum | null,
+    sport: SportEnum | null,
     period: string,
   ): Observable<PlayerEvaluation[]> {
-    const params = new HttpParams()
-      .set('category', category)
-      .set('sport', sport)
-      .set('period', period);
+    let params = new HttpParams().set('period', period);
+    if (category) params = params.set('category', category);
+    if (sport) params = params.set('sport', sport);
     return this.http.get<PlayerEvaluation[]>(this.apiUrl, { params });
   }
 

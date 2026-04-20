@@ -9,6 +9,8 @@ import { PaymentLinkEntity } from './schemas/payment-link.entity';
 import { PaymentLinkSchema } from './schemas/payment-link.schema';
 import { PaymentEntity } from './schemas/payment.entity';
 import { PaymentSchema } from './schemas/payment.schema';
+import { PaymentConfigEntity, PAYMENT_CONFIG_MODEL } from './schemas/payment-config.entity';
+import { PaymentConfigSchema } from './schemas/payment-config.schema';
 import { PlayerEntity } from '../players/schemas/player.entity';
 import { PlayerSchema } from '../players/schemas/player.schema';
 import { MatchEntity } from '../matches/schemas/match.entity';
@@ -29,6 +31,11 @@ import { TripSchema } from '../trips/schemas/trip.schema';
         name: PaymentEntity.name,
         schema: PaymentSchema,
         collection: 'payments',
+      },
+      {
+        name: PAYMENT_CONFIG_MODEL,
+        schema: PaymentConfigSchema,
+        collection: 'payment_config',
       },
       { name: PlayerEntity.name, schema: PlayerSchema },
       { name: MatchEntity.name, schema: MatchSchema },

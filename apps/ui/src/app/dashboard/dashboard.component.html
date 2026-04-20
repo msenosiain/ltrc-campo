@@ -178,6 +178,17 @@
         <span matListItemTitle>Usuarios</span>
       </a>
 
+      <a
+        *ltrcAllowedRoles="[RoleEnum.ADMIN]"
+        mat-list-item
+        routerLink="settings"
+        routerLinkActive="active-link"
+        (click)="onNavClick()"
+      >
+        <mat-icon matListItemIcon>settings</mat-icon>
+        <span matListItemTitle>Configuración</span>
+      </a>
+
       @if (isPlayer() && myPlayerId()) {
       <a
         mat-list-item

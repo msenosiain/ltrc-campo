@@ -1,13 +1,4 @@
 <div class="evaluation-settings">
-  <div class="sticky-toolbar">
-    <div class="sticky-toolbar__title">
-      <button mat-icon-button (click)="goBack()">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
-      <span class="sticky-toolbar__name">Configuración de evaluaciones</span>
-    </div>
-  </div>
-
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" />
   }
@@ -23,6 +14,8 @@
             [checked]="row.enabled"
             [disabled]="row.saving"
             (change)="toggle(row, $event.checked)"
+            [class.toggle--on]="row.enabled"
+            [class.toggle--off]="!row.enabled"
           />
         </div>
       }

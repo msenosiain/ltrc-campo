@@ -143,7 +143,11 @@ export class PaymentsService {
   }
 
   getConfig() {
-    return this.http.get<{ mpFeeRate: number }>(`${this.apiUrl}/config`);
+    return this.http.get<{ mpFeeRate: number; excludedPaymentTypes: string[] }>(`${this.apiUrl}/config`);
+  }
+
+  updatePaymentConfig(excludedPaymentTypes: string[]) {
+    return this.http.patch<{ excludedPaymentTypes: string[] }>(`${this.apiUrl}/config`, { excludedPaymentTypes });
   }
 
   getFieldOptions() {

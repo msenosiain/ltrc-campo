@@ -1,36 +1,15 @@
 <div class="evaluations-list">
   <div class="list-header">
     <h2 class="list-header__title">Evaluaciones</h2>
-    <div class="list-header__actions">
-      <button
-        *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]"
-        mat-stroked-button
-        type="button"
-        (click)="goToSettings()"
-      >
-        <mat-icon>settings</mat-icon>
-        Configurar categorías
-      </button>
-    </div>
   </div>
 
   <form class="search-form" [formGroup]="filterForm">
-    <div class="search-row">
-      <button mat-stroked-button type="button" class="filters-toggle" (click)="filtersExpanded = !filtersExpanded">
-        <mat-icon>tune</mat-icon>
-        {{ filtersExpanded ? 'Ocultar' : 'Filtros' }}
-      </button>
-      <button mat-flat-button color="primary" type="button" (click)="search()" [disabled]="!filterForm.get('category')?.value">
-        <mat-icon>search</mat-icon>
-        Buscar
-      </button>
-    </div>
-
-    <div class="filters-row" [class.filters-row--open]="filtersExpanded">
+    <div class="filters-row">
       @if (availableSports().length > 1) {
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Deporte</mat-label>
           <mat-select formControlName="sport">
+            <mat-option [value]="null">Todos</mat-option>
             @for (s of availableSports(); track s.id) {
               <mat-option [value]="s.id">{{ s.label }}</mat-option>
             }
@@ -42,14 +21,13 @@
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Categoría</mat-label>
           <mat-select formControlName="category">
+            <mat-option [value]="null">Todas</mat-option>
             @for (cat of availableCategories(); track cat.id) {
               <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
       }
-
-      <div class="filter-row-break"></div>
 
       <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Período</mat-label>
@@ -59,11 +37,6 @@
           }
         </mat-select>
       </mat-form-field>
-
-      <button mat-flat-button color="primary" type="button" class="search-btn--desktop" (click)="search()" [disabled]="!filterForm.get('category')?.value">
-        <mat-icon>search</mat-icon>
-        Buscar
-      </button>
     </div>
   </form>
 

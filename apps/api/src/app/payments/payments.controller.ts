@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -18,6 +19,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { PaymentEntityTypeEnum, PaymentMethodEnum, PaymentStatusEnum, RoleEnum } from '@ltrc-campo/shared-api-model';
 import { CreatePaymentLinkDto } from './dto/create-payment-link.dto';
 import { RecordManualPaymentDto } from './dto/record-manual-payment.dto';
+import { UpdatePaymentConfigDto } from './dto/update-payment-config.dto';
 
 @Controller('payments')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -48,6 +50,12 @@ export class PaymentsController {
   @Get('config')
   getConfig() {
     return this.paymentsService.getConfig();
+  }
+
+  @Patch('config')
+  @Roles(RoleEnum.ADMIN)
+  updateConfig(@Body() dto: UpdatePaymentConfigDto) {
+    return this.paymentsService.updatePaymentConfig(dto.excludedPaymentTypes);
   }
 
   @Get('field-options')
