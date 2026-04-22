@@ -87,8 +87,17 @@
           <td mat-cell *matCellDef="let row">{{ getCategoryLabel(row.category) }}</td>
         </ng-container>
 
+        <ng-container matColumnDef="cuotaAlDia">
+          <th mat-header-cell *matHeaderCellDef>Cuota</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-icon [class]="row.cuotaAlDia ? 'check-icon' : 'cross-icon'">
+              {{ row.cuotaAlDia ? 'check_circle' : 'cancel' }}
+            </mat-icon>
+          </td>
+        </ng-container>
+
         <ng-container matColumnDef="feePaid">
-          <th mat-header-cell *matHeaderCellDef>Pago</th>
+          <th mat-header-cell *matHeaderCellDef>Pago Derecho</th>
           <td mat-cell *matCellDef="let row">
             <mat-icon [class]="row.feePaid ? 'check-icon' : 'cross-icon'">
               {{ row.feePaid ? 'check_circle' : 'cancel' }}
@@ -96,17 +105,8 @@
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="fichaMedica">
-          <th mat-header-cell *matHeaderCellDef>Ficha Méd.</th>
-          <td mat-cell *matCellDef="let row">
-            <mat-icon [class]="row.fichaMedica ? 'check-icon' : 'cross-icon'">
-              {{ row.fichaMedica ? 'check_circle' : 'cancel' }}
-            </mat-icon>
-          </td>
-        </ng-container>
-
         <ng-container matColumnDef="fichajeBDUAR">
-          <th mat-header-cell *matHeaderCellDef>BDUAR</th>
+          <th mat-header-cell *matHeaderCellDef>BDUAR / Ficha Méd.</th>
           <td mat-cell *matCellDef="let row">
             <mat-icon [class]="row.fichajeBDUAR ? 'check-icon' : 'cross-icon'">
               {{ row.fichajeBDUAR ? 'check_circle' : 'cancel' }}

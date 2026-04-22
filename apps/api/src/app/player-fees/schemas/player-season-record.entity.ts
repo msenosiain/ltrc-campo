@@ -6,12 +6,10 @@ export class PlayerSeasonRecordEntity extends Document {
   playerId: Types.ObjectId;
   season: string;
   sport: SportEnum;
-  fichaMedica: boolean;
-  fichaMedicaFecha?: Date;
+  cuotaAlDia: boolean;
+  fichajeBDUAR: boolean;
   cursosAprobados: boolean;
   cursosFecha?: Date;
-  fichajeBDUAR: boolean;
-  fichajeUnion: boolean;
   fondoSolidarioPagado: boolean;
   fondoSolidarioFecha?: Date;
   notes?: string;

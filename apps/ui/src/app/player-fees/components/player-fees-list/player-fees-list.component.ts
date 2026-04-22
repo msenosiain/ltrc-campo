@@ -109,7 +109,7 @@ export class PlayerFeesListComponent implements OnInit {
   );
 
   readonly displayedColumns = computed(() => {
-    const cols = ['player', 'category', 'feePaid', 'fichaMedica', 'fichajeBDUAR'];
+    const cols = ['player', 'category', 'cuotaAlDia', 'feePaid', 'fichajeBDUAR'];
     if (this.hasCursos()) cols.push('cursosAprobados');
     if (this.hasFondoSolidario()) cols.push('fondoSolidarioPagado');
     cols.push('habilitado');
@@ -177,7 +177,7 @@ export class PlayerFeesListComponent implements OnInit {
       });
   }
 
-  toggleRecord(row: IPlayerFeeStatusRow, field: keyof Pick<IPlayerFeeStatusRow, 'fichaMedica' | 'cursosAprobados' | 'fichajeBDUAR' | 'fichajeUnion' | 'fondoSolidarioPagado'>, value: boolean): void {
+  toggleRecord(row: IPlayerFeeStatusRow, field: keyof Pick<IPlayerFeeStatusRow, 'cuotaAlDia' | 'fichajeBDUAR' | 'cursosAprobados' | 'fondoSolidarioPagado'>, value: boolean): void {
     const { season, sport } = this.filterForm.value;
     // Optimistic update
     this.rows.update(rows => rows.map(r => r.playerId === row.playerId ? { ...r, [field]: value } : r));

@@ -1,6 +1,6 @@
 <div class="player-fees-list">
   <div class="list-header">
-    <h2 class="list-header__title">Derechos de Jugador</h2>
+    <h2 class="list-header__title">Habilitaciones</h2>
     <div class="list-header__actions">
       @if (activeConfig()) {
         <button mat-stroked-button type="button" (click)="copyPaymentLink()" matTooltip="Copiar link público de pago">
@@ -112,7 +112,7 @@
         </ng-container>
 
         <ng-container matColumnDef="feePaid">
-          <th mat-header-cell *matHeaderCellDef>Pago</th>
+          <th mat-header-cell *matHeaderCellDef>Pago Derecho</th>
           <td mat-cell *matCellDef="let row">
             @if (row.feePaid) {
               <span class="badge badge--paid" [matTooltip]="row.feeAmount ? ('$' + (row.feeAmount | number:'1.0-0')) : ''">Pagado</span>
@@ -122,12 +122,12 @@
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="fichaMedica">
-          <th mat-header-cell *matHeaderCellDef>Ficha Médica</th>
+        <ng-container matColumnDef="cuotaAlDia">
+          <th mat-header-cell *matHeaderCellDef>Cuota al día</th>
           <td mat-cell *matCellDef="let row">
             <mat-checkbox
-              [checked]="row.fichaMedica"
-              (change)="toggleRecord(row, 'fichaMedica', $event.checked)"
+              [checked]="row.cuotaAlDia"
+              (change)="toggleRecord(row, 'cuotaAlDia', $event.checked)"
             />
           </td>
         </ng-container>
@@ -147,21 +147,11 @@
         </ng-container>
 
         <ng-container matColumnDef="fichajeBDUAR">
-          <th mat-header-cell *matHeaderCellDef>BDUAR</th>
+          <th mat-header-cell *matHeaderCellDef>BDUAR / Ficha Méd.</th>
           <td mat-cell *matCellDef="let row">
             <mat-checkbox
               [checked]="row.fichajeBDUAR"
               (change)="toggleRecord(row, 'fichajeBDUAR', $event.checked)"
-            />
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="fichajeUnion">
-          <th mat-header-cell *matHeaderCellDef>Unión</th>
-          <td mat-cell *matCellDef="let row">
-            <mat-checkbox
-              [checked]="row.fichajeUnion"
-              (change)="toggleRecord(row, 'fichajeUnion', $event.checked)"
             />
           </td>
         </ng-container>

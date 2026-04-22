@@ -21,6 +21,15 @@
     <mat-progress-bar mode="indeterminate" />
   } @else {
     <div class="eligibility-checks">
+      <label class="eligibility-check">
+        <mat-checkbox
+          [checked]="status()?.cuotaAlDia ?? false"
+          [disabled]="saving()"
+          (change)="toggle('cuotaAlDia', $event.checked)"
+        />
+        <span class="eligibility-check__label">Cuota al día</span>
+      </label>
+
       <label class="eligibility-check eligibility-check--disabled">
         <mat-checkbox [checked]="status()?.feePaid ?? false" [disabled]="true" />
         <span class="eligibility-check__label">
@@ -35,16 +44,7 @@
           [disabled]="saving()"
           (change)="toggle('fichajeBDUAR', $event.checked)"
         />
-        <span class="eligibility-check__label">Registro BDUAR</span>
-      </label>
-
-      <label class="eligibility-check">
-        <mat-checkbox
-          [checked]="status()?.fichaMedica ?? false"
-          [disabled]="saving()"
-          (change)="toggle('fichaMedica', $event.checked)"
-        />
-        <span class="eligibility-check__label">Ficha médica</span>
+        <span class="eligibility-check__label">BDUAR / Ficha médica</span>
       </label>
 
       @if (hasCursos()) {

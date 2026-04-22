@@ -267,12 +267,10 @@ export class PlayerFeesService {
     const update: Record<string, unknown> = {
       updatedBy: new Types.ObjectId(userId),
     };
-    if (dto.fichaMedica !== undefined) update['fichaMedica'] = dto.fichaMedica;
-    if (dto.fichaMedicaFecha) update['fichaMedicaFecha'] = new Date(dto.fichaMedicaFecha);
+    if (dto.cuotaAlDia !== undefined) update['cuotaAlDia'] = dto.cuotaAlDia;
+    if (dto.fichajeBDUAR !== undefined) update['fichajeBDUAR'] = dto.fichajeBDUAR;
     if (dto.cursosAprobados !== undefined) update['cursosAprobados'] = dto.cursosAprobados;
     if (dto.cursosFecha) update['cursosFecha'] = new Date(dto.cursosFecha);
-    if (dto.fichajeBDUAR !== undefined) update['fichajeBDUAR'] = dto.fichajeBDUAR;
-    if (dto.fichajeUnion !== undefined) update['fichajeUnion'] = dto.fichajeUnion;
     if (dto.fondoSolidarioPagado !== undefined) update['fondoSolidarioPagado'] = dto.fondoSolidarioPagado;
     if (dto.fondoSolidarioFecha) update['fondoSolidarioFecha'] = new Date(dto.fondoSolidarioFecha);
     if (dto.notes !== undefined) update['notes'] = dto.notes;
@@ -419,17 +417,16 @@ export class PlayerFeesService {
       const needsCursos = sport === SportEnum.RUGBY && RUGBY_M15_PLUS.has(cat);
 
       const feePaid = !!payment;
-      const fichaMedica = record?.fichaMedica ?? false;
+      const cuotaAlDia = record?.cuotaAlDia ?? false;
       const fichajeBDUAR = record?.fichajeBDUAR ?? false;
-      const fichajeUnion = record?.fichajeUnion ?? false;
       const cursosAprobados = needsCursos ? (record?.cursosAprobados ?? false) : undefined;
       const fondoSolidarioPagado = needsFondoSolidario
         ? (record?.fondoSolidarioPagado ?? false)
         : undefined;
 
       const habilitado =
+        cuotaAlDia &&
         feePaid &&
-        fichaMedica &&
         fichajeBDUAR &&
         (!needsCursos || cursosAprobados === true) &&
         (!needsFondoSolidario || fondoSolidarioPagado === true);
@@ -442,9 +439,8 @@ export class PlayerFeesService {
         feePaid,
         feeAmount: payment?.finalAmount,
         feePaidAt: payment?.paidAt,
-        fichaMedica,
+        cuotaAlDia,
         fichajeBDUAR,
-        fichajeUnion,
         cursosAprobados,
         fondoSolidarioPagado,
         habilitado,
@@ -827,12 +823,9 @@ export class PlayerFeesService {
           { playerId, season: dto.season, sport: SportEnum.RUGBY },
           {
             $set: {
-              fichaMedica: true,
-              fichaMedicaFecha: now,
+              fichajeBDUAR: true,
               cursosAprobados: true,
               cursosFecha: now,
-              fichajeBDUAR: true,
-              fichajeUnion: true,
               fondoSolidarioPagado: true,
               fondoSolidarioFecha: now,
               updatedBy: new Types.ObjectId(userId),

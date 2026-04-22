@@ -65,7 +65,7 @@ export class PlayerEligibilityEditorComponent implements OnChanges {
     this.load();
   }
 
-  toggle(field: 'fichaMedica' | 'fichajeBDUAR' | 'cursosAprobados' | 'fondoSolidarioPagado', value: boolean): void {
+  toggle(field: 'cuotaAlDia' | 'fichajeBDUAR' | 'cursosAprobados' | 'fondoSolidarioPagado', value: boolean): void {
     this.status.update(s => s ? { ...s, [field]: value } : s);
     this.saving.set(true);
 

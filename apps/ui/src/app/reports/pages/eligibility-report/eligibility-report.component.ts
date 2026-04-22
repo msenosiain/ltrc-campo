@@ -67,7 +67,7 @@ export class EligibilityReportComponent implements OnInit {
   readonly hasFondo = computed(() => this.rows().some(r => r.fondoSolidarioPagado !== undefined));
 
   readonly displayedColumns = computed(() => {
-    const cols = ['player', 'category', 'feePaid', 'fichaMedica', 'fichajeBDUAR'];
+    const cols = ['player', 'category', 'cuotaAlDia', 'feePaid', 'fichajeBDUAR'];
     if (this.hasCursos()) cols.push('cursosAprobados');
     if (this.hasFondo()) cols.push('fondoSolidarioPagado');
     cols.push('habilitado');

@@ -74,12 +74,10 @@ export interface IPlayerSeasonRecord {
   playerId: string;
   season: string;
   sport: SportEnum;
-  fichaMedica: boolean;
-  fichaMedicaFecha?: Date;
+  cuotaAlDia: boolean;
+  fichajeBDUAR: boolean;
   cursosAprobados: boolean;
   cursosFecha?: Date;
-  fichajeBDUAR: boolean;
-  fichajeUnion: boolean;
   fondoSolidarioPagado: boolean;
   fondoSolidarioFecha?: Date;
   notes?: string;
@@ -121,9 +119,8 @@ export interface IPlayerFeeStatusRow {
   feeAmount?: number;
   feePaidAt?: Date;
   // Habilitación
-  fichaMedica: boolean;
+  cuotaAlDia: boolean;
   fichajeBDUAR: boolean;
-  fichajeUnion: boolean;
   cursosAprobados?: boolean;       // solo M15→PS rugby
   fondoSolidarioPagado?: boolean;  // solo M15→PS rugby
   // Estado general

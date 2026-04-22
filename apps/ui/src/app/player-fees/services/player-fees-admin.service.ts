@@ -13,10 +13,9 @@ export interface PlayerFeeStats {
 export interface UpdateSeasonRecordPayload {
   season: string;
   sport: SportEnum;
-  fichaMedica?: boolean;
-  cursosAprobados?: boolean;
+  cuotaAlDia?: boolean;
   fichajeBDUAR?: boolean;
-  fichajeUnion?: boolean;
+  cursosAprobados?: boolean;
   fondoSolidarioPagado?: boolean;
   notes?: string;
 }

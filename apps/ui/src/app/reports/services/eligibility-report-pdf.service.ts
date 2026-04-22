@@ -35,7 +35,7 @@ export class EligibilityReportPdfService {
       grouped.get(catLabel)!.push(row);
     }
 
-    const columns: string[] = ['Jugador', 'DNI', 'Pago', 'Ficha Méd.', 'BDUAR'];
+    const columns: string[] = ['Jugador', 'DNI', 'Cuota', 'Pago Derecho', 'BDUAR / Ficha Méd.'];
     if (ctx.hasCursos) columns.push('Cursos');
     if (ctx.hasFondo) columns.push('Fondo Sol.');
     columns.push('Habilitado');
@@ -62,8 +62,8 @@ export class EligibilityReportPdfService {
         const cells: import('jspdf-autotable').CellInput[] = [
           row.playerName,
           row.playerDni,
+          this.yesNo(row.cuotaAlDia),
           this.yesNo(row.feePaid),
-          this.yesNo(row.fichaMedica),
           this.yesNo(row.fichajeBDUAR),
         ];
         if (ctx.hasCursos) cells.push(row.cursosAprobados !== undefined ? this.yesNo(row.cursosAprobados) : '—');

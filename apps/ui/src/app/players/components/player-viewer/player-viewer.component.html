@@ -298,17 +298,17 @@
         }
       </div>
       <div class="fee-checks">
+        <div class="fee-check" [class.fee-check--ok]="feeStatus()!.cuotaAlDia">
+          <mat-icon>{{ feeStatus()!.cuotaAlDia ? 'check_circle' : 'cancel' }}</mat-icon>
+          <span>Cuota al día</span>
+        </div>
         <div class="fee-check" [class.fee-check--ok]="feeStatus()!.feePaid">
           <mat-icon>{{ feeStatus()!.feePaid ? 'check_circle' : 'cancel' }}</mat-icon>
           <span>Derecho pagado</span>
         </div>
         <div class="fee-check" [class.fee-check--ok]="feeStatus()!.fichajeBDUAR">
           <mat-icon>{{ feeStatus()!.fichajeBDUAR ? 'check_circle' : 'cancel' }}</mat-icon>
-          <span>Registro BDUAR</span>
-        </div>
-        <div class="fee-check" [class.fee-check--ok]="feeStatus()!.fichaMedica">
-          <mat-icon>{{ feeStatus()!.fichaMedica ? 'check_circle' : 'cancel' }}</mat-icon>
-          <span>Ficha médica</span>
+          <span>BDUAR / Ficha médica</span>
         </div>
         @if (feeStatus()!.cursosAprobados !== undefined) {
           <div class="fee-check" [class.fee-check--ok]="feeStatus()!.cursosAprobados">
