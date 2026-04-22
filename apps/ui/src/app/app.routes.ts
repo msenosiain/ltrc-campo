@@ -128,6 +128,11 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./player-fees/player-fees.routes').then((m) => m.PLAYER_FEES_ROUTES),
       },
+      {
+        path: 'settings',
+        loadChildren: () =>
+          import('./settings/settings.routes').then((m) => m.SETTINGS_ROUTES),
+      },
       { path: 'set-password', component: SetPasswordComponent },
     ],
   },

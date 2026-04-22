@@ -58,6 +58,7 @@ export interface EncounterPaymentRow {
 }
 
 export interface EncounterCategorySummary {
+  matchId: string;
   category: string;
   categoryLabel: string;
   count: number;
@@ -77,6 +78,45 @@ export interface EncounterReport {
 
 export interface ConfirmResult {
   status: string;
+}
+
+export interface GlobalPaymentRow {
+  id: string;
+  playerName: string;
+  playerDni: string;
+  playerSport: string | null;
+  playerCategory: string | null;
+  entityType: PaymentEntityTypeEnum;
+  entityLabel: string;
+  concept: string;
+  method: string;
+  amount: number;
+  status: string;
+  date: string;
+  notes?: string;
+}
+
+export interface GlobalPaymentsReport {
+  data: GlobalPaymentRow[];
+  total: number;
+  page: number;
+  limit: number;
+  totalApproved: number;
+}
+
+export interface GlobalReportFilters {
+  status?: string;
+  method?: string;
+  entityType?: string;
+  sport?: string;
+  category?: string;
+  tournamentId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortDir?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -103,7 +143,11 @@ export class PaymentsService {
   }
 
   getConfig() {
-    return this.http.get<{ mpFeeRate: number }>(`${this.apiUrl}/config`);
+    return this.http.get<{ mpFeeRate: number; excludedPaymentTypes: string[] }>(`${this.apiUrl}/config`);
+  }
+
+  updatePaymentConfig(excludedPaymentTypes: string[]) {
+    return this.http.patch<{ excludedPaymentTypes: string[] }>(`${this.apiUrl}/config`, { excludedPaymentTypes });
   }
 
   getFieldOptions() {
@@ -132,6 +176,10 @@ export class PaymentsService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
+  syncPayment(id: string) {
+    return this.http.post<{ status: string; updated: boolean }>(`${this.apiUrl}/${id}/sync`, {});
+  }
+
   downloadPdfReport(entityType: PaymentEntityTypeEnum, entityId: string) {
     const params = new HttpParams()
       .set('entityType', entityType)
@@ -140,6 +188,23 @@ export class PaymentsService {
       params,
       responseType: 'blob',
     });
+  }
+
+  getGlobalReport(filters: GlobalReportFilters) {
+    let params = new HttpParams();
+    if (filters.status) params = params.set('status', filters.status);
+    if (filters.method) params = params.set('method', filters.method);
+    if (filters.entityType) params = params.set('entityType', filters.entityType);
+    if (filters.sport) params = params.set('sport', filters.sport);
+    if (filters.category) params = params.set('category', filters.category);
+    if (filters.tournamentId) params = params.set('tournamentId', filters.tournamentId);
+    if (filters.dateFrom) params = params.set('dateFrom', filters.dateFrom);
+    if (filters.dateTo) params = params.set('dateTo', filters.dateTo);
+    if (filters.page) params = params.set('page', String(filters.page));
+    if (filters.limit) params = params.set('limit', String(filters.limit));
+    if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
+    if (filters.sortDir) params = params.set('sortDir', filters.sortDir);
+    return this.http.get<GlobalPaymentsReport>(`${this.apiUrl}/report/global`, { params });
   }
 
   getEncounterReport(matchIds: string[]) {

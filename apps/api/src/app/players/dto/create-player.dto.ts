@@ -13,6 +13,7 @@ import {
 } from 'class-validator';
 
 import { Transform, Type, plainToInstance } from 'class-transformer';
+import { toTitleCase, toLowerCase } from '../../shared/text-normalize.util';
 import { parse as dateFnsParse } from 'date-fns';
 import {
   CategoryEnum,
@@ -30,6 +31,7 @@ import {
 export class AddressDto {
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => toTitleCase(value))
   street?: string;
 
   @IsOptional()
@@ -42,10 +44,12 @@ export class AddressDto {
 
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => toTitleCase(value))
   neighborhood?: string;
 
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => toTitleCase(value))
   city?: string;
 
   @IsOptional()
@@ -92,16 +96,19 @@ export class MedicalDataDto {
 
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   healthInsurance?: string;
 }
 
 export class ParentContactDto {
   @IsNotEmpty()
   @IsString()
+  @Transform(({ value }) => toTitleCase(value))
   name!: string;
 
   @IsOptional()
   @IsEmail()
+  @Transform(({ value }) => toLowerCase(value))
   email?: string;
 
   @IsOptional()
@@ -142,6 +149,7 @@ export class PlayerAvailabilityDto {
 export class CreatePlayerDto {
   @IsNotEmpty()
   @IsString()
+  @Transform(({ value }) => toTitleCase(value))
   readonly name!: string;
 
   @IsOptional()
@@ -150,6 +158,7 @@ export class CreatePlayerDto {
 
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => toTitleCase(value))
   readonly nickName?: string;
 
   @IsNotEmpty()
@@ -166,6 +175,7 @@ export class CreatePlayerDto {
 
   @IsOptional()
   @IsEmail()
+  @Transform(({ value }) => toLowerCase(value))
   readonly email?: string;
 
   @IsNotEmpty()

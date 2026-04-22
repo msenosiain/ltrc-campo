@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -15,9 +16,10 @@ import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { PaymentEntityTypeEnum, RoleEnum } from '@ltrc-campo/shared-api-model';
+import { PaymentEntityTypeEnum, PaymentMethodEnum, PaymentStatusEnum, RoleEnum } from '@ltrc-campo/shared-api-model';
 import { CreatePaymentLinkDto } from './dto/create-payment-link.dto';
 import { RecordManualPaymentDto } from './dto/record-manual-payment.dto';
+import { UpdatePaymentConfigDto } from './dto/update-payment-config.dto';
 
 @Controller('payments')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -48,6 +50,12 @@ export class PaymentsController {
   @Get('config')
   getConfig() {
     return this.paymentsService.getConfig();
+  }
+
+  @Patch('config')
+  @Roles(RoleEnum.ADMIN)
+  updateConfig(@Body() dto: UpdatePaymentConfigDto) {
+    return this.paymentsService.updatePaymentConfig(dto.excludedPaymentTypes);
   }
 
   @Get('field-options')
@@ -89,6 +97,32 @@ export class PaymentsController {
     res.end(buffer);
   }
 
+  @Get('report/global')
+  @Roles(RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR)
+  getGlobalReport(
+    @Query('status') status?: string,
+    @Query('method') method?: string,
+    @Query('entityType') entityType?: PaymentEntityTypeEnum,
+    @Query('sport') sport?: string,
+    @Query('category') category?: string,
+    @Query('tournamentId') tournamentId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortDir') sortDir?: string,
+  ) {
+    return this.paymentsService.getGlobalReport({
+      status, method, entityType, sport, category, tournamentId, dateFrom, dateTo,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      sortBy,
+      sortDir,
+    });
+  }
+
+
   @Get('report/pdf')
   async downloadPdf(
     @Query('entityType') entityType: PaymentEntityTypeEnum,
@@ -124,6 +158,12 @@ export class PaymentsController {
   @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
   recordManual(@Body() dto: RecordManualPaymentDto, @Req() req: Request) {
     return this.paymentsService.recordManualPayment(dto, (req as any).user);
+  }
+
+  @Post(':id/sync')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
+  syncPayment(@Param('id') id: string) {
+    return this.paymentsService.syncPaymentById(id);
   }
 
   @Delete(':id')

@@ -55,6 +55,7 @@ export class PaymentLinksPanelComponent implements OnInit {
   links: IPaymentLink[] = [];
   payments: IPayment[] = [];
   loading = signal(true);
+  syncingId = signal<string | null>(null);
 
   readonly linkColumns = ['concept', 'amount', 'type', 'expires', 'status', 'actions'];
   readonly paymentColumns = ['player', 'concept', 'method', 'amount', 'date', 'status', 'actions'];
@@ -125,6 +126,25 @@ export class PaymentLinksPanelComponent implements OnInit {
 
   deletePayment(payment: IPayment) {
     this.paymentsService.deleteManual(payment.id).subscribe(() => this.loadAll());
+  }
+
+  syncPayment(payment: IPayment) {
+    this.syncingId.set(payment.id);
+    this.paymentsService.syncPayment(payment.id).subscribe({
+      next: (result) => {
+        this.syncingId.set(null);
+        if (result.updated) {
+          this.snackBar.open('Estado actualizado', '', { duration: 2500 });
+          this.loadAll();
+        } else {
+          this.snackBar.open('Sin cambios en MercadoPago', '', { duration: 2500 });
+        }
+      },
+      error: () => {
+        this.syncingId.set(null);
+        this.snackBar.open('Error al consultar MercadoPago', '', { duration: 3000 });
+      },
+    });
   }
 
   downloadPdf() {

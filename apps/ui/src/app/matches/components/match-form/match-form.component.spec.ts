@@ -7,7 +7,7 @@ import { API_CONFIG_TOKEN } from '../../../app.config';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideHttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
-import { CategoryEnum, MatchStatusEnum } from '@ltrc-campo/shared-api-model';
+import { CategoryEnum, MatchStatusEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 
 describe('MatchFormComponent', () => {
   let component: MatchFormComponent;
@@ -62,6 +62,7 @@ describe('MatchFormComponent', () => {
       date: new Date(),
       venue: 'El Monumental',
       tournament: '507f1f77bcf86cd799439011',
+      sport: SportEnum.RUGBY,
       category: CategoryEnum.PLANTEL_SUPERIOR,
     });
     expect(component.matchForm.valid).toBeTruthy();
@@ -79,7 +80,8 @@ describe('MatchFormComponent', () => {
       date: new Date(),
       venue: 'El Monumental',
       tournament: '507f1f77bcf86cd799439011',
-      categories: [CategoryEnum.PLANTEL_SUPERIOR],
+      sport: SportEnum.RUGBY,
+      categories: [CategoryEnum.M14],
       status: MatchStatusEnum.UPCOMING,
       isHome: true,
     });

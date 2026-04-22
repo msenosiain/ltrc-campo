@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Observable, map, shareReplay } from 'rxjs';
+import { map, Observable, shareReplay } from 'rxjs';
 import {
   CategoryEnum,
   HockeyBranchEnum,
@@ -96,5 +96,14 @@ export class UserFilterContextService {
       shareReplay(1)
     );
 
-  readonly filterContext = toSignal(this.filterContext$, { initialValue: initialContext });
+  readonly filterContext = toSignal(this.filterContext$, {
+    initialValue: {
+      showSportFilter: true,
+      sportOptions,
+      showCategoryFilter: true,
+      categoryOptions,
+      showBranchFilter: true,
+      branchOptions,
+    } as FilterContext,
+  });
 }

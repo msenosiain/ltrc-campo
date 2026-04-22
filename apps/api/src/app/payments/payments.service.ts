@@ -13,6 +13,7 @@ import PDFDocument from 'pdfkit';
 import MercadoPagoConfig, { Payment as MpPayment, Preference } from 'mercadopago';
 import { PaymentLinkEntity } from './schemas/payment-link.entity';
 import { PaymentEntity } from './schemas/payment.entity';
+import { PaymentConfigEntity, PAYMENT_CONFIG_MODEL } from './schemas/payment-config.entity';
 import { PlayerEntity } from '../players/schemas/player.entity';
 import { MatchEntity } from '../matches/schemas/match.entity';
 import { TripEntity } from '../trips/schemas/trip.entity';
@@ -34,12 +35,15 @@ export class PaymentsService {
   private readonly mpClient: MercadoPagoConfig;
   private readonly appBaseUrl: string;
   private readonly mpFeeRate: number;
+  private readonly mpWebhookSecret: string;
 
   constructor(
     @InjectModel(PaymentLinkEntity.name)
     private readonly paymentLinkModel: Model<PaymentLinkEntity>,
     @InjectModel(PaymentEntity.name)
     private readonly paymentModel: Model<PaymentEntity>,
+    @InjectModel(PAYMENT_CONFIG_MODEL)
+    private readonly paymentConfigModel: Model<PaymentConfigEntity>,
     @InjectModel(PlayerEntity.name)
     private readonly playerModel: Model<PlayerEntity>,
     @InjectModel(MatchEntity.name)
@@ -58,6 +62,7 @@ export class PaymentsService {
       'APP_BASE_URL',
       'http://localhost:4200'
     );
+    this.mpWebhookSecret = this.configService.get<string>('MP_WEBHOOK_SECRET', '');
   }
 
   // ── Cálculo de comisión ────────────────────────────────────────────────────
@@ -71,8 +76,21 @@ export class PaymentsService {
     return { mpFeeRate: this.mpFeeRate, grossAmount, mpFeeAmount, netAmount };
   }
 
-  getConfig() {
-    return { mpFeeRate: this.mpFeeRate };
+  async getConfig() {
+    const config = await this.paymentConfigModel.findOne().lean();
+    return {
+      mpFeeRate: this.mpFeeRate,
+      excludedPaymentTypes: config?.excludedPaymentTypes ?? [],
+    };
+  }
+
+  async updatePaymentConfig(excludedPaymentTypes: string[]) {
+    const config = await this.paymentConfigModel.findOneAndUpdate(
+      {},
+      { excludedPaymentTypes },
+      { upsert: true, new: true }
+    ).lean();
+    return { excludedPaymentTypes: config?.excludedPaymentTypes ?? [] };
   }
 
   async getFieldOptions() {
@@ -263,6 +281,9 @@ export class PaymentsService {
     );
 
     // Crea preferencia en MP
+    const paymentConfig = await this.paymentConfigModel.findOne().lean();
+    const excludedTypes = paymentConfig?.excludedPaymentTypes ?? [];
+
     const preference = new Preference(this.mpClient);
     const mpResponse = await preference.create({
       body: {
@@ -281,6 +302,11 @@ export class PaymentsService {
           identification: { type: 'DNI', number: player.idNumber },
         },
         external_reference: externalReference,
+        ...(excludedTypes.length > 0 ? {
+          payment_methods: {
+            excluded_payment_types: excludedTypes.map((id) => ({ id })),
+          },
+        } : {}),
         back_urls: {
           success: `${this.appBaseUrl}/pay/result`,
           failure: `${this.appBaseUrl}/pay/result`,
@@ -379,6 +405,233 @@ export class PaymentsService {
       throw new BadRequestException('No se pueden eliminar pagos de Mercado Pago');
     }
     await payment.deleteOne();
+  }
+
+  // ── MP Sync ───────────────────────────────────────────────────────────────
+
+  async syncPaymentById(id: string) {
+    const payment = await this.paymentModel.findById(id);
+    if (!payment) throw new NotFoundException('Pago no encontrado');
+    if (payment.method !== PaymentMethodEnum.MERCADOPAGO) {
+      throw new BadRequestException('Solo se pueden sincronizar pagos de Mercado Pago');
+    }
+    return this.syncWithMp(payment);
+  }
+
+  async syncPaymentByMpId(mpPaymentId: string) {
+    const payment = await this.paymentModel.findOne({ mpPaymentId });
+    if (!payment) return;
+    await this.syncWithMp(payment);
+  }
+
+  async syncAllPending(): Promise<{ synced: number; updated: number }> {
+    const pending = await this.paymentModel.find({
+      method: PaymentMethodEnum.MERCADOPAGO,
+      status: PaymentStatusEnum.PENDING,
+    });
+    let updated = 0;
+    for (const payment of pending) {
+      const result = await this.syncWithMp(payment);
+      if (result.updated) updated++;
+    }
+    return { synced: pending.length, updated };
+  }
+
+  private async syncWithMp(payment: PaymentEntity): Promise<{ status: string; updated: boolean }> {
+    const previousStatus = payment.status;
+    const mpPaymentApi = new MpPayment(this.mpClient);
+
+    try {
+      let mpData: Awaited<ReturnType<typeof mpPaymentApi.get>> | undefined;
+
+      if (payment.mpPaymentId) {
+        mpData = await mpPaymentApi.get({ id: payment.mpPaymentId });
+      } else if (payment.mpExternalReference) {
+        const search = await mpPaymentApi.search({
+          options: { external_reference: payment.mpExternalReference },
+        });
+        mpData = search.results?.[0] as unknown as typeof mpData;
+      }
+
+      if (!mpData) return { status: payment.status, updated: false };
+
+      payment.mpPaymentId = String(mpData.id);
+      payment.mpStatusDetail = (mpData as any).status_detail ?? undefined;
+      payment.status = this.mapMpStatus((mpData as any).status ?? 'pending');
+      if ((mpData as any).status === 'approved' && !payment.date) {
+        payment.date = (mpData as any).date_approved
+          ? new Date((mpData as any).date_approved)
+          : new Date();
+      }
+      await payment.save();
+
+      return { status: payment.status, updated: payment.status !== previousStatus };
+    } catch {
+      return { status: payment.status, updated: false };
+    }
+  }
+
+  // ── Reporte global ────────────────────────────────────────────────────────
+
+  private async buildGlobalQuery(filters: {
+    status?: string;
+    method?: string;
+    entityType?: PaymentEntityTypeEnum;
+    sport?: string;
+    category?: string;
+    tournamentId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<Record<string, unknown>> {
+    const query: Record<string, unknown> = {};
+
+    if (filters.status) {
+      const statuses = filters.status.split(',').filter(Boolean);
+      query['status'] = statuses.length === 1 ? statuses[0] : { $in: statuses };
+    }
+    if (filters.method) {
+      const methods = filters.method.split(',').filter(Boolean);
+      query['method'] = methods.length === 1 ? methods[0] : { $in: methods };
+    }
+    if (filters.entityType) query['entityType'] = filters.entityType;
+
+    if (filters.sport || filters.category) {
+      const playerQuery: Record<string, unknown> = {};
+      if (filters.sport) playerQuery['sport'] = filters.sport;
+      if (filters.category) playerQuery['category'] = filters.category;
+      const players = await this.playerModel.find(playerQuery).select('_id').lean();
+      query['playerId'] = { $in: players.map((p) => p._id) };
+    }
+
+    if (filters.tournamentId) {
+      const matchIds = await this.matchModel
+        .find({ tournament: new Types.ObjectId(filters.tournamentId) })
+        .distinct('_id');
+      query['entityType'] = PaymentEntityTypeEnum.MATCH;
+      query['entityId'] = { $in: matchIds };
+    }
+
+    if (filters.dateFrom || filters.dateTo) {
+      const dateFilter: Record<string, Date> = {};
+      if (filters.dateFrom) dateFilter['$gte'] = new Date(filters.dateFrom);
+      if (filters.dateTo) {
+        const to = new Date(filters.dateTo);
+        to.setHours(23, 59, 59, 999);
+        dateFilter['$lte'] = to;
+      }
+      query['date'] = dateFilter;
+    }
+
+    return query;
+  }
+
+  private async resolveEntityLabels(payments: any[]): Promise<{ matchLabelMap: Map<string, string>; tripLabelMap: Map<string, string> }> {
+    const matchIds = new Set<string>();
+    const tripIds = new Set<string>();
+    for (const p of payments) {
+      if (p.entityType === PaymentEntityTypeEnum.MATCH) matchIds.add(p.entityId.toString());
+      else tripIds.add(p.entityId.toString());
+    }
+
+    const [rawMatches, rawTrips] = await Promise.all([
+      matchIds.size
+        ? this.matchModel.find({ _id: { $in: [...matchIds] } }).select('date opponent name tournament').populate('tournament', 'name').lean()
+        : [],
+      tripIds.size
+        ? this.tripModel.find({ _id: { $in: [...tripIds] } }).select('name destination date').lean()
+        : [],
+    ]);
+
+    const matchLabelMap = new Map<string, string>();
+    for (const m of rawMatches as any[]) {
+      const date = this.formatDate(m.date);
+      const opponent = m.opponent ? ` vs ${m.opponent}` : '';
+      const name: string = m.name || m.tournament?.name || '';
+      matchLabelMap.set(m._id.toString(), name ? `${name}${opponent} (${date})` : `${opponent.trimStart() || 'Partido'} (${date})`);
+    }
+
+    const tripLabelMap = new Map<string, string>();
+    for (const t of rawTrips as any[]) {
+      tripLabelMap.set(t._id.toString(), t.name || t.destination || 'Viaje');
+    }
+
+    return { matchLabelMap, tripLabelMap };
+  }
+
+  private mapPaymentRow(p: any, matchLabelMap: Map<string, string>, tripLabelMap: Map<string, string>) {
+    const player = p.playerId as any;
+    const entityLabel =
+      p.entityType === PaymentEntityTypeEnum.MATCH
+        ? (matchLabelMap.get(p.entityId.toString()) ?? 'Partido')
+        : (tripLabelMap.get(p.entityId.toString()) ?? 'Viaje');
+    return {
+      id: p._id.toString(),
+      playerName: player?.name ?? '—',
+      playerDni: player?.idNumber ?? '—',
+      playerSport: player?.sport ?? null,
+      playerCategory: player?.category ?? null,
+      entityType: p.entityType as PaymentEntityTypeEnum,
+      entityLabel,
+      concept: p.concept,
+      method: p.method as PaymentMethodEnum,
+      amount: p.amount,
+      status: p.status as PaymentStatusEnum,
+      date: p.date,
+      notes: p.notes,
+    };
+  }
+
+  async getGlobalReport(filters: {
+    status?: string;
+    method?: string;
+    entityType?: PaymentEntityTypeEnum;
+    sport?: string;
+    category?: string;
+    tournamentId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortDir?: string;
+  }) {
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.min(filters.limit ?? 50, 1000);
+    const skip = (page - 1) * limit;
+
+    const SORTABLE_FIELDS: Record<string, string> = {
+      date: 'date',
+      amount: 'amount',
+      status: 'status',
+      method: 'method',
+      concept: 'concept',
+    };
+    const sortField = SORTABLE_FIELDS[filters.sortBy ?? ''] ?? 'date';
+    const sortOrder = filters.sortDir === 'asc' ? 1 : -1;
+
+    const query = await this.buildGlobalQuery(filters);
+    const approvedQuery = { ...query, status: PaymentStatusEnum.APPROVED };
+
+    const [total, payments, approvedAgg] = await Promise.all([
+      this.paymentModel.countDocuments(query),
+      this.paymentModel
+        .find(query)
+        .populate('playerId', 'name idNumber sport category')
+        .sort({ [sortField]: sortOrder, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.paymentModel.aggregate([
+        { $match: approvedQuery },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
+    ]);
+
+    const { matchLabelMap, tripLabelMap } = await this.resolveEntityLabels(payments);
+    const data = payments.map((p) => this.mapPaymentRow(p, matchLabelMap, tripLabelMap));
+    const totalApproved = approvedAgg[0]?.total ?? 0;
+
+    return { data, total, page, limit, totalApproved };
   }
 
   // ── Analytics ─────────────────────────────────────────────────────────────
@@ -571,6 +824,7 @@ export class PaymentsService {
     time?: string;
     opponent?: string;
     categories: {
+      matchId: string;
       category: string;
       categoryLabel: string;
       count: number;
@@ -602,18 +856,19 @@ export class PaymentsService {
     const opponent: string | undefined = first?.opponent || undefined;
 
     const categoryMap = new Map<string, {
+      matchId: string;
       count: number;
       total: number;
       payments: { playerName: string; playerDni: string; concept: string; method: string; amount: number; date: string }[];
     }>();
     for (const match of matches) {
       const cat = match.category || 'sin_categoria';
-      if (!categoryMap.has(cat)) categoryMap.set(cat, { count: 0, total: 0, payments: [] });
+      if (!categoryMap.has(cat)) categoryMap.set(cat, { matchId: (match as any)._id.toString(), count: 0, total: 0, payments: [] });
     }
     for (const p of payments) {
       const match = matches.find((m) => (m as any)._id.equals(p.entityId));
       const cat = match?.category || 'sin_categoria';
-      const entry = categoryMap.get(cat) ?? { count: 0, total: 0, payments: [] };
+      const entry = categoryMap.get(cat) ?? { matchId: (match as any)?._id?.toString() ?? '', count: 0, total: 0, payments: [] };
       const player = p.playerId as any;
       entry.count++;
       entry.total += p.amount;
@@ -636,9 +891,12 @@ export class PaymentsService {
         return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
       })
       .map(([category, data]) => ({
+        matchId: data.matchId,
         category,
         categoryLabel: getCategoryLabel(category as CategoryEnum),
-        ...data,
+        count: data.count,
+        total: data.total,
+        payments: data.payments,
       }));
 
     const grandTotal = categories.reduce((s, c) => s + c.total, 0);
@@ -797,6 +1055,28 @@ export class PaymentsService {
     }
   }
 
+  validateMpWebhookSignature(
+    signature: string | undefined,
+    requestId: string | undefined,
+    dataId: string,
+    ts: string,
+  ): boolean {
+    if (!this.mpWebhookSecret) return true; // si no está configurado, se omite la validación
+    if (!signature || !requestId) return false;
+
+    const v1Match = signature.match(/v1=([a-f0-9]+)/);
+    if (!v1Match) return false;
+    const receivedHash = v1Match[1];
+
+    const template = `id:${dataId};request-id:${requestId};ts:${ts}`;
+    const expectedHash = require('crypto')
+      .createHmac('sha256', this.mpWebhookSecret)
+      .update(template)
+      .digest('hex');
+
+    return receivedHash === expectedHash;
+  }
+
   private formatMoney(amount: number): string {
     return '$' + amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
@@ -875,14 +1155,19 @@ export class PaymentsService {
       if (entityIds && entityIds.length > 1) {
         const matches = await this.matchModel
           .find({ _id: { $in: entityIds } })
-          .select('date opponent name category')
+          .select('date opponent name category tournament')
+          .populate('tournament', 'name')
           .sort({ category: 1 })
           .lean();
         if (!matches.length) return 'Encuentro';
-        const date = this.formatDate(matches[0].date);
+        const first = matches[0] as any;
+        const date = this.formatDate(first.date);
         const categories = matches.map((m) => m.category).join(', ');
-        const opponent = matches[0].opponent ?? 'Rival';
-        return `${categories} vs ${opponent} (${date})`;
+        const opponent = first.opponent ? ` vs ${first.opponent}` : '';
+        const tournamentName: string = first.name || first.tournament?.name || '';
+        return tournamentName
+          ? `${tournamentName}${opponent} (${date})`
+          : `${categories}${opponent} (${date})`;
       }
       const match = await this.matchModel
         .findById(entityId)

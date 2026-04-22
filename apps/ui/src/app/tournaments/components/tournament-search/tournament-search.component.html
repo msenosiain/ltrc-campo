@@ -20,12 +20,12 @@
   </div>
 
   <div class="filters-row" [class.filters-row--open]="filtersExpanded">
-    @if (showSportFilter) {
+    @if (availableSports().length > 1) {
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>Deporte</mat-label>
       <mat-select formControlName="sport">
         <mat-option [value]="undefined">Todos</mat-option>
-        @for (s of sportOptions; track s.id) {
+        @for (s of availableSports(); track s.id) {
         <mat-option [value]="s.id">{{ s.label }}</mat-option>
         }
       </mat-select>
@@ -45,7 +45,7 @@
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>Categorías</mat-label>
       <mat-select formControlName="categories" multiple>
-        @for (c of categoryOptions; track c.id) {
+        @for (c of availableCategories(); track c.id) {
         <mat-option [value]="c.id">{{ c.label }}</mat-option>
         }
       </mat-select>

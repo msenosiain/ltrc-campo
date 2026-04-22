@@ -4,7 +4,7 @@
     <p class="report-subtitle">Pagos por categoría participante</p>
   </div>
 
-  <form [formGroup]="filterForm" class="filter-form" (ngSubmit)="searchEncounters()">
+  <form [formGroup]="filterForm" class="filter-form">
     <mat-form-field appearance="outline">
       <mat-label>Torneo</mat-label>
       <mat-select formControlName="tournament">
@@ -12,30 +12,58 @@
           <mat-option [value]="t.id">{{ t.name }}</mat-option>
         }
       </mat-select>
+      @if (filterForm.value.tournament) {
+        <button mat-icon-button matIconSuffix type="button" (click)="clearAll(); $event.stopPropagation()">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
     </mat-form-field>
+
+    @if (availableSports().length > 1) {
+      <mat-form-field appearance="outline">
+        <mat-label>Deporte</mat-label>
+        <mat-select formControlName="sport">
+          <mat-option [value]="null">Todos</mat-option>
+          @for (s of availableSports(); track s.value) {
+            <mat-option [value]="s.value">{{ s.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
+    @if (availableCategories().length > 1) {
+      <mat-form-field appearance="outline">
+        <mat-label>Categoría</mat-label>
+        <mat-select formControlName="category" multiple>
+          @for (c of availableCategories(); track c.id) {
+            <mat-option [value]="c.id">{{ c.label }}</mat-option>
+          }
+        </mat-select>
+        @if (filterForm.get('category')?.value?.length) {
+          <button mat-icon-button matIconSuffix type="button" (click)="filterForm.get('category')!.setValue(null); $event.stopPropagation()">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+    }
 
     <mat-form-field appearance="outline">
-      <mat-label>Fecha (opcional)</mat-label>
+      <mat-label>Fecha</mat-label>
       <input matInput [matDatepicker]="picker" formControlName="date" placeholder="dd/MM/yyyy" />
-      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      @if (filterForm.value.date) {
+        <button mat-icon-button matIconSuffix type="button" (click)="filterForm.get('date')!.setValue(null)">
+          <mat-icon>close</mat-icon>
+        </button>
+      } @else {
+        <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      }
       <mat-datepicker #picker />
     </mat-form-field>
-
-    <button mat-raised-button color="primary" type="submit" [disabled]="!filterForm.value.tournament || loadingEncounters()">
-      @if (loadingEncounters()) {
-        <mat-spinner diameter="20" />
-      } @else {
-        <mat-icon>search</mat-icon>
-      }
-      Buscar
-    </button>
-
-    @if (encounters().length > 0 || report()) {
-      <button mat-stroked-button type="button" (click)="clearAll()">
-        <mat-icon>restart_alt</mat-icon> Nueva búsqueda
-      </button>
-    }
   </form>
+
+  @if (loadingEncounters()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
 
   @if (encounters().length > 0) {
     <div class="encounters-section">
@@ -51,7 +79,7 @@
             <span class="encounter-card__meta">
               {{ enc.date }}
               @if (enc.time) { · {{ enc.time }}hs }
-              · {{ enc.matchIds.length }} categoría(s)
+              @if (enc.categories.length) { · {{ enc.categories.join(' · ') }} }
             </span>
           </button>
         }
@@ -84,7 +112,16 @@
 
       <mat-divider />
 
-      <table mat-table [dataSource]="r.categories" class="category-table">
+      <table mat-table [dataSource]="r.categories" class="category-table" multiTemplateDataRows>
+        <ng-container matColumnDef="toggle">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let c" class="toggle-cell">
+            <mat-icon class="expand-icon" [class.expand-icon--open]="expandedCategory() === c">
+              keyboard_arrow_right
+            </mat-icon>
+          </td>
+        </ng-container>
+
         <ng-container matColumnDef="categoryLabel">
           <th mat-header-cell *matHeaderCellDef>Categoría</th>
           <td mat-cell *matCellDef="let c">{{ c.categoryLabel }}</td>
@@ -100,8 +137,50 @@
           <td mat-cell *matCellDef="let c">${{ c.total | number:'1.2-2' }}</td>
         </ng-container>
 
+        <ng-container matColumnDef="expandedDetail">
+          <td mat-cell *matCellDef="let c" colspan="4" class="detail-cell">
+            @if (expandedCategory() === c) {
+              <div class="payment-detail">
+                @if (c.payments.length) {
+                  <table class="payment-detail__table">
+                    <thead>
+                      <tr>
+                        <th>Jugador</th>
+                        <th>DNI</th>
+                        <th>Concepto</th>
+                        <th>Método</th>
+                        <th>Monto</th>
+                        <th>Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (p of c.payments; track p.playerDni + p.date) {
+                        <tr>
+                          <td>{{ p.playerName }}</td>
+                          <td>{{ p.playerDni }}</td>
+                          <td>{{ p.concept }}</td>
+                          <td>{{ p.method }}</td>
+                          <td>${{ p.amount | number:'1.2-2' }}</td>
+                          <td>{{ p.date }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="payment-detail__empty">Sin pagos registrados</p>
+                }
+              </div>
+            }
+          </td>
+        </ng-container>
+
         <tr mat-header-row *matHeaderRowDef="categoryColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: categoryColumns;"></tr>
+        <tr mat-row *matRowDef="let row; columns: categoryColumns;"
+            class="category-row"
+            (click)="toggleCategory(row)"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['expandedDetail'];"
+            class="detail-row"
+            [class.detail-row--visible]="expandedCategory() === row"></tr>
       </table>
 
       <div class="grand-total">

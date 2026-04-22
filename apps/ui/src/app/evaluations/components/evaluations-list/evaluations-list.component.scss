@@ -6,13 +6,9 @@
   gap: 12px;
 }
 
-// Filters — same pattern as session-search
+// Filters
 .search-form {
   margin-bottom: 4px;
-}
-
-.search-row {
-  display: none;
 }
 
 .filters-row {
@@ -22,17 +18,8 @@
   align-items: flex-start;
 }
 
-.filter-row-break {
-  width: 100%;
-  height: 0;
-}
-
 .filter-field {
   width: 200px;
-}
-
-.search-btn--desktop {
-  margin-top: 4px;
 }
 
 // Table
@@ -86,30 +73,8 @@
 
 // Mobile
 @media (max-width: 767px) {
-  .search-row {
-    display: flex;
-    gap: 8px;
-  }
-
-  .filters-toggle {
-    flex: 1;
-  }
-
-  .filters-row {
-    display: none;
-    margin-top: 4px;
-
-    &--open {
-      display: flex;
-    }
-  }
-
   .filter-field {
     flex: 1 1 calc(50% - 6px);
     width: auto;
-  }
-
-  .search-btn--desktop {
-    display: none;
   }
 }

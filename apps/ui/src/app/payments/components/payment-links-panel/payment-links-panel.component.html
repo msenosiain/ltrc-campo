@@ -142,7 +142,20 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let p">
-          @if (p.method !== PaymentMethodEnum.MERCADOPAGO) {
+          @if (p.method === PaymentMethodEnum.MERCADOPAGO) {
+            <button
+              mat-icon-button
+              matTooltip="Consultar estado en MercadoPago"
+              [disabled]="syncingId() === p.id"
+              (click)="syncPayment(p)"
+            >
+              @if (syncingId() === p.id) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <mat-icon>sync</mat-icon>
+              }
+            </button>
+          } @else {
             <button mat-icon-button color="warn" matTooltip="Eliminar" (click)="deletePayment(p)">
               <mat-icon>delete</mat-icon>
             </button>

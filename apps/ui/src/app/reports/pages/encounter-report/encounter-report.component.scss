@@ -1,7 +1,5 @@
 .report-page {
   padding: 24px;
-  max-width: 800px;
-  margin: 0 auto;
 }
 
 .report-header {
@@ -22,20 +20,24 @@
 
 .filter-form {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: flex-start;
-  flex-wrap: wrap;
   margin-bottom: 24px;
 
   mat-form-field {
     flex: 1;
-    min-width: 200px;
+    min-width: 160px;
+
+    &:first-child {
+      flex: 2;
+    }
   }
 
   button {
-    margin-top: 4px;
+    white-space: nowrap;
   }
 }
+
 
 .section-label {
   font-size: 14px;
@@ -132,6 +134,83 @@
   th.mat-header-cell,
   td.mat-cell {
     padding: 0 16px;
+  }
+}
+
+.category-row {
+  cursor: pointer;
+  transition: background 0.12s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+}
+
+.toggle-cell {
+  width: 40px;
+  padding-right: 0 !important;
+}
+
+.expand-icon {
+  color: #999;
+  transition: transform 0.2s;
+  display: block;
+
+  &--open {
+    transform: rotate(90deg);
+  }
+}
+
+.detail-row {
+  display: none;
+
+  &--visible {
+    display: table-row;
+  }
+
+  td {
+    padding: 0 !important;
+    border-bottom: none !important;
+  }
+}
+
+.detail-cell {
+  padding: 0 !important;
+}
+
+.payment-detail {
+  padding: 10px 16px 10px 56px;
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+
+    th {
+      text-align: left;
+      padding: 6px 12px;
+      color: #666;
+      font-weight: 500;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    td {
+      padding: 5px 12px;
+      color: #333;
+    }
+
+    tr:not(:last-child) td {
+      border-bottom: 1px solid #f0f0f0;
+    }
+  }
+
+  &__empty {
+    margin: 0;
+    padding: 12px 0 14px;
+    font-size: 13px;
+    color: #999;
   }
 }
 

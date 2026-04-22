@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   DestroyRef,
   EventEmitter,
   inject,
@@ -9,7 +10,8 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime } from 'rxjs/operators';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { startWith } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   CategoryEnum,
   HockeyBranchEnum,
@@ -20,10 +22,8 @@ import {
 } from '@ltrc-campo/shared-api-model';
 import {
   CategoryOption,
-  categoryOptions,
   getCategoryOptionsBySport,
 } from '../../../common/category-options';
-import { SportOption, sportOptions } from '../../../common/sport-options';
 import {
   getPositionOptionsBySport,
   PositionOption,
@@ -71,19 +71,13 @@ export class PlayerSearchComponent implements OnInit {
     availability?: PlayerAvailabilityEnum;
   }>();
 
-  sportOptions: SportOption[] = sportOptions;
-  categoryOptions: CategoryOption[] = getCategoryOptionsBySport();
   positionOptions: PositionOption[] = getPositionOptionsBySport();
   readonly branchOptions = Object.values(HockeyBranchEnum);
   readonly statusOptions = playerStatusOptions;
   readonly availabilityOptions = playerAvailabilityOptions;
 
-  showSportFilter = true;
-  showCategoryFilter = true;
   showBranchFilter = false;
   filtersExpanded = false;
-
-  private allowedCategories: CategoryEnum[] | undefined;
 
   readonly searchForm = this.fb.group({
     searchTerm: [''],
@@ -95,6 +89,20 @@ export class PlayerSearchComponent implements OnInit {
     availability: [undefined as PlayerAvailabilityEnum | undefined],
   });
 
+  private readonly selectedSport = toSignal(
+    this.searchForm.get('sport')!.valueChanges.pipe(startWith(this.searchForm.get('sport')!.value as SportEnum | undefined))
+  );
+
+  readonly availableSports = computed(() => this.filterContext.filterContext().sportOptions);
+
+  readonly availableCategories = computed((): CategoryOption[] => {
+    const sport = this.selectedSport();
+    const ctxCats = this.filterContext.filterContext().categoryOptions;
+    if (!sport) return ctxCats;
+    const forSport = getCategoryOptionsBySport(sport);
+    return ctxCats.filter(c => forSport.some(o => o.id === c.id));
+  });
+
   ngOnInit(): void {
     if (this.initialFilters) {
       this.searchForm.patchValue(this.initialFilters, { emitEvent: false });
@@ -103,55 +111,32 @@ export class PlayerSearchComponent implements OnInit {
     this.filterContext.filterContext$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((ctx) => {
-        this.showSportFilter = ctx.showSportFilter;
-        this.showCategoryFilter = ctx.showCategoryFilter;
-        this.sportOptions = ctx.sportOptions;
-        this.categoryOptions = ctx.categoryOptions;
-        this.allowedCategories = ctx.forcedCategory
-          ? [ctx.forcedCategory]
-          : ctx.categoryOptions.length < categoryOptions.length
-            ? ctx.categoryOptions.map((c) => c.id)
-            : undefined;
-
         if (ctx.forcedSport) {
-          this.searchForm
-            .get('sport')!
-            .setValue(ctx.forcedSport, { emitEvent: false });
+          this.searchForm.get('sport')!.setValue(ctx.forcedSport, { emitEvent: false });
           this.positionOptions = getPositionOptionsBySport(ctx.forcedSport);
           this.showBranchFilter = ctx.forcedSport === SportEnum.HOCKEY;
         }
         if (ctx.forcedCategory) {
-          this.searchForm
-            .get('category')!
-            .setValue(ctx.forcedCategory, { emitEvent: false });
+          this.searchForm.get('category')!.setValue(ctx.forcedCategory, { emitEvent: false });
         }
-
       });
 
-    this.searchForm
-      .get('sport')!
-      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+    this.searchForm.get('sport')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((sport) => {
-        this.categoryOptions = this.filterCategoryOptions(sport);
         this.positionOptions = getPositionOptionsBySport(sport);
         this.showBranchFilter = sport === SportEnum.HOCKEY;
 
         const cat = this.searchForm.get('category')?.value;
-        if (cat && !this.categoryOptions.find((c) => c.id === cat)) {
-          this.searchForm
-            .get('category')
-            ?.setValue(undefined, { emitEvent: false });
+        if (cat && !this.availableCategories().some(c => c.id === cat)) {
+          this.searchForm.get('category')?.setValue(undefined, { emitEvent: false });
         }
         const pos = this.searchForm.get('position')?.value;
-        if (pos && !this.positionOptions.find((p) => p.id === pos)) {
-          this.searchForm
-            .get('position')
-            ?.setValue(undefined, { emitEvent: false });
+        if (pos && !this.positionOptions.find(p => p.id === pos)) {
+          this.searchForm.get('position')?.setValue(undefined, { emitEvent: false });
         }
         if (!this.showBranchFilter) {
-          this.searchForm
-            .get('branch')
-            ?.setValue(undefined, { emitEvent: false });
+          this.searchForm.get('branch')?.setValue(undefined, { emitEvent: false });
         }
       });
 
@@ -162,12 +147,6 @@ export class PlayerSearchComponent implements OnInit {
 
   clearField(field: string): void {
     this.searchForm.get(field)?.setValue(undefined);
-  }
-
-  private filterCategoryOptions(sport?: SportEnum | null): CategoryOption[] {
-    const options = getCategoryOptionsBySport(sport);
-    if (!this.allowedCategories) return options;
-    return options.filter((c) => this.allowedCategories!.includes(c.id));
   }
 
   private emitFilters(): void {

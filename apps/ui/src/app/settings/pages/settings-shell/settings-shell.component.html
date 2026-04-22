@@ -1,0 +1,23 @@
+<div class="settings-shell">
+  <div class="settings-shell__header">
+    <h1 class="settings-shell__title">Configuración</h1>
+  </div>
+
+  <mat-tab-group animationDuration="200ms">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">payments</mat-icon>
+        Pagos
+      </ng-template>
+      <ltrc-payment-settings />
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">star_rate</mat-icon>
+        Evaluaciones
+      </ng-template>
+      <ltrc-evaluation-settings />
+    </mat-tab>
+  </mat-tab-group>
+</div>

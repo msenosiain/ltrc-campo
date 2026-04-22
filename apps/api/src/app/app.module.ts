@@ -38,6 +38,7 @@ export const configSchema = Joi.object({
   AUTH_REFRESH_JWT_SECRET: Joi.string().optional(),
   MP_ACCESS_TOKEN: Joi.string().allow('').optional(),
   MP_FEE_RATE: Joi.number().default(4.83),
+  MP_WEBHOOK_SECRET: Joi.string().allow('').optional(),
   APP_BASE_URL: Joi.string().default('http://localhost:4200'),
 });
 
