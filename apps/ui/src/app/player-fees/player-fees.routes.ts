@@ -8,11 +8,4 @@ export const PLAYER_FEES_ROUTES: Routes = [
         (m) => m.PlayerFeesListComponent
       ),
   },
-  {
-    path: 'settings',
-    loadComponent: () =>
-      import('./components/player-fees-settings/player-fees-settings.component').then(
-        (m) => m.PlayerFeesSettingsComponent
-      ),
-  },
 ];

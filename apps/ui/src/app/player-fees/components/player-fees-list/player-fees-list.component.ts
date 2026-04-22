@@ -21,7 +21,6 @@ import { CategoryOption, getCategoryLabel, getCategoryOptionsBySport } from '../
 import { UserFilterContextService } from '../../../common/services/user-filter-context.service';
 import { PlayerFeesAdminService } from '../../services/player-fees-admin.service';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
-import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ManualFeePaymentDialogComponent } from '../manual-fee-payment-dialog/manual-fee-payment-dialog.component';
 
@@ -56,7 +55,6 @@ export class PlayerFeesListComponent implements OnInit {
   private readonly adminService = inject(PlayerFeesAdminService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly clipboard = inject(Clipboard);
-  private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
 
   readonly RoleEnum = RoleEnum;
@@ -207,10 +205,6 @@ export class PlayerFeesListComponent implements OnInit {
     ref.afterClosed().subscribe((saved) => {
       if (saved) this.search();
     });
-  }
-
-  goToSettings(): void {
-    this.router.navigate(['/dashboard/player-fees/settings']);
   }
 
   copyPaymentLink(): void {

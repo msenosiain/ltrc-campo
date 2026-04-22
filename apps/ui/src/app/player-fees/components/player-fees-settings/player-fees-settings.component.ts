@@ -1,7 +1,6 @@
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { debounceTime, switchMap } from 'rxjs/operators';
@@ -25,7 +24,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { CategoryEnum, IFamilyGroup, IPlayerFeeConfig, Player, SportEnum } from '@ltrc-campo/shared-api-model';
-import { categoryOptions, getCategoryLabel } from '../../../common/category-options';
+import { categoryOptions, getCategoryLabel, getCategoryOptionsBySport } from '../../../common/category-options';
 import { sportOptions } from '../../../common/sport-options';
 import { PlayerFeesAdminService, PlayerFeeConfigPayload, BduarRow } from '../../services/player-fees-admin.service';
 import { PlayersService } from '../../../players/services/players.service';
@@ -64,7 +63,6 @@ export class PlayerFeesSettingsComponent implements OnInit {
   private readonly adminService = inject(PlayerFeesAdminService);
   private readonly playersService = inject(PlayersService);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly router = inject(Router);
 
   readonly sportOptions = sportOptions;
   readonly categoryOptions = categoryOptions;
@@ -147,6 +145,12 @@ export class PlayerFeesSettingsComponent implements OnInit {
   ngOnInit(): void {
     this.loadAll();
 
+    this.configForm.get('sport')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.blocks.controls.forEach(ctrl => ctrl.get('categories')?.setValue([], { emitEvent: false }));
+      });
+
     this.playerSearch$.pipe(
       debounceTime(300),
       switchMap(term => term.length >= 2
@@ -200,12 +204,14 @@ export class PlayerFeesSettingsComponent implements OnInit {
   }
 
   availableCategoryOptions(blockIndex: number): typeof this.categoryOptions {
+    const sport = this.configForm.get('sport')?.value as SportEnum | null;
+    const forSport = sport ? getCategoryOptionsBySport(sport) : this.categoryOptions;
     const usedInOtherBlocks = new Set<CategoryEnum>(
       this.blocks.controls.flatMap((ctrl, i) =>
         i !== blockIndex ? (ctrl.get('categories')?.value as CategoryEnum[] ?? []) : []
       )
     );
-    return this.categoryOptions.filter(cat => !usedInOtherBlocks.has(cat.id as CategoryEnum));
+    return forSport.filter(cat => !usedInOtherBlocks.has(cat.id as CategoryEnum));
   }
 
   addBlock(data?: { name: string; categories: CategoryEnum[]; amount: number }): void {
@@ -395,8 +401,13 @@ export class PlayerFeesSettingsComponent implements OnInit {
     return cats.map(c => getCategoryLabel(c)).join(', ');
   }
 
-  goToList(): void {
-    this.router.navigate(['/dashboard/player-fees']);
+  onAmountFocus(event: FocusEvent): void {
+    const input = event.target as HTMLInputElement;
+    if (input.value === '0') {
+      input.value = '';
+      input.dispatchEvent(new Event('input'));
+    }
+    input.select();
   }
 
   sportLabel(sport: SportEnum): string {

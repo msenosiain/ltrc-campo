@@ -6,10 +6,25 @@ export const REPORTS_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./pages/payments-report/payments-report.component').then(
-        (m) => m.PaymentsReportComponent
-      ),
+      import('./reports-shell.component').then((m) => m.ReportsShellComponent),
     canActivate: [hasRoleGuard],
     data: { allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR] },
+    children: [
+      { path: '', redirectTo: 'payments', pathMatch: 'full' },
+      {
+        path: 'payments',
+        loadComponent: () =>
+          import('./pages/payments-report/payments-report.component').then(
+            (m) => m.PaymentsReportComponent
+          ),
+      },
+      {
+        path: 'eligibility',
+        loadComponent: () =>
+          import('./pages/eligibility-report/eligibility-report.component').then(
+            (m) => m.EligibilityReportComponent
+          ),
+      },
+    ],
   },
 ];

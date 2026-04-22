@@ -1,0 +1,128 @@
+.eligibility-report {
+  padding: 16px;
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+  }
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.filter-field {
+  min-width: 160px;
+}
+
+.stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &__label {
+    color: #666;
+  }
+
+  &__value {
+    font-weight: 600;
+
+    &--paid { color: #1976d2; }
+    &--enabled { color: #2e7d32; }
+  }
+}
+
+.stat-sep { color: #ccc; }
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+.eligibility-table {
+  width: 100%;
+
+  th.mat-header-cell {
+    font-weight: 600;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  td.mat-cell {
+    font-size: 0.85rem;
+    vertical-align: middle;
+  }
+}
+
+.player-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.player-dni {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.check-icon {
+  color: #2e7d32;
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+  vertical-align: middle;
+}
+
+.cross-icon {
+  color: #c62828;
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+  vertical-align: middle;
+}
+
+.na {
+  color: #bbb;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--enabled {
+    background: #e8f5e9;
+    color: #1b5e20;
+  }
+
+  &--disabled {
+    background: #ffebee;
+    color: #b71c1c;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  color: #888;
+  padding: 32px 0;
+  font-size: 0.95rem;
+}
