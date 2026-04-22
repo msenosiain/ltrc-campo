@@ -22,6 +22,7 @@ import { CreateFamilyGroupDto } from './dto/create-family-group.dto';
 import { UpdateSeasonRecordDto } from './dto/update-season-record.dto';
 import { BduarImportDto } from './dto/bduar-import.dto';
 import { RecordManualFeePaymentDto } from './dto/record-manual-fee-payment.dto';
+import { ImportFamilyGroupsDto } from './dto/import-family-groups.dto';
 
 @Controller('player-fees')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -102,6 +103,14 @@ export class PlayerFeesController {
     @Req() req: Request,
   ) {
     return this.service.updateSeasonRecord(playerId, dto, (req as any).user.userId);
+  }
+
+  // ── Family groups import ──────────────────────────────────────────────────
+
+  @Post('import/family-groups')
+  @Roles(RoleEnum.ADMIN)
+  importFamilyGroups(@Body() dto: ImportFamilyGroupsDto, @Req() req: Request) {
+    return this.service.importFamilyGroups(dto.groups, (req as any).user.userId);
   }
 
   // ── BDUAR import ─────────────────────────────────────────────────────────

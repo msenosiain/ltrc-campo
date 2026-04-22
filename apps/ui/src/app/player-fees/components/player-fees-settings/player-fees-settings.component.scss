@@ -1,3 +1,45 @@
+.import-hint {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 0 0 16px;
+}
+
+.import-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.import-preview {
+  font-size: 0.875rem;
+  color: #555;
+}
+
+.import-result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  font-size: 0.875rem;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+    &--ok { color: #1b5e20; }
+    &--warn { color: #e65100; }
+  }
+}
+
 .settings-page {
   display: flex;
   flex-direction: column;

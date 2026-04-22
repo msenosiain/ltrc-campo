@@ -498,4 +498,71 @@ export class PlayerFeesSettingsComponent implements OnInit {
         },
       });
   }
+
+  // ── Import Grupos Familiares ──────────────────────────────────────────────
+
+  familyImportFileName = signal('');
+  familyImportGroups = signal<{ name: string; dnis: string[] }[]>([]);
+  familyImporting = signal(false);
+  familyImportResult = signal<{ total: number; created: number; skipped: number; notFound: string[] } | null>(null);
+
+  onFamilyImportFileChange(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.familyImportFileName.set(file.name);
+    this.familyImportGroups.set([]);
+    this.familyImportResult.set(null);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target!.result as ArrayBuffer);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1 }) as unknown[][];
+
+      // Group by "Grupo Familiar" column (index 3), collect DNIs (index 1)
+      const groupMap = new Map<string, string[]>();
+      for (let i = 1; i < raw.length; i++) {
+        const row = raw[i] as unknown[];
+        const dni = String(row[1] ?? '').trim();
+        const grupo = String(row[3] ?? '').trim();
+        if (!dni || !grupo) continue;
+        if (!groupMap.has(grupo)) groupMap.set(grupo, []);
+        groupMap.get(grupo)!.push(dni);
+      }
+
+      // Sort each group's DNIs ascending (lower DNI = older person)
+      const groups: { name: string; dnis: string[] }[] = [];
+      for (const [name, dnis] of groupMap) {
+        if (dnis.length >= 2) {
+          groups.push({ name, dnis: [...dnis].sort((a, b) => Number(a) - Number(b)) });
+        }
+      }
+
+      this.familyImportGroups.set(groups);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  runFamilyImport(): void {
+    const groups = this.familyImportGroups();
+    if (!groups.length) return;
+    this.familyImporting.set(true);
+    this.familyImportResult.set(null);
+    this.adminService.importFamilyGroups(groups)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.familyImportResult.set(res);
+          this.familyImporting.set(false);
+          this.familyImportGroups.set([]);
+          this.familyImportFileName.set('');
+          if (res.created > 0) this.loadAll();
+        },
+        error: () => {
+          this.familyImporting.set(false);
+          this.snackBar.open('Error al importar grupos familiares', 'Cerrar', { duration: 4000 });
+        },
+      });
+  }
 }

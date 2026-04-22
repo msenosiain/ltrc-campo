@@ -261,6 +261,53 @@ export class PlayerFeesService {
     return { deleted: true };
   }
 
+  async importFamilyGroups(
+    groups: { name: string; dnis: string[] }[],
+    userId: string,
+  ): Promise<{ total: number; created: number; skipped: number; notFound: string[] }> {
+    let created = 0;
+    let skipped = 0;
+    const notFound: string[] = [];
+
+    for (const group of groups) {
+      const members: { playerId: Types.ObjectId; order: number }[] = [];
+      let order = 1;
+
+      for (const dni of group.dnis) {
+        const player = await this.playerModel
+          .findOne({ idNumber: dni })
+          .select('_id')
+          .lean();
+        if (player) {
+          members.push({ playerId: (player as any)._id, order: order++ });
+        } else {
+          notFound.push(dni);
+        }
+      }
+
+      if (members.length < 2) {
+        skipped++;
+        continue;
+      }
+
+      const existing = await this.familyGroupModel.findOne({ name: group.name });
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      await this.familyGroupModel.create({
+        name: group.name,
+        sport: SportEnum.RUGBY,
+        members,
+        createdBy: new Types.ObjectId(userId),
+      });
+      created++;
+    }
+
+    return { total: groups.length, created, skipped, notFound };
+  }
+
   // ── Season records ────────────────────────────────────────────────────────
 
   async updateSeasonRecord(playerId: string, dto: UpdateSeasonRecordDto, userId: string) {

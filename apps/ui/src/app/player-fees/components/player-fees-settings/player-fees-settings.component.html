@@ -454,4 +454,61 @@
       <p class="empty-state">No hay grupos familiares registrados.</p>
     }
   </section>
+
+  <mat-divider />
+
+  <!-- ── Import Grupos Familiares ──────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h3 class="section-header__title">Importar grupos familiares</h3>
+    </div>
+    <mat-card class="form-card">
+      <p class="import-hint">
+        Seleccioná el archivo Excel de socios por grupo familiar. Los miembros se ordenan por DNI ascendente
+        (mayor edad primero). Solo se crean grupos con al menos 2 jugadores encontrados en el sistema.
+        Los grupos ya existentes por nombre se omiten.
+      </p>
+
+      <div class="import-actions">
+        <button mat-stroked-button type="button" (click)="familyImportInput.click()">
+          <mat-icon>upload_file</mat-icon>
+          {{ familyImportFileName() || 'Seleccionar archivo Excel' }}
+        </button>
+        <input #familyImportInput type="file" accept=".xlsx,.xls" hidden (change)="onFamilyImportFileChange($event)" />
+
+        @if (familyImportGroups().length > 0) {
+          <span class="import-preview">{{ familyImportGroups().length }} grupos leídos</span>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="familyImporting()"
+            (click)="runFamilyImport()"
+          >
+            @if (familyImporting()) { Importando… } @else { Importar grupos }
+          </button>
+        }
+      </div>
+
+      @if (familyImportResult(); as res) {
+        <div class="import-result">
+          <span class="import-result__item import-result__item--ok">
+            <mat-icon>check_circle</mat-icon> {{ res.created }} grupos creados
+          </span>
+          <span class="import-result__item">
+            <mat-icon>skip_next</mat-icon> {{ res.skipped }} omitidos
+          </span>
+          @if (res.notFound.length > 0) {
+            <span class="import-result__item import-result__item--warn">
+              <mat-icon>warning</mat-icon> {{ res.notFound.length }} DNIs no encontrados
+            </span>
+          }
+        </div>
+      }
+
+      @if (familyImporting()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+    </mat-card>
+  </section>
 </div>

@@ -145,4 +145,10 @@ export class PlayerFeesAdminService {
       this.url('import/bduar'), { rows, season }
     );
   }
+
+  importFamilyGroups(groups: { name: string; dnis: string[] }[]) {
+    return this.http.post<{ total: number; created: number; skipped: number; notFound: string[] }>(
+      this.url('import/family-groups'), { groups }
+    );
+  }
 }
