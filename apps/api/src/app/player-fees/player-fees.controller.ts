@@ -96,7 +96,7 @@ export class PlayerFeesController {
   // ── Season records (Admin / Coordinator / Coach) ─────────────────────────
 
   @Patch('season-record/:playerId')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.COACH)
+  @Roles(RoleEnum.ADMIN)
   updateSeasonRecord(
     @Param('playerId') playerId: string,
     @Body() dto: UpdateSeasonRecordDto,

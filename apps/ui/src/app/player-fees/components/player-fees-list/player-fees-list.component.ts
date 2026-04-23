@@ -8,8 +8,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
@@ -25,6 +25,7 @@ import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.di
 import { MatDialog } from '@angular/material/dialog';
 import { ManualFeePaymentDialogComponent } from '../manual-fee-payment-dialog/manual-fee-payment-dialog.component';
 import { AuthService } from '../../../auth/auth.service';
+import { ViewAsRoleService } from '../../../auth/services/view-as-role.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -39,8 +40,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
     MatFormFieldModule,
     MatInputModule,
     MatProgressBarModule,
+    MatProgressSpinnerModule,
     MatTableModule,
-    MatCheckboxModule,
     MatTooltipModule,
     MatSnackBarModule,
     MatChipsModule,
@@ -61,13 +62,15 @@ export class PlayerFeesListComponent implements OnInit {
   private readonly clipboard = inject(Clipboard);
   private readonly dialog = inject(MatDialog);
   private readonly authService = inject(AuthService);
+  private readonly viewAsService = inject(ViewAsRoleService);
 
   readonly RoleEnum = RoleEnum;
 
   private readonly currentUser = toSignal(this.authService.user$);
   readonly canEdit = computed(() => {
-    const roles = this.currentUser()?.roles ?? [];
-    return roles.some(r => [RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.COACH].includes(r));
+    const viewAs = this.viewAsService.viewAsRole();
+    if (viewAs) return viewAs === RoleEnum.ADMIN;
+    return this.currentUser()?.roles?.includes(RoleEnum.ADMIN) ?? false;
   });
 
   filterForm: FormGroup = this.fb.group({
@@ -98,6 +101,7 @@ export class PlayerFeesListComponent implements OnInit {
   solidarityFilter = signal<boolean | null>(null);
   eligibleFilter = signal<boolean | null>(null);
   loading = signal(false);
+  savingKey = signal<string | null>(null);
   configs = signal<IPlayerFeeConfig[]>([]);
 
   readonly filteredRows = computed(() => {
@@ -195,33 +199,41 @@ export class PlayerFeesListComponent implements OnInit {
     this.search();
   }
 
-  search(silent = false): void {
+  search(silent = false, onComplete?: () => void): void {
     const { season, sport } = this.filterForm.getRawValue();
     if (!season || !sport) return;
     if (!silent) this.loading.set(true);
     this.adminService.getStatus({ season, sport })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (data) => { this.rows.set(data); if (!silent) this.loading.set(false); },
+        next: (data) => {
+          this.rows.set(data);
+          if (!silent) this.loading.set(false);
+          onComplete?.();
+        },
         error: () => {
           if (!silent) this.loading.set(false);
+          onComplete?.();
           this.snackBar.open('Error al cargar los datos', 'Cerrar', { duration: 4000 });
         },
       });
   }
 
   toggleRecord(row: IPlayerFeeStatusRow, field: keyof Pick<IPlayerFeeStatusRow, 'membershipCurrent' | 'bduarRegistered' | 'coursesApproved' | 'solidarityFundPaid'>, value: boolean): void {
+    const key = `${row.playerId}:${field}`;
+    if (this.savingKey()) return;
+
     const { season, sport } = this.filterForm.value;
-    // Optimistic update
-    this.rows.update(rows => rows.map(r => r.playerId === row.playerId ? { ...r, [field]: value } : r));
+    this.savingKey.set(key);
 
     this.adminService.updateSeasonRecord(row.playerId, { season, sport, [field]: value })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => this.search(true),
+        next: () => {
+          this.search(true, () => this.savingKey.set(null));
+        },
         error: () => {
-          // Revert
-          this.rows.update(rows => rows.map(r => r.playerId === row.playerId ? { ...r, [field]: !value } : r));
+          this.savingKey.set(null);
           this.snackBar.open('Error al guardar', 'Cerrar', { duration: 3000 });
         },
       });

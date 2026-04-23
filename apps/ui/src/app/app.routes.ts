@@ -124,7 +124,7 @@ export const routes: Routes = [
           import('./reports/reports.routes').then((m) => m.REPORTS_ROUTES),
       },
       {
-        path: 'player-fees',
+        path: 'eligibility',
         loadChildren: () =>
           import('./player-fees/player-fees.routes').then((m) => m.PLAYER_FEES_ROUTES),
       },

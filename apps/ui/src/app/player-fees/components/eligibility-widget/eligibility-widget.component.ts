@@ -127,6 +127,6 @@ export class EligibilityWidgetComponent implements OnInit {
   }
 
   goToFees(): void {
-    this.router.navigate(['/dashboard/player-fees']);
+    this.router.navigate(['/dashboard/eligibility']);
   }
 }
