@@ -187,10 +187,13 @@
         <ng-container matColumnDef="membershipCurrent">
           <th mat-header-cell *matHeaderCellDef>Cuota al día</th>
           <td mat-cell *matCellDef="let row">
-            <mat-checkbox
-              [checked]="row.membershipCurrent"
-              (change)="toggleRecord(row, 'membershipCurrent', $event.checked)"
-            />
+            @if (canEdit()) {
+              <mat-checkbox [checked]="row.membershipCurrent" (change)="toggleRecord(row, 'membershipCurrent', $event.checked)" />
+            } @else {
+              <mat-icon class="status-icon" [class.status-icon--ok]="row.membershipCurrent" [class.status-icon--no]="!row.membershipCurrent">
+                {{ row.membershipCurrent ? 'check_circle' : 'cancel' }}
+              </mat-icon>
+            }
           </td>
         </ng-container>
 
@@ -198,10 +201,13 @@
           <th mat-header-cell *matHeaderCellDef>Cursos</th>
           <td mat-cell *matCellDef="let row">
             @if (row.coursesApproved !== undefined) {
-              <mat-checkbox
-                [checked]="row.coursesApproved"
-                (change)="toggleRecord(row, 'coursesApproved', $event.checked)"
-              />
+              @if (canEdit()) {
+                <mat-checkbox [checked]="row.coursesApproved" (change)="toggleRecord(row, 'coursesApproved', $event.checked)" />
+              } @else {
+                <mat-icon class="status-icon" [class.status-icon--ok]="row.coursesApproved" [class.status-icon--no]="!row.coursesApproved">
+                  {{ row.coursesApproved ? 'check_circle' : 'cancel' }}
+                </mat-icon>
+              }
             } @else {
               <span class="na">—</span>
             }
@@ -211,10 +217,13 @@
         <ng-container matColumnDef="bduarRegistered">
           <th mat-header-cell *matHeaderCellDef>Ficha Médica</th>
           <td mat-cell *matCellDef="let row">
-            <mat-checkbox
-              [checked]="row.bduarRegistered"
-              (change)="toggleRecord(row, 'bduarRegistered', $event.checked)"
-            />
+            @if (canEdit()) {
+              <mat-checkbox [checked]="row.bduarRegistered" (change)="toggleRecord(row, 'bduarRegistered', $event.checked)" />
+            } @else {
+              <mat-icon class="status-icon" [class.status-icon--ok]="row.bduarRegistered" [class.status-icon--no]="!row.bduarRegistered">
+                {{ row.bduarRegistered ? 'check_circle' : 'cancel' }}
+              </mat-icon>
+            }
           </td>
         </ng-container>
 
@@ -222,10 +231,13 @@
           <th mat-header-cell *matHeaderCellDef>Fondo Sol.</th>
           <td mat-cell *matCellDef="let row">
             @if (row.solidarityFundPaid !== undefined) {
-              <mat-checkbox
-                [checked]="row.solidarityFundPaid"
-                (change)="toggleRecord(row, 'solidarityFundPaid', $event.checked)"
-              />
+              @if (canEdit()) {
+                <mat-checkbox [checked]="row.solidarityFundPaid" (change)="toggleRecord(row, 'solidarityFundPaid', $event.checked)" />
+              } @else {
+                <mat-icon class="status-icon" [class.status-icon--ok]="row.solidarityFundPaid" [class.status-icon--no]="!row.solidarityFundPaid">
+                  {{ row.solidarityFundPaid ? 'check_circle' : 'cancel' }}
+                </mat-icon>
+              }
             } @else {
               <span class="na">—</span>
             }

@@ -7,11 +7,11 @@ import {
   Input,
   OnInit,
   Output,
+  signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime } from 'rxjs/operators';
-import { startWith } from 'rxjs';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   CategoryEnum,
   HockeyBranchEnum,
@@ -91,9 +91,7 @@ export class PlayerSearchComponent implements OnInit {
     eligible: [undefined as boolean | undefined],
   });
 
-  private readonly selectedSport = toSignal(
-    this.searchForm.get('sport')!.valueChanges.pipe(startWith(this.searchForm.get('sport')!.value as SportEnum | undefined))
-  );
+  private readonly selectedSport = signal<SportEnum | undefined>(undefined);
 
   readonly availableSports = computed(() => this.filterContext.filterContext().sportOptions);
 
@@ -113,6 +111,8 @@ export class PlayerSearchComponent implements OnInit {
         patch['category'] = patch['categories'];
       }
       this.searchForm.patchValue(patch, { emitEvent: false });
+      // Sync selectedSport signal since patchValue uses emitEvent: false
+      if (patch['sport']) this.selectedSport.set(patch['sport'] as SportEnum);
     }
 
     this.filterContext.filterContext$
@@ -120,6 +120,7 @@ export class PlayerSearchComponent implements OnInit {
       .subscribe((ctx) => {
         if (ctx.forcedSport) {
           this.searchForm.get('sport')!.setValue(ctx.forcedSport, { emitEvent: false });
+          this.selectedSport.set(ctx.forcedSport);
           this.positionOptions = getPositionOptionsBySport(ctx.forcedSport);
           this.showBranchFilter = ctx.forcedSport === SportEnum.HOCKEY;
         }
@@ -131,6 +132,7 @@ export class PlayerSearchComponent implements OnInit {
     this.searchForm.get('sport')!.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((sport) => {
+        this.selectedSport.set(sport ?? undefined);
         this.positionOptions = getPositionOptionsBySport(sport);
         this.showBranchFilter = sport === SportEnum.HOCKEY;
 

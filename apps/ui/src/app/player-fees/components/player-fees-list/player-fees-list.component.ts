@@ -24,6 +24,8 @@ import { PlayerFeesAdminService } from '../../services/player-fees-admin.service
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
 import { MatDialog } from '@angular/material/dialog';
 import { ManualFeePaymentDialogComponent } from '../manual-fee-payment-dialog/manual-fee-payment-dialog.component';
+import { AuthService } from '../../../auth/auth.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'ltrc-player-fees-list',
@@ -58,8 +60,15 @@ export class PlayerFeesListComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly clipboard = inject(Clipboard);
   private readonly dialog = inject(MatDialog);
+  private readonly authService = inject(AuthService);
 
   readonly RoleEnum = RoleEnum;
+
+  private readonly currentUser = toSignal(this.authService.user$);
+  readonly canEdit = computed(() => {
+    const roles = this.currentUser()?.roles ?? [];
+    return roles.some(r => [RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.COACH].includes(r));
+  });
 
   filterForm: FormGroup = this.fb.group({
     season: [this.currentSeason()],

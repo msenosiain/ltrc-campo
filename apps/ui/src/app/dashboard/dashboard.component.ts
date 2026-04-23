@@ -30,6 +30,7 @@ import { PlayerStatsWidgetComponent } from '../players/components/player-stats-w
 import { AttendanceStatsWidgetComponent } from '../trainings/components/attendance-stats-widget/attendance-stats-widget.component';
 import { MatchAttendanceStatsWidgetComponent } from '../matches/components/match-attendance-stats-widget/match-attendance-stats-widget.component';
 import { MyWorkoutWidgetComponent } from '../physical-training/components/my-workout-widget/my-workout-widget.component';
+import { EligibilityWidgetComponent } from '../player-fees/components/eligibility-widget/eligibility-widget.component';
 
 @Component({
   selector: 'ltrc-dashboard',
@@ -49,6 +50,7 @@ import { MyWorkoutWidgetComponent } from '../physical-training/components/my-wor
     AttendanceStatsWidgetComponent,
     MatchAttendanceStatsWidgetComponent,
     MyWorkoutWidgetComponent,
+    EligibilityWidgetComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
@@ -126,6 +128,12 @@ export class DashboardComponent implements OnInit {
   readonly showMatchStats = computed(() =>
     this.check(RoleEnum.ADMIN) || this.check(RoleEnum.MANAGER) ||
     this.check(RoleEnum.COORDINATOR) || this.check(RoleEnum.COACH)
+  );
+
+  readonly showEligibility = computed(() =>
+    this.check(RoleEnum.ADMIN) || this.check(RoleEnum.MANAGER) ||
+    this.check(RoleEnum.COORDINATOR) || this.check(RoleEnum.COACH) ||
+    this.check(RoleEnum.TRAINER)
   );
 
   myPlayerId = signal<string | null>(null);

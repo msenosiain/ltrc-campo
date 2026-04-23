@@ -93,10 +93,10 @@ export class PlayerFeesController {
     return this.service.deleteFamilyGroup(id);
   }
 
-  // ── Season records (Manager / Coordinator / Coach) ────────────────────────
+  // ── Season records (Admin / Coordinator / Coach) ─────────────────────────
 
   @Patch('season-record/:playerId')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.COACH)
   updateSeasonRecord(
     @Param('playerId') playerId: string,
     @Body() dto: UpdateSeasonRecordDto,
