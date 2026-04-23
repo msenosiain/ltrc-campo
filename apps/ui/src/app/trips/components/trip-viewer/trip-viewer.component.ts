@@ -46,6 +46,7 @@ import {
   TripTransport,
 } from '@ltrc-campo/shared-api-model';
 import { PaymentLinksPanelComponent } from '../../../payments/components/payment-links-panel/payment-links-panel.component';
+import { TripRecordPaymentDialogComponent } from '../trip-record-payment-dialog/trip-record-payment-dialog.component';
 import { TripsService, AddParticipantPayload, AddTransportPayload } from '../../services/trips.service';
 import { ConfirmDialogComponent } from '../../../common/components/confirm-dialog/confirm-dialog.component';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
@@ -226,16 +227,7 @@ export class TripViewerComponent implements OnInit {
 
   addingAllPlayers = false;
 
-  // Formulario registrar pago
-  paymentForm = this.fb.group({
-    amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
-    date: [new Date(), Validators.required],
-    notes: [''],
-  });
-
-  selectedParticipantForPayment: TripParticipant | null = null;
   showAddParticipant = false;
-  showPaymentForm = false;
 
   // ── Estado transportes ────────────────────────────────────────────────────
   showAddTransport = false;
@@ -627,38 +619,17 @@ export class TripViewerComponent implements OnInit {
 
   // ── Pagos ─────────────────────────────────────────────────────────────────
 
-  openPaymentForm(p: TripParticipant): void {
-    this.selectedParticipantForPayment = p;
-    this.showPaymentForm = true;
-    this.paymentForm.reset({ amount: null, date: new Date(), notes: '' });
-  }
-
-  closePaymentForm(): void {
-    this.showPaymentForm = false;
-    this.selectedParticipantForPayment = null;
-  }
-
-  submitPayment(): void {
-    if (!this.trip?.id || !this.selectedParticipantForPayment?.id) return;
-    if (this.paymentForm.invalid) return;
-    const v = this.paymentForm.getRawValue();
-
-    this.tripsService
-      .recordPayment(this.trip.id, this.selectedParticipantForPayment.id, {
-        amount: v.amount!,
-        date: (v.date instanceof Date ? v.date.toISOString().split('T')[0] : v.date) as string,
-        notes: v.notes || undefined,
+  openManualPaymentDialog(): void {
+    if (!this.trip) return;
+    this.dialog
+      .open(TripRecordPaymentDialogComponent, {
+        width: '440px',
+        data: { trip: this.trip },
       })
+      .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (trip) => {
-          this.trip = trip;
-          this.closePaymentForm();
-        },
-        error: (err) =>
-          this.snackBar.open(getErrorMessage(err, 'Error al registrar pago'), 'Cerrar', {
-            duration: 4000,
-          }),
+      .subscribe((updatedTrip: Trip | undefined) => {
+        if (updatedTrip) this.trip = updatedTrip;
       });
   }
 

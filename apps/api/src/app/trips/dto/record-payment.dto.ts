@@ -18,5 +18,9 @@ export class RecordPaymentDto {
 
   @IsOptional()
   @IsString()
+  readonly method?: string;
+
+  @IsOptional()
+  @IsString()
   readonly notes?: string;
 }

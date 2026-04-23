@@ -72,7 +72,7 @@
         @if (state === 'ready' || state === 'validating') {
           <div class="dni-form">
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>DNI del jugador</mat-label>
+              <mat-label>{{ isTrip ? 'DNI del pasajero' : 'DNI del jugador' }}</mat-label>
               <input
                 matInput
                 type="text"
@@ -123,7 +123,7 @@
           <div class="player-confirmed">
             <div class="player-confirmed__header">
               <mat-icon class="player-confirmed__icon">check_circle</mat-icon>
-              <p class="player-confirmed__title">Jugador verificado</p>
+              <p class="player-confirmed__title">{{ verifiedLabel }}</p>
             </div>
             <div class="player-confirmed__details">
               <div class="player-detail">

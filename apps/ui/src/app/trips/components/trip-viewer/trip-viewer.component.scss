@@ -412,21 +412,3 @@
   }
 }
 
-// Panel de pago flotante
-.payment-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 100;
-}
-
-.payment-panel {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 360px;
-  z-index: 101;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-
-  .full-width { width: 100%; }
-}

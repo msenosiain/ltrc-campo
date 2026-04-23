@@ -1,0 +1,38 @@
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 360px;
+}
+
+.dni-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  .dni-field { flex: 1; }
+
+  button {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.participant-found {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--mat-sys-surface-variant);
+  border-radius: 6px;
+  margin-bottom: 8px;
+
+  &__name   { font-weight: 600; font-size: 0.95rem; }
+  &__balance { font-size: 0.85rem; color: var(--mat-sys-on-surface-variant); }
+}
+
+.full-width { width: 100%; }
+
+mat-divider { margin: 8px 0 12px; }

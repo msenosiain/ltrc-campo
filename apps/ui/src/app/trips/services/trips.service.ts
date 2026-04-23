@@ -52,6 +52,7 @@ export interface UpdateParticipantPayload {
 export interface RecordPaymentPayload {
   amount: number;
   date: string;
+  method?: string;
   notes?: string;
 }
 

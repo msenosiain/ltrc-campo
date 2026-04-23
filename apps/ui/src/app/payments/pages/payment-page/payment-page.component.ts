@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { PaymentsService } from '../../services/payments.service';
-import { CategoryEnum, IPaymentLinkPublicInfo } from '@ltrc-campo/shared-api-model';
+import { CategoryEnum, IPaymentLinkPublicInfo, PaymentEntityTypeEnum } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../../common/category-options';
 
 type PageState = 'loading' | 'ready' | 'validating' | 'validated' | 'redirecting' | 'expired' | 'error';
@@ -115,7 +115,9 @@ export class PaymentPageComponent implements OnInit {
 
   private resolveDniError(body: any): string {
     if (body?.code === 'NOT_A_PARTICIPANT') {
-      return 'El DNI ingresado no corresponde a ningún participante de este viaje.';
+      return this.isTrip
+        ? 'El DNI ingresado no corresponde a ningún pasajero de este viaje.'
+        : 'El jugador con ese DNI no participa en este partido.';
     }
     if (body?.code === 'NO_PAYMENT_REQUIRED') {
       return 'Este participante no tiene costo asignado en el viaje.';
@@ -130,6 +132,14 @@ export class PaymentPageComponent implements OnInit {
       return `La categoría del DNI ingresado es ${player}, que no está incluida en este encuentro.`;
     }
     return body?.message ?? 'Error al validar el DNI. Intente nuevamente.';
+  }
+
+  get isTrip(): boolean {
+    return this.linkInfo?.entityType === PaymentEntityTypeEnum.TRIP;
+  }
+
+  get verifiedLabel(): string {
+    return this.isTrip ? 'Pasajero verificado' : 'Jugador verificado';
   }
 
   get installmentLabel(): string {

@@ -26,6 +26,7 @@ const PaymentEntrySchema = new Schema(
   {
     amount: { type: Number, required: true },
     date: { type: Date, required: true },
+    method: { type: String },
     notes: { type: String },
     recordedBy: { type: Types.ObjectId, ref: 'User' },
   },

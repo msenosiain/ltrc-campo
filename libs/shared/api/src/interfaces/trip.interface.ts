@@ -14,6 +14,7 @@ export interface PaymentEntry {
   readonly id?: string;
   readonly amount: number;
   readonly date: Date;
+  readonly method?: string;
   readonly notes?: string;
   readonly recordedBy?: string;
 }
