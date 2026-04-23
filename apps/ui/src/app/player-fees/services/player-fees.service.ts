@@ -17,7 +17,7 @@ export class PlayerFeesPublicService {
   private readonly apiBase = inject(API_CONFIG_TOKEN);
 
   private url(path: string) {
-    return `${this.apiBase}/player-fees/public/${path}`;
+    return `${this.apiBase.baseUrl}/player-fees/public/${path}`;
   }
 
   getPublicInfo(token: string) {
@@ -33,7 +33,7 @@ export class PlayerFeesPublicService {
   }
 
   confirmPayment(externalReference: string, paymentId?: string, status?: string) {
-    return this.http.post<PlayerFeeConfirmResult>(`${this.apiBase}/player-fees/public/confirm`, {
+    return this.http.post<PlayerFeeConfirmResult>(`${this.apiBase.baseUrl}/player-fees/public/confirm`, {
       externalReference,
       paymentId,
       status,
