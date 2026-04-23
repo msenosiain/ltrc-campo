@@ -236,20 +236,20 @@
             <span class="kpi-card__label">Total jugadores</span>
             <span class="kpi-card__value">{{ stats.total }}</span>
           </div>
-          <div class="kpi-card" [class.kpi-card--green]="stats.total > 0 && stats.pagados === stats.total"
-                                [class.kpi-card--orange]="stats.total > 0 && stats.pagados < stats.total">
+          <div class="kpi-card" [class.kpi-card--green]="stats.total > 0 && stats.paid === stats.total"
+                                [class.kpi-card--orange]="stats.total > 0 && stats.paid < stats.total">
             <span class="kpi-card__label">Derecho pagado</span>
-            <span class="kpi-card__value">{{ stats.pagados }}</span>
+            <span class="kpi-card__value">{{ stats.paid }}</span>
             <span class="kpi-card__sub">
-              {{ stats.total > 0 ? (stats.pagados / stats.total * 100 | number:'1.0-0') : 0 }}% del total
+              {{ stats.total > 0 ? (stats.paid / stats.total * 100 | number:'1.0-0') : 0 }}% del total
             </span>
           </div>
-          <div class="kpi-card" [class.kpi-card--green]="stats.total > 0 && stats.habilitados === stats.total"
-                                [class.kpi-card--orange]="stats.total > 0 && stats.habilitados < stats.total">
+          <div class="kpi-card" [class.kpi-card--green]="stats.total > 0 && stats.eligible === stats.total"
+                                [class.kpi-card--orange]="stats.total > 0 && stats.eligible < stats.total">
             <span class="kpi-card__label">Habilitados</span>
-            <span class="kpi-card__value">{{ stats.habilitados }}</span>
+            <span class="kpi-card__value">{{ stats.eligible }}</span>
             <span class="kpi-card__sub">
-              {{ stats.total > 0 ? (stats.habilitados / stats.total * 100 | number:'1.0-0') : 0 }}% del total
+              {{ stats.total > 0 ? (stats.eligible / stats.total * 100 | number:'1.0-0') : 0 }}% del total
             </span>
           </div>
         </div>
@@ -276,24 +276,24 @@
                     <tr>
                       <td class="fee-cat-label">{{ row.label }}</td>
                       <td class="fee-col-num">{{ row.total }}</td>
-                      <td class="fee-col-num">{{ row.pagados }}</td>
+                      <td class="fee-col-num">{{ row.paid }}</td>
                       <td class="fee-col-pct">
                         <span class="fee-pct-bar">
                           <span class="fee-pct-bar__fill"
-                            [style.width.%]="row.pctPagados"
-                            [class.fee-pct-bar__fill--full]="row.pctPagados === 100">
+                            [style.width.%]="row.pctPaid"
+                            [class.fee-pct-bar__fill--full]="row.pctPaid === 100">
                           </span>
-                          <span class="fee-pct-bar__label">{{ row.pctPagados }}%</span>
+                          <span class="fee-pct-bar__label">{{ row.pctPaid }}%</span>
                         </span>
                       </td>
-                      <td class="fee-col-num">{{ row.habilitados }}</td>
+                      <td class="fee-col-num">{{ row.eligible }}</td>
                       <td class="fee-col-pct">
                         <span class="fee-pct-bar">
                           <span class="fee-pct-bar__fill"
-                            [style.width.%]="row.pctHab"
-                            [class.fee-pct-bar__fill--full]="row.pctHab === 100">
+                            [style.width.%]="row.pctEligible"
+                            [class.fee-pct-bar__fill--full]="row.pctEligible === 100">
                           </span>
-                          <span class="fee-pct-bar__label">{{ row.pctHab }}%</span>
+                          <span class="fee-pct-bar__label">{{ row.pctEligible }}%</span>
                         </span>
                       </td>
                     </tr>

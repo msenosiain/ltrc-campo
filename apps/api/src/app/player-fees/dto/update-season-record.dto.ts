@@ -5,15 +5,16 @@ export class UpdateSeasonRecordDto {
   @IsString() season!: string;
   @IsEnum(SportEnum) sport!: SportEnum;
 
-  @IsOptional() @IsBoolean() cuotaAlDia?: boolean;
+  @IsOptional() @IsBoolean() membershipCurrent?: boolean;
 
-  @IsOptional() @IsBoolean() fichajeBDUAR?: boolean;
+  @IsOptional() @IsBoolean() bduarRegistered?: boolean;
+  @IsOptional() @IsDateString() bduarRegistrationDate?: string;
 
-  @IsOptional() @IsBoolean() cursosAprobados?: boolean;
-  @IsOptional() @IsDateString() cursosFecha?: string;
+  @IsOptional() @IsBoolean() coursesApproved?: boolean;
+  @IsOptional() @IsDateString() coursesDate?: string;
 
-  @IsOptional() @IsBoolean() fondoSolidarioPagado?: boolean;
-  @IsOptional() @IsDateString() fondoSolidarioFecha?: string;
+  @IsOptional() @IsBoolean() solidarityFundPaid?: boolean;
+  @IsOptional() @IsDateString() solidarityFundDate?: string;
 
   @IsOptional() @IsString() notes?: string;
 }

@@ -15,7 +15,7 @@ import { PlayerFeesService } from './player-fees.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { RoleEnum, SportEnum } from '@ltrc-campo/shared-api-model';
+import { CategoryEnum, RoleEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 import { CreatePlayerFeeConfigDto } from './dto/create-player-fee-config.dto';
 import { UpdatePlayerFeeConfigDto } from './dto/update-player-fee-config.dto';
 import { CreateFamilyGroupDto } from './dto/create-family-group.dto';
@@ -156,8 +156,12 @@ export class PlayerFeesController {
     @Query('season') season: string,
     @Query('sport') sport: SportEnum,
     @Query('category') category?: string,
+    @Query('categories') categories?: string | string[],
   ) {
-    return this.service.getStatus(season, sport, category);
+    const cats = categories
+      ? (Array.isArray(categories) ? categories : [categories]) as CategoryEnum[]
+      : undefined;
+    return this.service.getStatus(season, sport, cats?.length ? undefined : category, cats);
   }
 
   @Get('stats')

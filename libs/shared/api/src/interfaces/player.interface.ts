@@ -1,5 +1,6 @@
 import { Document } from 'mongoose';
 import {
+  BloodTypeEnum,
   CategoryEnum,
   ClothingSizesEnum,
   HockeyBranchEnum,
@@ -35,6 +36,7 @@ export interface MedicalData {
   weight?: number;
   torgIndex?: number;
   healthInsurance?: string;
+  bloodType?: BloodTypeEnum;
 }
 
 export interface ParentContact {

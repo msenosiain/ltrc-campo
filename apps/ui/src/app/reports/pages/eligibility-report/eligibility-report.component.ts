@@ -63,14 +63,14 @@ export class EligibilityReportComponent implements OnInit {
   loading = signal(false);
   generatingPdf = signal(false);
 
-  readonly hasCursos = computed(() => this.rows().some(r => r.cursosAprobados !== undefined));
-  readonly hasFondo = computed(() => this.rows().some(r => r.fondoSolidarioPagado !== undefined));
+  readonly hasCursos = computed(() => this.rows().some(r => r.coursesApproved !== undefined));
+  readonly hasFondo = computed(() => this.rows().some(r => r.solidarityFundPaid !== undefined));
 
   readonly displayedColumns = computed(() => {
-    const cols = ['player', 'category', 'cuotaAlDia', 'feePaid', 'fichajeBDUAR'];
-    if (this.hasCursos()) cols.push('cursosAprobados');
-    if (this.hasFondo()) cols.push('fondoSolidarioPagado');
-    cols.push('habilitado');
+    const cols = ['player', 'category', 'membershipCurrent', 'feePaid', 'bduarRegistered'];
+    if (this.hasCursos()) cols.push('coursesApproved');
+    if (this.hasFondo()) cols.push('solidarityFundPaid');
+    cols.push('eligible');
     return cols;
   });
 
@@ -78,8 +78,8 @@ export class EligibilityReportComponent implements OnInit {
     const all = this.rows();
     return {
       total: all.length,
-      pagados: all.filter(r => r.feePaid).length,
-      habilitados: all.filter(r => r.habilitado).length,
+      paid: all.filter(r => r.feePaid).length,
+      eligible: all.filter(r => r.eligible).length,
     };
   });
 

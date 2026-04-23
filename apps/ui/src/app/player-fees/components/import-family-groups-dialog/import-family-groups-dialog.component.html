@@ -1,0 +1,70 @@
+<h2 mat-dialog-title>Importar grupos familiares</h2>
+
+<mat-dialog-content>
+  <p class="hint">
+    Seleccioná el Excel de socios. Se crean grupos con 2 o más jugadores de rugby encontrados en el sistema
+    (col. B = DNI, col. D = grupo familiar). Los grupos ya existentes se omiten.
+  </p>
+
+  <div class="upload-area">
+    <label class="upload-label" [class.upload-label--selected]="fileName()">
+      <input type="file" accept=".xlsx,.xls" hidden (change)="onFileChange($event)" />
+      <mat-icon class="upload-icon">upload_file</mat-icon>
+      <span class="upload-text">
+        @if (fileName()) {
+          {{ fileName() }}
+        } @else {
+          Seleccionar archivo Excel
+        }
+      </span>
+    </label>
+
+    @if (groups().length > 0) {
+      <div class="preview-chip">
+        <mat-icon>groups</mat-icon>
+        {{ groups().length }} grupos leídos
+      </div>
+    }
+  </div>
+
+  @if (importing()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  @if (result(); as res) {
+    <div class="result-summary">
+      <div class="result-item result-item--ok">
+        <mat-icon>check_circle</mat-icon>
+        <span><strong>{{ res.created }}</strong> grupos creados</span>
+      </div>
+      <div class="result-item">
+        <mat-icon>skip_next</mat-icon>
+        <span>{{ res.skipped }} omitidos</span>
+      </div>
+      @if (res.notFound.length > 0) {
+        <div class="result-item result-item--warn">
+          <mat-icon>warning</mat-icon>
+          <span>{{ res.notFound.length }} DNIs no encontrados</span>
+        </div>
+      }
+      <p class="download-note">Se descargó un archivo Excel con el detalle.</p>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (!result()) {
+    <button mat-button type="button" (click)="close()">Cancelar</button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="groups().length === 0 || importing()"
+      (click)="runImport()"
+    >
+      @if (importing()) { Importando… } @else { Importar grupos }
+    </button>
+  } @else {
+    <button mat-flat-button (click)="close()">Cerrar</button>
+  }
+</mat-dialog-actions>

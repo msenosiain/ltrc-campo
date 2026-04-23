@@ -100,3 +100,13 @@
   &--suspended { color: #f57c00; }
   &--called-up { color: #5c35bb; }
 }
+
+.eligibility-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  display: block;
+
+  &--ok  { color: #2e7d32; }
+  &--nok { color: #c62828; }
+}

@@ -1,5 +1,5 @@
-export function toTitleCase(value: unknown): unknown {
-  if (typeof value !== 'string') return value;
+export function toTitleCase(value: string): string {
+  if (!value) return value;
   return value
     .trim()
     .replace(/\s+/g, ' ')
@@ -8,7 +8,7 @@ export function toTitleCase(value: unknown): unknown {
     .join(' ');
 }
 
-export function toLowerCase(value: unknown): unknown {
-  if (typeof value !== 'string') return value;
+export function toLowerCase(value: string): string {
+  if (!value) return value;
   return value.trim().toLowerCase();
 }

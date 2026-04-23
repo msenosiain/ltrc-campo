@@ -35,7 +35,7 @@ export class EligibilityReportPdfService {
       grouped.get(catLabel)!.push(row);
     }
 
-    const columns: string[] = ['Jugador', 'DNI', 'Cuota', 'Pago Derecho', 'BDUAR / Ficha Méd.'];
+    const columns: string[] = ['Jugador', 'DNI', 'Cuota', 'Pago Derecho', 'Ficha Médica'];
     if (ctx.hasCursos) columns.push('Cursos');
     if (ctx.hasFondo) columns.push('Fondo Sol.');
     columns.push('Habilitado');
@@ -43,10 +43,10 @@ export class EligibilityReportPdfService {
     const body: import('jspdf-autotable').RowInput[] = [];
 
     for (const [catLabel, catRows] of grouped) {
-      const habilitados = catRows.filter(r => r.habilitado).length;
+      const eligibleCount = catRows.filter(r => r.eligible).length;
       body.push([
         {
-          content: `${catLabel}  (${habilitados}/${catRows.length} habilitados)`,
+          content: `${catLabel}  (${eligibleCount}/${catRows.length} habilitados)`,
           colSpan: columns.length,
           styles: {
             fillColor: this.GROUP_BG,
@@ -62,16 +62,16 @@ export class EligibilityReportPdfService {
         const cells: import('jspdf-autotable').CellInput[] = [
           row.playerName,
           row.playerDni,
-          this.yesNo(row.cuotaAlDia),
+          this.yesNo(row.membershipCurrent),
           this.yesNo(row.feePaid),
-          this.yesNo(row.fichajeBDUAR),
+          this.yesNo(row.bduarRegistered),
         ];
-        if (ctx.hasCursos) cells.push(row.cursosAprobados !== undefined ? this.yesNo(row.cursosAprobados) : '—');
-        if (ctx.hasFondo) cells.push(row.fondoSolidarioPagado !== undefined ? this.yesNo(row.fondoSolidarioPagado) : '—');
+        if (ctx.hasCursos) cells.push(row.coursesApproved !== undefined ? this.yesNo(row.coursesApproved) : '—');
+        if (ctx.hasFondo) cells.push(row.solidarityFundPaid !== undefined ? this.yesNo(row.solidarityFundPaid) : '—');
         cells.push({
-          content: row.habilitado ? 'SÍ' : 'NO',
+          content: row.eligible ? 'SÍ' : 'NO',
           styles: {
-            textColor: row.habilitado ? [27, 94, 32] : [183, 28, 28],
+            textColor: row.eligible ? [27, 94, 32] : [183, 28, 28],
             fontStyle: 'bold',
           },
         });
@@ -179,13 +179,13 @@ export class EligibilityReportPdfService {
     }
 
     const total = rows.length;
-    const habilitados = rows.filter(r => r.habilitado).length;
-    const pagados = rows.filter(r => r.feePaid).length;
+    const eligibleCount = rows.filter(r => r.eligible).length;
+    const paidCount = rows.filter(r => r.feePaid).length;
 
     row('Total jugadores', String(total), col1x, y);
-    row('Habilitados', `${habilitados} / ${total}`, col2x, y);
+    row('Habilitados', `${eligibleCount} / ${total}`, col2x, y);
     y += lineH;
-    row('Derecho pagado', `${pagados} / ${total}`, col1x, y);
+    row('Derecho pagado', `${paidCount} / ${total}`, col1x, y);
     y += lineH;
 
     doc.setDrawColor(200, 200, 200);

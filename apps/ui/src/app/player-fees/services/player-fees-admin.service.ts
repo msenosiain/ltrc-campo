@@ -5,18 +5,18 @@ import { CategoryEnum, IFamilyGroup, IPlayerFeeConfig, IPlayerFeeStatusRow, IPla
 
 export interface PlayerFeeStats {
   total: number;
-  pagados: number;
-  habilitados: number;
-  byCategory: Record<string, { total: number; pagados: number; habilitados: number }>;
+  paid: number;
+  eligible: number;
+  byCategory: Record<string, { total: number; paid: number; eligible: number }>;
 }
 
 export interface UpdateSeasonRecordPayload {
   season: string;
   sport: SportEnum;
-  cuotaAlDia?: boolean;
-  fichajeBDUAR?: boolean;
-  cursosAprobados?: boolean;
-  fondoSolidarioPagado?: boolean;
+  membershipCurrent?: boolean;
+  bduarRegistered?: boolean;
+  coursesApproved?: boolean;
+  solidarityFundPaid?: boolean;
   notes?: string;
 }
 
@@ -43,6 +43,8 @@ export interface BduarRow {
   estatura?: string;
   email?: string;
   oSocial?: string;
+  grupoSanguineo?: string;
+  fechaFichaje?: string;
   estado?: string;
 }
 
@@ -67,9 +69,10 @@ export class PlayerFeesAdminService {
     return this.http.get<IPlayerFeeStatusRow[]>(this.url(`player-status/${playerId}`), { params: { season } });
   }
 
-  getStatus(params: { season: string; sport: SportEnum; category?: CategoryEnum }) {
-    const p: Record<string, string> = { season: params.season, sport: params.sport };
-    if (params.category) p['category'] = params.category;
+  getStatus(params: { season: string; sport: SportEnum; category?: CategoryEnum; categories?: CategoryEnum[] }) {
+    const p: Record<string, string | string[]> = { season: params.season, sport: params.sport };
+    if (params.categories?.length) p['categories'] = params.categories;
+    else if (params.category) p['category'] = params.category;
     return this.http.get<IPlayerFeeStatusRow[]>(this.url('status'), { params: p });
   }
 

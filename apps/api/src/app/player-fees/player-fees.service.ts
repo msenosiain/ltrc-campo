@@ -22,6 +22,7 @@ import { RecordManualFeePaymentDto } from './dto/record-manual-fee-payment.dto';
 import { BduarImportDto } from './dto/bduar-import.dto';
 import { ConfirmPlayerFeeDto } from './dto/validate-player-fee.dto';
 import {
+  BloodTypeEnum,
   CategoryEnum,
   PlayerFeeStatusEnum,
   PlayerStatusEnum,
@@ -208,7 +209,7 @@ export class PlayerFeesService {
       .find()
       .populate({ path: 'members.playerId', select: 'name idNumber' })
       .sort({ name: 1 })
-      .lean();
+      .lean<any[]>();
     return groups.map((g: any) => this.mapFamilyGroup(g));
   }
 
@@ -222,6 +223,7 @@ export class PlayerFeesService {
       members: (g.members ?? []).map((m: any) => ({
         playerId: m.playerId?._id?.toString() ?? m.playerId?.toString(),
         playerName: m.playerId?.name ?? null,
+        playerDni: m.playerId?.idNumber ?? null,
         order: m.order,
       })),
     };
@@ -270,16 +272,16 @@ export class PlayerFeesService {
     const notFound: string[] = [];
 
     for (const group of groups) {
-      const members: { playerId: Types.ObjectId; order: number }[] = [];
+      const members: { playerId: Types.ObjectId; order: 1 | 2 | 3 }[] = [];
       let order = 1;
 
       for (const dni of group.dnis) {
         const player = await this.playerModel
-          .findOne({ idNumber: dni })
+          .findOne({ idNumber: dni, sport: SportEnum.RUGBY })
           .select('_id')
           .lean();
         if (player) {
-          members.push({ playerId: (player as any)._id, order: order++ });
+          members.push({ playerId: (player as any)._id, order: Math.min(order++, 3) as 1 | 2 | 3 });
         } else {
           notFound.push(dni);
         }
@@ -314,12 +316,13 @@ export class PlayerFeesService {
     const update: Record<string, unknown> = {
       updatedBy: new Types.ObjectId(userId),
     };
-    if (dto.cuotaAlDia !== undefined) update['cuotaAlDia'] = dto.cuotaAlDia;
-    if (dto.fichajeBDUAR !== undefined) update['fichajeBDUAR'] = dto.fichajeBDUAR;
-    if (dto.cursosAprobados !== undefined) update['cursosAprobados'] = dto.cursosAprobados;
-    if (dto.cursosFecha) update['cursosFecha'] = new Date(dto.cursosFecha);
-    if (dto.fondoSolidarioPagado !== undefined) update['fondoSolidarioPagado'] = dto.fondoSolidarioPagado;
-    if (dto.fondoSolidarioFecha) update['fondoSolidarioFecha'] = new Date(dto.fondoSolidarioFecha);
+    if (dto.membershipCurrent !== undefined) update['membershipCurrent'] = dto.membershipCurrent;
+    if (dto.bduarRegistered !== undefined) update['bduarRegistered'] = dto.bduarRegistered;
+    if (dto.bduarRegistrationDate) update['bduarRegistrationDate'] = new Date(dto.bduarRegistrationDate);
+    if (dto.coursesApproved !== undefined) update['coursesApproved'] = dto.coursesApproved;
+    if (dto.coursesDate) update['coursesDate'] = new Date(dto.coursesDate);
+    if (dto.solidarityFundPaid !== undefined) update['solidarityFundPaid'] = dto.solidarityFundPaid;
+    if (dto.solidarityFundDate) update['solidarityFundDate'] = new Date(dto.solidarityFundDate);
     if (dto.notes !== undefined) update['notes'] = dto.notes;
 
     return this.seasonRecordModel.findOneAndUpdate(
@@ -418,9 +421,10 @@ export class PlayerFeesService {
 
   // ── Status list ───────────────────────────────────────────────────────────
 
-  async getStatus(season: string, sport: SportEnum, category?: string): Promise<IPlayerFeeStatusRow[]> {
+  async getStatus(season: string, sport: SportEnum, category?: string, categories?: CategoryEnum[]): Promise<IPlayerFeeStatusRow[]> {
     const playerQuery: Record<string, unknown> = { sport, status: 'active' };
-    if (category) playerQuery['category'] = category;
+    if (categories?.length) playerQuery['category'] = { $in: categories };
+    else if (category) playerQuery['category'] = category;
 
     const [players, configs] = await Promise.all([
       this.playerModel
@@ -464,19 +468,19 @@ export class PlayerFeesService {
       const needsCursos = sport === SportEnum.RUGBY && RUGBY_M15_PLUS.has(cat);
 
       const feePaid = !!payment;
-      const cuotaAlDia = record?.cuotaAlDia ?? false;
-      const fichajeBDUAR = record?.fichajeBDUAR ?? false;
-      const cursosAprobados = needsCursos ? (record?.cursosAprobados ?? false) : undefined;
-      const fondoSolidarioPagado = needsFondoSolidario
-        ? (record?.fondoSolidarioPagado ?? false)
+      const membershipCurrent = record?.membershipCurrent ?? false;
+      const bduarRegistered = record?.bduarRegistered ?? false;
+      const coursesApproved = needsCursos ? (record?.coursesApproved ?? false) : undefined;
+      const solidarityFundPaid = needsFondoSolidario
+        ? (record?.solidarityFundPaid ?? false)
         : undefined;
 
-      const habilitado =
-        cuotaAlDia &&
+      const eligible =
+        membershipCurrent &&
         feePaid &&
-        fichajeBDUAR &&
-        (!needsCursos || cursosAprobados === true) &&
-        (!needsFondoSolidario || fondoSolidarioPagado === true);
+        bduarRegistered &&
+        (!needsCursos || coursesApproved === true) &&
+        (!needsFondoSolidario || solidarityFundPaid === true);
 
       return {
         playerId: pid,
@@ -486,11 +490,11 @@ export class PlayerFeesService {
         feePaid,
         feeAmount: payment?.finalAmount,
         feePaidAt: payment?.paidAt,
-        cuotaAlDia,
-        fichajeBDUAR,
-        cursosAprobados,
-        fondoSolidarioPagado,
-        habilitado,
+        membershipCurrent,
+        bduarRegistered,
+        coursesApproved,
+        solidarityFundPaid,
+        eligible,
       };
     }).sort((a, b) => {
       const catDiff = categoryIndex(a.category) - categoryIndex(b.category);
@@ -518,17 +522,16 @@ export class PlayerFeesService {
     const needsCursos = sport === SportEnum.RUGBY && RUGBY_M15_PLUS.has(cat);
 
     const feePaid = !!payment;
-    const fichaMedica = record?.fichaMedica ?? false;
-    const fichajeBDUAR = record?.fichajeBDUAR ?? false;
-    const fichajeUnion = record?.fichajeUnion ?? false;
-    const cursosAprobados = needsCursos ? (record?.cursosAprobados ?? false) : undefined;
-    const fondoSolidarioPagado = needsFondoSolidario ? (record?.fondoSolidarioPagado ?? false) : undefined;
-    const habilitado =
+    const membershipCurrent = record?.membershipCurrent ?? false;
+    const bduarRegistered = record?.bduarRegistered ?? false;
+    const coursesApproved = needsCursos ? (record?.coursesApproved ?? false) : undefined;
+    const solidarityFundPaid = needsFondoSolidario ? (record?.solidarityFundPaid ?? false) : undefined;
+    const eligible =
+      membershipCurrent &&
       feePaid &&
-      fichaMedica &&
-      fichajeBDUAR &&
-      (!needsCursos || cursosAprobados === true) &&
-      (!needsFondoSolidario || fondoSolidarioPagado === true);
+      bduarRegistered &&
+      (!needsCursos || coursesApproved === true) &&
+      (!needsFondoSolidario || solidarityFundPaid === true);
 
     return [{
       playerId: pid,
@@ -538,32 +541,31 @@ export class PlayerFeesService {
       feePaid,
       feeAmount: (payment as any)?.finalAmount,
       feePaidAt: (payment as any)?.paidAt,
-      fichaMedica,
-      fichajeBDUAR,
-      fichajeUnion,
-      cursosAprobados,
-      fondoSolidarioPagado,
-      habilitado,
+      membershipCurrent,
+      bduarRegistered,
+      coursesApproved,
+      solidarityFundPaid,
+      eligible,
     }];
   }
 
   async getStats(season: string, sport: SportEnum) {
     const rows = await this.getStatus(season, sport);
-    const byCategory = new Map<string, { total: number; habilitados: number; pagados: number }>();
+    const byCategory = new Map<string, { total: number; eligible: number; paid: number }>();
 
     for (const row of rows) {
       const cat = row.category;
-      if (!byCategory.has(cat)) byCategory.set(cat, { total: 0, habilitados: 0, pagados: 0 });
+      if (!byCategory.has(cat)) byCategory.set(cat, { total: 0, eligible: 0, paid: 0 });
       const entry = byCategory.get(cat)!;
       entry.total++;
-      if (row.feePaid) entry.pagados++;
-      if (row.habilitado) entry.habilitados++;
+      if (row.feePaid) entry.paid++;
+      if (row.eligible) entry.eligible++;
     }
 
     return {
       total: rows.length,
-      pagados: rows.filter((r) => r.feePaid).length,
-      habilitados: rows.filter((r) => r.habilitado).length,
+      paid: rows.filter((r) => r.feePaid).length,
+      eligible: rows.filter((r) => r.eligible).length,
       byCategory: Object.fromEntries(byCategory),
     };
   }
@@ -825,7 +827,11 @@ export class PlayerFeesService {
       const height = this.parseHeight(row.estatura);
       const weight = this.parseWeight(row.peso);
       const position = this.mapBduarPosition(row.puesto);
-      const birthDate = row.fechaNac ? new Date(row.fechaNac) : undefined;
+      const _birthRaw = row.fechaNac ? new Date(row.fechaNac) : undefined;
+      const birthDate = _birthRaw && !isNaN(_birthRaw.getTime()) ? _birthRaw : undefined;
+      const bloodType = this.normalizeBduarBloodType(row.grupoSanguineo);
+      const _bduarRawDate = row.fechaFichaje ? new Date(row.fechaFichaje) : undefined;
+      const bduarRegistrationDate = _bduarRawDate && !isNaN(_bduarRawDate.getTime()) ? _bduarRawDate : undefined;
 
       const playerData: Record<string, unknown> = {
         name,
@@ -834,12 +840,13 @@ export class PlayerFeesService {
         ...(birthDate && { birthDate }),
         ...(row.email?.trim() && { email: row.email.trim() }),
         ...(position && { positions: [position] }),
-        ...(height !== null || weight !== null || row.oSocial
+        ...(height !== null || weight !== null || row.oSocial || bloodType
           ? {
               medicalData: {
                 ...(height !== null && { height }),
                 ...(weight !== null && { weight }),
                 ...(row.oSocial?.trim() && { healthInsurance: row.oSocial.trim() }),
+                ...(bloodType && { bloodType }),
               },
             }
           : {}),
@@ -870,11 +877,13 @@ export class PlayerFeesService {
           { playerId, season: dto.season, sport: SportEnum.RUGBY },
           {
             $set: {
-              fichajeBDUAR: true,
-              cursosAprobados: true,
-              cursosFecha: now,
-              fondoSolidarioPagado: true,
-              fondoSolidarioFecha: now,
+              membershipCurrent: true,
+              bduarRegistered: true,
+              ...(bduarRegistrationDate && { bduarRegistrationDate }),
+              coursesApproved: true,
+              coursesDate: now,
+              solidarityFundPaid: true,
+              solidarityFundDate: now,
               updatedBy: new Types.ObjectId(userId),
             },
           },
@@ -912,6 +921,15 @@ export class PlayerFeesService {
     }
 
     return { total: dto.rows.length, created, updated, recordsSet };
+  }
+
+  private normalizeBduarBloodType(raw?: string): BloodTypeEnum | null {
+    if (!raw) return null;
+    // Normalize "0" (zero) to "O" (letter), then uppercase
+    const normalized = raw.trim().toUpperCase().replace(/^0/, 'O');
+    return Object.values(BloodTypeEnum).includes(normalized as BloodTypeEnum)
+      ? (normalized as BloodTypeEnum)
+      : null;
   }
 
   private parseHeight(raw?: string): number | null {

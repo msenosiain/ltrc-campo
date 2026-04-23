@@ -1,4 +1,5 @@
 export * from './attendance-status.enum';
+export * from './blood-type.enum';
 export * from './category.enum';
 export * from './clothing-sizes.enum';
 export * from './day-of-week.enum';

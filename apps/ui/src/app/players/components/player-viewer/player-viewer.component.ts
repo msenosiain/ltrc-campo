@@ -39,12 +39,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
 import { AvailabilityDialogComponent, AvailabilityDialogResult } from '../availability-dialog/availability-dialog.component';
 import { PlayerFeesAdminService } from '../../../player-fees/services/player-fees-admin.service';
-import { PlayerEligibilityEditorComponent } from '../../../player-fees/components/player-eligibility-editor/player-eligibility-editor.component';
 import { IPlayerFeeStatusRow } from '@ltrc-campo/shared-api-model';
 
 @Component({
@@ -57,9 +58,10 @@ import { IPlayerFeeStatusRow } from '@ltrc-campo/shared-api-model';
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
+    MatSelectModule,
+    MatFormFieldModule,
     DatePipe,
     AllowedRolesDirective,
-    PlayerEligibilityEditorComponent,
   ],
   templateUrl: './player-viewer.component.html',
   styleUrl: './player-viewer.component.scss',
@@ -89,8 +91,12 @@ export class PlayerViewerComponent implements OnInit {
   matchHistory: Match[] = [];
   matchHistoryLoading = signal(false);
   isOwnProfile = signal(false);
-  feeStatus = signal<IPlayerFeeStatusRow | null>(null);
-  readonly currentSeason = String(new Date().getFullYear());
+  eligibilityStatus = signal<IPlayerFeeStatusRow | null>(null);
+  readonly fichajeSeasonOptions = (() => {
+    const y = new Date().getFullYear();
+    return [String(y + 1), String(y), String(y - 1)];
+  })();
+  fichajeSeason = signal(String(new Date().getFullYear()));
 
   ngOnInit(): void {
     const playerId = this.route.snapshot.paramMap.get('id');
@@ -145,11 +151,16 @@ export class PlayerViewerComponent implements OnInit {
     });
   }
 
+  onFichajeSeason(season: string): void {
+    this.fichajeSeason.set(season);
+    if (this.player?.id) this.loadFeeStatus(this.player.id);
+  }
+
   private loadFeeStatus(playerId: string): void {
-    this.playerFeesService.getPlayerStatus(playerId, this.currentSeason)
+    this.playerFeesService.getPlayerStatus(playerId, this.fichajeSeason())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (rows) => this.feeStatus.set(rows[0] ?? null),
+        next: (rows) => this.eligibilityStatus.set(rows[0] ?? null),
         error: () => {},
       });
   }

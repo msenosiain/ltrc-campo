@@ -328,10 +328,16 @@
     <div class="section-header">
       <h3 class="section-header__title">Grupos familiares (Rugby)</h3>
       @if (!familyFormOpen()) {
-        <button mat-stroked-button type="button" (click)="openNewFamily()">
-          <mat-icon>add</mat-icon>
-          Nuevo grupo
-        </button>
+        <div style="display:flex;gap:8px">
+          <button mat-stroked-button type="button" (click)="openImportFamilyDialog()">
+            <mat-icon>upload_file</mat-icon>
+            Importar desde Excel
+          </button>
+          <button mat-stroked-button type="button" (click)="openNewFamily()">
+            <mat-icon>add</mat-icon>
+            Nuevo grupo
+          </button>
+        </div>
       }
     </div>
 
@@ -364,7 +370,7 @@
                       [matAutocomplete]="playerAuto"
                       placeholder="Buscar por nombre o apodo"
                     />
-                    <mat-autocomplete #playerAuto="matAutocomplete" (optionSelected)="selectPlayer($index, $event.option.value)">
+                    <mat-autocomplete #playerAuto="matAutocomplete" (optionSelected)="selectPlayer($index, $event.option.value)" [displayWith]="displayPlayerName">
                       @for (p of availablePlayerResults($index); track p.id) {
                         <mat-option [value]="p">
                           {{ p.name || p.nickName }} — {{ p.idNumber }}
@@ -399,10 +405,10 @@
 
     @if (families().length > 0) {
       <mat-form-field appearance="outline" class="family-filter-field">
-        <mat-label>Buscar por grupo o jugador</mat-label>
-        <input matInput [value]="familyFilter()" (input)="familyFilter.set($any($event.target).value)" />
+        <mat-label>Buscar por grupo, jugador o DNI</mat-label>
+        <input matInput [value]="familyFilter()" (input)="onFamilyFilterChange($any($event.target).value)" placeholder="Nombre del grupo, apellido o DNI" />
         @if (familyFilter()) {
-          <button mat-icon-button matSuffix type="button" (click)="familyFilter.set('')">
+          <button mat-icon-button matSuffix type="button" (click)="onFamilyFilterChange('')">
             <mat-icon>close</mat-icon>
           </button>
         } @else {
@@ -411,22 +417,24 @@
       </mat-form-field>
 
       <div class="table-wrapper mat-elevation-z1">
-        <table mat-table [dataSource]="filteredFamilies()" class="families-table">
+        <table mat-table [dataSource]="pagedFamilies()" class="families-table">
 
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Grupo</th>
-            <td mat-cell *matCellDef="let f">{{ f.name }}</td>
+            <td mat-cell *matCellDef="let f">{{ toTitleCase(f.name) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="members">
             <th mat-header-cell *matHeaderCellDef>Miembros</th>
-            <td mat-cell *matCellDef="let f" class="members-cell">
-              @for (m of f.members; track m.playerId; let i = $index) {
-                <span class="member-inline">
-                  {{ m.playerName ?? '?' }}<span class="member-discount">({{ discountLabel(m.order) }})</span>
-                </span>
-                @if (i < f.members.length - 1) { <span class="member-sep">·</span> }
-              }
+            <td mat-cell *matCellDef="let f">
+              <div class="members-cell-inner">
+                @for (m of f.members; track m.playerId; let i = $index) {
+                  <span class="member-inline">
+                    {{ m.playerName ?? '?' }}<span class="member-discount">({{ discountLabel(m.order) }})</span>
+                  </span>
+                  @if (i < f.members.length - 1) { <span class="member-sep">·</span> }
+                }
+              </div>
             </td>
           </ng-container>
 
@@ -447,68 +455,20 @@
         </table>
       </div>
 
+      <mat-paginator
+        [length]="filteredFamilies().length"
+        [pageSize]="familyPageSize"
+        [pageIndex]="familyPage()"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="familyPage.set($event.pageIndex)"
+        hidePageSize
+      />
+
       @if (filteredFamilies().length === 0) {
         <p class="empty-state">Sin resultados para "{{ familyFilter() }}".</p>
       }
     } @else if (!loading()) {
       <p class="empty-state">No hay grupos familiares registrados.</p>
     }
-  </section>
-
-  <mat-divider />
-
-  <!-- ── Import Grupos Familiares ──────────────────────────────────── -->
-  <section class="section">
-    <div class="section-header">
-      <h3 class="section-header__title">Importar grupos familiares</h3>
-    </div>
-    <mat-card class="form-card">
-      <p class="import-hint">
-        Seleccioná el archivo Excel de socios por grupo familiar. Los miembros se ordenan por DNI ascendente
-        (mayor edad primero). Solo se crean grupos con al menos 2 jugadores encontrados en el sistema.
-        Los grupos ya existentes por nombre se omiten.
-      </p>
-
-      <div class="import-actions">
-        <button mat-stroked-button type="button" (click)="familyImportInput.click()">
-          <mat-icon>upload_file</mat-icon>
-          {{ familyImportFileName() || 'Seleccionar archivo Excel' }}
-        </button>
-        <input #familyImportInput type="file" accept=".xlsx,.xls" hidden (change)="onFamilyImportFileChange($event)" />
-
-        @if (familyImportGroups().length > 0) {
-          <span class="import-preview">{{ familyImportGroups().length }} grupos leídos</span>
-          <button
-            mat-flat-button
-            color="primary"
-            type="button"
-            [disabled]="familyImporting()"
-            (click)="runFamilyImport()"
-          >
-            @if (familyImporting()) { Importando… } @else { Importar grupos }
-          </button>
-        }
-      </div>
-
-      @if (familyImportResult(); as res) {
-        <div class="import-result">
-          <span class="import-result__item import-result__item--ok">
-            <mat-icon>check_circle</mat-icon> {{ res.created }} grupos creados
-          </span>
-          <span class="import-result__item">
-            <mat-icon>skip_next</mat-icon> {{ res.skipped }} omitidos
-          </span>
-          @if (res.notFound.length > 0) {
-            <span class="import-result__item import-result__item--warn">
-              <mat-icon>warning</mat-icon> {{ res.notFound.length }} DNIs no encontrados
-            </span>
-          }
-        </div>
-      }
-
-      @if (familyImporting()) {
-        <mat-progress-bar mode="indeterminate" />
-      }
-    </mat-card>
   </section>
 </div>

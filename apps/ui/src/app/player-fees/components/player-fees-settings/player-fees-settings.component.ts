@@ -3,8 +3,14 @@ import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } fr
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-import { debounceTime, switchMap } from 'rxjs/operators';
+import { debounceTime, filter, switchMap } from 'rxjs/operators';
 import { of, Subject } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../../../common/components/confirm-dialog/confirm-dialog.component';
+import {
+  ImportFamilyGroupsDialogComponent,
+  ImportFamilyGroupsDialogResult,
+} from '../import-family-groups-dialog/import-family-groups-dialog.component';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -23,7 +29,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { DecimalPipe, DatePipe } from '@angular/common';
-import { CategoryEnum, IFamilyGroup, IPlayerFeeConfig, Player, SportEnum } from '@ltrc-campo/shared-api-model';
+import { CategoryEnum, IFamilyGroup, IPlayerFeeConfig, Player, SportEnum, toTitleCase } from '@ltrc-campo/shared-api-model';
 import { categoryOptions, getCategoryLabel, getCategoryOptionsBySport } from '../../../common/category-options';
 import { sportOptions } from '../../../common/sport-options';
 import { PlayerFeesAdminService, PlayerFeeConfigPayload, BduarRow } from '../../services/player-fees-admin.service';
@@ -63,6 +69,7 @@ export class PlayerFeesSettingsComponent implements OnInit {
   private readonly adminService = inject(PlayerFeesAdminService);
   private readonly playersService = inject(PlayersService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   readonly sportOptions = sportOptions;
   readonly categoryOptions = categoryOptions;
@@ -115,14 +122,24 @@ export class PlayerFeesSettingsComponent implements OnInit {
 
   // Family table
   familyFilter = signal('');
+  familyPage = signal(0);
+  readonly familyPageSize = 20;
 
   readonly filteredFamilies = computed(() => {
     const term = this.familyFilter().toLowerCase().trim();
     if (!term) return this.families();
     return this.families().filter(f =>
       f.name.toLowerCase().includes(term) ||
-      f.members.some(m => m.playerName?.toLowerCase().includes(term))
+      f.members.some(m =>
+        m.playerName?.toLowerCase().includes(term) ||
+        m.playerDni?.toLowerCase().includes(term)
+      )
     );
+  });
+
+  readonly pagedFamilies = computed(() => {
+    const page = this.familyPage();
+    return this.filteredFamilies().slice(page * this.familyPageSize, (page + 1) * this.familyPageSize);
   });
 
   // Family form
@@ -169,7 +186,7 @@ export class PlayerFeesSettingsComponent implements OnInit {
 
     this.adminService.getFamilies()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: (f) => this.families.set(f), error: () => {} });
+      .subscribe({ next: (f) => { this.families.set(f); this.familyPage.set(0); }, error: () => {} });
   }
 
   // ── Configs ───────────────────────────────────────────────────────────────
@@ -345,9 +362,11 @@ export class PlayerFeesSettingsComponent implements OnInit {
     member.patchValue({ playerId: player.id, playerName: player.name ?? player.nickName ?? '' });
   }
 
-  memberDisplayFn(member: FormGroup): string {
-    return member.get('playerName')?.value ?? '';
-  }
+  readonly displayPlayerName = (player: Player | string | null): string => {
+    if (!player) return '';
+    if (typeof player === 'string') return player;
+    return player.name ?? player.nickName ?? '';
+  };
 
   saveFamily(): void {
     if (this.familyForm.invalid) return;
@@ -379,10 +398,26 @@ export class PlayerFeesSettingsComponent implements OnInit {
     });
   }
 
+  readonly toTitleCase = toTitleCase;
+
+  onFamilyFilterChange(value: string): void {
+    this.familyFilter.set(value);
+    this.familyPage.set(0);
+  }
+
   deleteFamily(family: IFamilyGroup): void {
-    if (!confirm(`¿Eliminar grupo "${family.name}"?`)) return;
-    this.adminService.deleteFamily(family.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Eliminar grupo familiar',
+        message: `¿Eliminar el grupo "${family.name}"? Esta acción no se puede deshacer.`,
+        confirmLabel: 'Eliminar',
+      },
+    }).afterClosed()
+      .pipe(
+        filter(Boolean),
+        switchMap(() => this.adminService.deleteFamily(family.id)),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe({
         next: () => this.families.update(list => list.filter(f => f.id !== family.id)),
         error: () => this.snackBar.open('Error al eliminar', 'Cerrar', { duration: 3000 }),
@@ -445,6 +480,8 @@ export class PlayerFeesSettingsComponent implements OnInit {
     estatura: 'estatura', altura: 'estatura',
     email: 'email', 'e-mail': 'email', correo: 'email',
     'o. social': 'oSocial', osocial: 'oSocial', 'obra social': 'oSocial',
+    'g.sang.': 'grupoSanguineo', 'g. sang.': 'grupoSanguineo', 'grupo sanguineo': 'grupoSanguineo', 'grupo sanguíneo': 'grupoSanguineo', gsang: 'grupoSanguineo',
+    'f.fichaje': 'fechaFichaje', 'f. fichaje': 'fechaFichaje', 'fecha fichaje': 'fechaFichaje', fechafichaje: 'fechaFichaje',
     estado: 'estado', habilitacion: 'estado', habilitación: 'estado',
   };
 
@@ -499,70 +536,12 @@ export class PlayerFeesSettingsComponent implements OnInit {
       });
   }
 
-  // ── Import Grupos Familiares ──────────────────────────────────────────────
-
-  familyImportFileName = signal('');
-  familyImportGroups = signal<{ name: string; dnis: string[] }[]>([]);
-  familyImporting = signal(false);
-  familyImportResult = signal<{ total: number; created: number; skipped: number; notFound: string[] } | null>(null);
-
-  onFamilyImportFileChange(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    this.familyImportFileName.set(file.name);
-    this.familyImportGroups.set([]);
-    this.familyImportResult.set(null);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const data = new Uint8Array(e.target!.result as ArrayBuffer);
-      const wb = XLSX.read(data, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1 }) as unknown[][];
-
-      // Group by "Grupo Familiar" column (index 3), collect DNIs (index 1)
-      const groupMap = new Map<string, string[]>();
-      for (let i = 1; i < raw.length; i++) {
-        const row = raw[i] as unknown[];
-        const dni = String(row[1] ?? '').trim();
-        const grupo = String(row[3] ?? '').trim();
-        if (!dni || !grupo) continue;
-        if (!groupMap.has(grupo)) groupMap.set(grupo, []);
-        groupMap.get(grupo)!.push(dni);
-      }
-
-      // Sort each group's DNIs ascending (lower DNI = older person)
-      const groups: { name: string; dnis: string[] }[] = [];
-      for (const [name, dnis] of groupMap) {
-        if (dnis.length >= 2) {
-          groups.push({ name, dnis: [...dnis].sort((a, b) => Number(a) - Number(b)) });
-        }
-      }
-
-      this.familyImportGroups.set(groups);
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  runFamilyImport(): void {
-    const groups = this.familyImportGroups();
-    if (!groups.length) return;
-    this.familyImporting.set(true);
-    this.familyImportResult.set(null);
-    this.adminService.importFamilyGroups(groups)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.familyImportResult.set(res);
-          this.familyImporting.set(false);
-          this.familyImportGroups.set([]);
-          this.familyImportFileName.set('');
-          if (res.created > 0) this.loadAll();
-        },
-        error: () => {
-          this.familyImporting.set(false);
-          this.snackBar.open('Error al importar grupos familiares', 'Cerrar', { duration: 4000 });
-        },
+  openImportFamilyDialog(): void {
+    this.dialog
+      .open(ImportFamilyGroupsDialogComponent, { width: '480px', maxWidth: '95vw' })
+      .afterClosed()
+      .subscribe((result: ImportFamilyGroupsDialogResult | undefined) => {
+        if (result?.created) this.loadAll();
       });
   }
 }

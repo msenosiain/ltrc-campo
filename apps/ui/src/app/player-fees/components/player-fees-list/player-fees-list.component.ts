@@ -62,8 +62,9 @@ export class PlayerFeesListComponent implements OnInit {
   filterForm: FormGroup = this.fb.group({
     season: [this.currentSeason()],
     sport: [null as SportEnum | null],
-    category: [null as CategoryEnum | null],
   });
+
+  categoryFilter = signal<CategoryEnum[]>([]);
 
   private readonly selectedSport = signal<SportEnum | null>(null);
 
@@ -79,40 +80,57 @@ export class PlayerFeesListComponent implements OnInit {
 
   rows = signal<IPlayerFeeStatusRow[]>([]);
   nameFilter = signal('');
+  feePaidFilter = signal<boolean | null>(null);
+  membershipFilter = signal<boolean | null>(null);
+  bduarFilter = signal<boolean | null>(null);
+  coursesFilter = signal<boolean | null>(null);
+  solidarityFilter = signal<boolean | null>(null);
+  eligibleFilter = signal<boolean | null>(null);
   loading = signal(false);
   configs = signal<IPlayerFeeConfig[]>([]);
 
   readonly filteredRows = computed(() => {
     const term = this.nameFilter().toLowerCase().trim();
-    if (!term) return this.rows();
-    return this.rows().filter(r =>
-      r.playerName?.toLowerCase().includes(term) ||
-      r.playerDni?.includes(term)
-    );
+    const feePaid = this.feePaidFilter();
+    const membership = this.membershipFilter();
+    const bduar = this.bduarFilter();
+    const courses = this.coursesFilter();
+    const solidarity = this.solidarityFilter();
+    const eligible = this.eligibleFilter();
+    return this.rows().filter(r => {
+      if (term && !r.playerName?.toLowerCase().includes(term) && !r.playerDni?.includes(term)) return false;
+      if (feePaid !== null && r.feePaid !== feePaid) return false;
+      if (membership !== null && r.membershipCurrent !== membership) return false;
+      if (bduar !== null && r.bduarRegistered !== bduar) return false;
+      if (courses !== null && r.coursesApproved !== undefined && r.coursesApproved !== courses) return false;
+      if (solidarity !== null && r.solidarityFundPaid !== undefined && r.solidarityFundPaid !== solidarity) return false;
+      if (eligible !== null && r.eligible !== eligible) return false;
+      return true;
+    });
   });
 
   readonly stats = computed(() => {
     const all = this.filteredRows();
     return {
       total: all.length,
-      pagados: all.filter(r => r.feePaid).length,
-      habilitados: all.filter(r => r.habilitado).length,
+      paid: all.filter(r => r.feePaid).length,
+      eligible: all.filter(r => r.eligible).length,
     };
   });
 
   readonly hasCursos = computed(() =>
-    this.filteredRows().some(r => r.cursosAprobados !== undefined)
+    this.filteredRows().some(r => r.coursesApproved !== undefined)
   );
 
   readonly hasFondoSolidario = computed(() =>
-    this.filteredRows().some(r => r.fondoSolidarioPagado !== undefined)
+    this.filteredRows().some(r => r.solidarityFundPaid !== undefined)
   );
 
   readonly displayedColumns = computed(() => {
-    const cols = ['player', 'category', 'cuotaAlDia', 'feePaid', 'fichajeBDUAR'];
-    if (this.hasCursos()) cols.push('cursosAprobados');
-    if (this.hasFondoSolidario()) cols.push('fondoSolidarioPagado');
-    cols.push('habilitado');
+    const cols = ['player', 'category', 'membershipCurrent', 'feePaid', 'bduarRegistered'];
+    if (this.hasCursos()) cols.push('coursesApproved');
+    if (this.hasFondoSolidario()) cols.push('solidarityFundPaid');
+    cols.push('eligible');
     return cols;
   });
 
@@ -149,9 +167,12 @@ export class PlayerFeesListComponent implements OnInit {
   onSportChange(): void {
     const sport = this.filterForm.get('sport')?.value as SportEnum | null;
     this.selectedSport.set(sport);
-    const currentCat = this.filterForm.get('category')?.value;
-    if (currentCat && !this.availableCategories().some((c: CategoryOption) => c.id === currentCat)) {
-      this.filterForm.get('category')?.setValue(null, { emitEvent: false });
+    const currentCats = this.filterForm.get('category')?.value as CategoryEnum[];
+    if (currentCats?.length) {
+      const valid = currentCats.filter(c => this.availableCategories().some(o => o.id === c));
+      if (valid.length !== currentCats.length) {
+        this.filterForm.get('category')?.setValue(valid, { emitEvent: false });
+      }
     }
     this.rows.set([]);
     this.search();
@@ -166,7 +187,8 @@ export class PlayerFeesListComponent implements OnInit {
     const { season, sport, category } = this.filterForm.getRawValue();
     if (!season || !sport) return;
     if (!silent) this.loading.set(true);
-    this.adminService.getStatus({ season, sport, category: category ?? undefined })
+    const categories: CategoryEnum[] | undefined = category?.length ? category : undefined;
+    this.adminService.getStatus({ season, sport, categories })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => { this.rows.set(data); if (!silent) this.loading.set(false); },
@@ -177,7 +199,7 @@ export class PlayerFeesListComponent implements OnInit {
       });
   }
 
-  toggleRecord(row: IPlayerFeeStatusRow, field: keyof Pick<IPlayerFeeStatusRow, 'cuotaAlDia' | 'fichajeBDUAR' | 'cursosAprobados' | 'fondoSolidarioPagado'>, value: boolean): void {
+  toggleRecord(row: IPlayerFeeStatusRow, field: keyof Pick<IPlayerFeeStatusRow, 'membershipCurrent' | 'bduarRegistered' | 'coursesApproved' | 'solidarityFundPaid'>, value: boolean): void {
     const { season, sport } = this.filterForm.value;
     // Optimistic update
     this.rows.update(rows => rows.map(r => r.playerId === row.playerId ? { ...r, [field]: value } : r));

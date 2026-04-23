@@ -41,8 +41,8 @@ export class PlayerEligibilityEditorComponent implements OnChanges {
   loading = signal(false);
   saving = signal(false);
 
-  readonly hasCursos = computed(() => this.status()?.cursosAprobados !== undefined);
-  readonly hasFondo = computed(() => this.status()?.fondoSolidarioPagado !== undefined);
+  readonly hasCursos = computed(() => this.status()?.coursesApproved !== undefined);
+  readonly hasFondo = computed(() => this.status()?.solidarityFundPaid !== undefined);
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['playerId'] && this.playerId) {
@@ -65,7 +65,7 @@ export class PlayerEligibilityEditorComponent implements OnChanges {
     this.load();
   }
 
-  toggle(field: 'cuotaAlDia' | 'fichajeBDUAR' | 'cursosAprobados' | 'fondoSolidarioPagado', value: boolean): void {
+  toggle(field: 'membershipCurrent' | 'bduarRegistered' | 'coursesApproved' | 'solidarityFundPaid', value: boolean): void {
     this.status.update(s => s ? { ...s, [field]: value } : s);
     this.saving.set(true);
 

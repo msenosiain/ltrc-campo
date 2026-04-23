@@ -34,6 +34,7 @@ export interface IPlayerFeeConfig {
 export interface IFamilyGroupMember {
   playerId: string;
   playerName?: string;
+  playerDni?: string;
   order: number;
 }
 
@@ -74,12 +75,13 @@ export interface IPlayerSeasonRecord {
   playerId: string;
   season: string;
   sport: SportEnum;
-  cuotaAlDia: boolean;
-  fichajeBDUAR: boolean;
-  cursosAprobados: boolean;
-  cursosFecha?: Date;
-  fondoSolidarioPagado: boolean;
-  fondoSolidarioFecha?: Date;
+  membershipCurrent: boolean;
+  bduarRegistered: boolean;
+  bduarRegistrationDate?: Date;
+  coursesApproved: boolean;
+  coursesDate?: Date;
+  solidarityFundPaid: boolean;
+  solidarityFundDate?: Date;
   notes?: string;
   updatedBy?: string;
   updatedAt?: Date;
@@ -118,11 +120,11 @@ export interface IPlayerFeeStatusRow {
   feePaid: boolean;
   feeAmount?: number;
   feePaidAt?: Date;
-  // Habilitación
-  cuotaAlDia: boolean;
-  fichajeBDUAR: boolean;
-  cursosAprobados?: boolean;       // solo M15→PS rugby
-  fondoSolidarioPagado?: boolean;  // solo M15→PS rugby
-  // Estado general
-  habilitado: boolean;
+  // Eligibility
+  membershipCurrent: boolean;
+  bduarRegistered: boolean;
+  coursesApproved?: boolean;       // solo M15→PS rugby
+  solidarityFundPaid?: boolean;    // solo M15→PS rugby
+  // Overall status
+  eligible: boolean;
 }

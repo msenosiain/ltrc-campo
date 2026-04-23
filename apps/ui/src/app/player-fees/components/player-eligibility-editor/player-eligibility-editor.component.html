@@ -10,9 +10,9 @@
     </mat-form-field>
 
     @if (status()) {
-      <span class="eligibility-badge" [class.eligibility-badge--ok]="status()!.habilitado">
-        <mat-icon>{{ status()!.habilitado ? 'verified' : 'cancel' }}</mat-icon>
-        {{ status()!.habilitado ? 'Habilitado' : 'No habilitado' }}
+      <span class="eligibility-badge" [class.eligibility-badge--ok]="status()!.eligible">
+        <mat-icon>{{ status()!.eligible ? 'verified' : 'cancel' }}</mat-icon>
+        {{ status()!.eligible ? 'Habilitado' : 'No habilitado' }}
       </span>
     }
   </div>
@@ -23,9 +23,9 @@
     <div class="eligibility-checks">
       <label class="eligibility-check">
         <mat-checkbox
-          [checked]="status()?.cuotaAlDia ?? false"
+          [checked]="status()?.membershipCurrent ?? false"
           [disabled]="saving()"
-          (change)="toggle('cuotaAlDia', $event.checked)"
+          (change)="toggle('membershipCurrent', $event.checked)"
         />
         <span class="eligibility-check__label">Cuota al día</span>
       </label>
@@ -40,19 +40,19 @@
 
       <label class="eligibility-check">
         <mat-checkbox
-          [checked]="status()?.fichajeBDUAR ?? false"
+          [checked]="status()?.bduarRegistered ?? false"
           [disabled]="saving()"
-          (change)="toggle('fichajeBDUAR', $event.checked)"
+          (change)="toggle('bduarRegistered', $event.checked)"
         />
-        <span class="eligibility-check__label">BDUAR / Ficha médica</span>
+        <span class="eligibility-check__label">Ficha Médica</span>
       </label>
 
       @if (hasCursos()) {
         <label class="eligibility-check">
           <mat-checkbox
-            [checked]="status()?.cursosAprobados ?? false"
+            [checked]="status()?.coursesApproved ?? false"
             [disabled]="saving()"
-            (change)="toggle('cursosAprobados', $event.checked)"
+            (change)="toggle('coursesApproved', $event.checked)"
           />
           <span class="eligibility-check__label">Cursos obligatorios</span>
         </label>
@@ -61,9 +61,9 @@
       @if (hasFondo()) {
         <label class="eligibility-check">
           <mat-checkbox
-            [checked]="status()?.fondoSolidarioPagado ?? false"
+            [checked]="status()?.solidarityFundPaid ?? false"
             [disabled]="saving()"
-            (change)="toggle('fondoSolidarioPagado', $event.checked)"
+            (change)="toggle('solidarityFundPaid', $event.checked)"
           />
           <span class="eligibility-check__label">Fondo solidario</span>
         </label>

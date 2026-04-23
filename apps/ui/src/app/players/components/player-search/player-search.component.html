@@ -37,13 +37,12 @@
     @if (availableCategories().length > 1) {
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>Categoría</mat-label>
-      <mat-select formControlName="category">
-        <mat-option [value]="undefined">Todas</mat-option>
+      <mat-select formControlName="category" multiple>
         @for (cat of availableCategories(); track cat.id) {
         <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
         }
       </mat-select>
-      @if (searchForm.get('category')?.value) {
+      @if (searchForm.get('category')?.value?.length) {
       <button mat-icon-button matSuffix type="button" (click)="clearField('category')">
         <mat-icon>close</mat-icon>
       </button>
@@ -125,5 +124,21 @@
       </button>
       }
     </mat-form-field>
+
+    @if (searchForm.get('sport')?.value) {
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Habilitación</mat-label>
+      <mat-select formControlName="eligible">
+        <mat-option [value]="undefined">Todos</mat-option>
+        <mat-option [value]="true">Habilitados</mat-option>
+        <mat-option [value]="false">No habilitados</mat-option>
+      </mat-select>
+      @if (searchForm.get('eligible')?.value !== undefined) {
+      <button mat-icon-button matSuffix type="button" (click)="clearField('eligible')">
+        <mat-icon>close</mat-icon>
+      </button>
+      }
+    </mat-form-field>
+    }
   </div>
 </form>

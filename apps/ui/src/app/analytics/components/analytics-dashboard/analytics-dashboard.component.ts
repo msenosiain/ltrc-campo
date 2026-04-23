@@ -100,10 +100,10 @@ export class AnalyticsDashboardComponent implements OnInit {
         cat: cat as CategoryEnum,
         label: getCategoryLabel(cat as CategoryEnum),
         total: d.total,
-        pagados: d.pagados,
-        habilitados: d.habilitados,
-        pctPagados: d.total > 0 ? Math.round((d.pagados / d.total) * 100) : 0,
-        pctHab: d.total > 0 ? Math.round((d.habilitados / d.total) * 100) : 0,
+        paid: d.paid,
+        eligible: d.eligible,
+        pctPaid: d.total > 0 ? Math.round((d.paid / d.total) * 100) : 0,
+        pctEligible: d.total > 0 ? Math.round((d.eligible / d.total) * 100) : 0,
       }))
       .sort((a, b) => a.label.localeCompare(b.label, 'es'));
   });

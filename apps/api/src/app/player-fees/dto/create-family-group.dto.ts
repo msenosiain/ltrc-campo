@@ -6,8 +6,8 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { SportEnum } from '@ltrc-campo/shared-api-model';
+import { Transform, Type } from 'class-transformer';
+import { SportEnum, toTitleCase } from '@ltrc-campo/shared-api-model';
 
 class FamilyMemberDto {
   @IsString() @IsNotEmpty() playerId!: string;
@@ -15,7 +15,7 @@ class FamilyMemberDto {
 }
 
 export class CreateFamilyGroupDto {
-  @IsString() @IsNotEmpty() name!: string;
+  @IsString() @IsNotEmpty() @Transform(({ value }) => toTitleCase(value)) name!: string;
   @IsEnum(SportEnum) sport!: SportEnum;
 
   @IsArray() @ValidateNested({ each: true }) @Type(() => FamilyMemberDto)

@@ -12,6 +12,8 @@ export class BduarRowDto {
   @IsOptional() @IsString() estatura?: string;
   @IsOptional() @IsString() email?: string;
   @IsOptional() @IsString() oSocial?: string;
+  @IsOptional() @IsString() grupoSanguineo?: string;
+  @IsOptional() @IsString() fechaFichaje?: string;
   @IsOptional() @IsString() estado?: string;
 }
 

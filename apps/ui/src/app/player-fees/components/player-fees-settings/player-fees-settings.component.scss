@@ -299,14 +299,17 @@
 
 .families-table {
   width: 100%;
+
+  td.mat-mdc-cell {
+    vertical-align: middle;
+  }
 }
 
-.members-cell {
+.members-cell-inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  padding: 6px 0;
 }
 
 .member-inline {
