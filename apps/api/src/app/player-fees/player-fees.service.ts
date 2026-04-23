@@ -93,9 +93,11 @@ export class PlayerFeesService {
     private readonly playerModel: Model<PlayerEntity>,
     private readonly configService: ConfigService,
   ) {
-    this.mpFeeRate = parseFloat(
-      this.configService.get<string>('MP_FEE_RATE') ?? '0.0599'
+    const rawRate = parseFloat(
+      this.configService.get<string>('MP_FEE_RATE') ?? '0.05'
     );
+    // Si viene como porcentaje (ej: 5) en lugar de decimal (0.05), convertir
+    this.mpFeeRate = rawRate > 1 ? rawRate / 100 : rawRate;
     this.mpClient = new MercadoPagoConfig({
       accessToken: this.configService.get<string>('MP_ACCESS_TOKEN', ''),
     });
