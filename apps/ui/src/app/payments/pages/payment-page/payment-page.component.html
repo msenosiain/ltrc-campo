@@ -158,7 +158,7 @@
               type="button"
               class="full-width"
               [disabled]="state === 'redirecting'"
-              (click)="state = 'ready'; errorMessage = ''"
+              (click)="resetDni()"
             >
               No soy yo — cambiar DNI
             </button>

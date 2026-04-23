@@ -95,6 +95,7 @@ export class PaymentPageComponent implements OnInit {
     this.dniControl.reset();
     this.dniRejected = false;
     this.errorMessage = '';
+    this.state = 'ready';
   }
 
   pay() {
