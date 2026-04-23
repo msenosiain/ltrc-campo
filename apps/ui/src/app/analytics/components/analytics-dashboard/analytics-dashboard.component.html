@@ -209,5 +209,104 @@
       </div>
     </section>
 
+    <!-- ── Sección Derechos de Jugador ── -->
+    <section class="analytics__section">
+      <h2 class="analytics__section-title">Derechos de Jugador</h2>
+      <div class="fee-controls">
+        <mat-form-field appearance="outline" class="fee-control-field">
+          <mat-label>Temporada</mat-label>
+          <mat-select [value]="feeSeason()" (selectionChange)="feeSeason.set($event.value); loadFeeStats()">
+            @for (s of feeSeasonOptions; track s) {
+              <mat-option [value]="s">{{ s }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-button-toggle-group [value]="feeSportFilter()" (change)="feeSportFilter.set($event.value); loadFeeStats()">
+          <mat-button-toggle [value]="SportEnum.RUGBY">Rugby</mat-button-toggle>
+          <mat-button-toggle [value]="SportEnum.HOCKEY">Hockey</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+
+      @if (feeStatsLoading()) {
+        <div class="analytics__loading"><mat-spinner diameter="36" /></div>
+      } @else if (feeStats(); as stats) {
+        <div class="kpi-grid fee-kpi-grid">
+          <div class="kpi-card kpi-card--blue">
+            <span class="kpi-card__label">Total jugadores</span>
+            <span class="kpi-card__value">{{ stats.total }}</span>
+          </div>
+          <div class="kpi-card" [class.kpi-card--green]="stats.total > 0 && stats.paid === stats.total"
+                                [class.kpi-card--orange]="stats.total > 0 && stats.paid < stats.total">
+            <span class="kpi-card__label">Derecho pagado</span>
+            <span class="kpi-card__value">{{ stats.paid }}</span>
+            <span class="kpi-card__sub">
+              {{ stats.total > 0 ? (stats.paid / stats.total * 100 | number:'1.0-0') : 0 }}% del total
+            </span>
+          </div>
+          <div class="kpi-card" [class.kpi-card--green]="stats.total > 0 && stats.eligible === stats.total"
+                                [class.kpi-card--orange]="stats.total > 0 && stats.eligible < stats.total">
+            <span class="kpi-card__label">Habilitados</span>
+            <span class="kpi-card__value">{{ stats.eligible }}</span>
+            <span class="kpi-card__sub">
+              {{ stats.total > 0 ? (stats.eligible / stats.total * 100 | number:'1.0-0') : 0 }}% del total
+            </span>
+          </div>
+        </div>
+
+        @if (feeCategoryRows().length > 0) {
+          <div class="chart-card chart-card--full fee-table-card">
+            <div class="chart-card__header">
+              <span class="chart-card__title">Por categoría</span>
+            </div>
+            <div class="fee-table-wrapper">
+              <table class="fee-table">
+                <thead>
+                  <tr>
+                    <th>Categoría</th>
+                    <th class="fee-col-num">Total</th>
+                    <th class="fee-col-num">Pagados</th>
+                    <th class="fee-col-pct">%</th>
+                    <th class="fee-col-num">Habilitados</th>
+                    <th class="fee-col-pct">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of feeCategoryRows(); track row.cat) {
+                    <tr>
+                      <td class="fee-cat-label">{{ row.label }}</td>
+                      <td class="fee-col-num">{{ row.total }}</td>
+                      <td class="fee-col-num">{{ row.paid }}</td>
+                      <td class="fee-col-pct">
+                        <span class="fee-pct-bar">
+                          <span class="fee-pct-bar__fill"
+                            [style.width.%]="row.pctPaid"
+                            [class.fee-pct-bar__fill--full]="row.pctPaid === 100">
+                          </span>
+                          <span class="fee-pct-bar__label">{{ row.pctPaid }}%</span>
+                        </span>
+                      </td>
+                      <td class="fee-col-num">{{ row.eligible }}</td>
+                      <td class="fee-col-pct">
+                        <span class="fee-pct-bar">
+                          <span class="fee-pct-bar__fill"
+                            [style.width.%]="row.pctEligible"
+                            [class.fee-pct-bar__fill--full]="row.pctEligible === 100">
+                          </span>
+                          <span class="fee-pct-bar__label">{{ row.pctEligible }}%</span>
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        } @else {
+          <p class="analytics__empty">Sin datos para {{ feeSeason() }}. Verificá que haya una configuración activa.</p>
+        }
+      }
+    </section>
+
   }
 </div>

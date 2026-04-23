@@ -1,5 +1,6 @@
 import { Document, Types } from 'mongoose';
 import {
+  BloodTypeEnum,
   CategoryEnum,
   ClothingSizesEnum,
   HockeyBranchEnum,
@@ -41,6 +42,7 @@ export class PlayerEntity extends Document {
     weight?: number;
     torgIndex?: number;
     healthInsurance?: string;
+    bloodType?: BloodTypeEnum;
   };
   parentContacts?: {
     name: string;

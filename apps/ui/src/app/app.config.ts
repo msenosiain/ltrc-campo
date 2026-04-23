@@ -11,6 +11,8 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import localeEsAr from '@angular/common/locales/es-AR';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
+import { MAT_DATEPICKER_SCROLL_STRATEGY } from '@angular/material/datepicker';
+import { Overlay } from '@angular/cdk/overlay';
 import { MatPaginatorIntl } from '@angular/material/paginator';
 import { provideDateFnsAdapter } from '@angular/material-date-fns-adapter';
 import { es } from 'date-fns/locale';
@@ -62,6 +64,11 @@ export const appConfig: ApplicationConfig = {
     { provide: LOCALE_ID, useValue: 'es-AR' },
     { provide: MAT_DATE_LOCALE, useValue: es },
     { provide: MatPaginatorIntl, useFactory: getEsArPaginatorIntl },
+    {
+      provide: MAT_DATEPICKER_SCROLL_STRATEGY,
+      deps: [Overlay],
+      useFactory: (overlay: Overlay) => () => overlay.scrollStrategies.reposition(),
+    },
     provideCharts(withDefaultRegisterables()),
     provideDateFnsAdapter({
       parse: {

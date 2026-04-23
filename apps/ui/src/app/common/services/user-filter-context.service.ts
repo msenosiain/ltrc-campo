@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
-import { Observable, map, shareReplay } from 'rxjs';
+import { inject, Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { map, Observable, shareReplay } from 'rxjs';
 import {
   CategoryEnum,
   HockeyBranchEnum,
@@ -29,6 +29,15 @@ export interface FilterContext {
   branchOptions: BranchOption[];
   forcedBranch?: HockeyBranchEnum;
 }
+
+const initialContext: FilterContext = {
+  showSportFilter: true,
+  sportOptions,
+  showCategoryFilter: true,
+  categoryOptions,
+  showBranchFilter: true,
+  branchOptions,
+};
 
 @Injectable({ providedIn: 'root' })
 export class UserFilterContextService {

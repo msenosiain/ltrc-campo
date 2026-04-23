@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   HostListener,
   inject,
   OnInit,
@@ -38,10 +39,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { DatePipe } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
 import { AvailabilityDialogComponent, AvailabilityDialogResult } from '../availability-dialog/availability-dialog.component';
+import { PlayerFeesAdminService } from '../../../player-fees/services/player-fees-admin.service';
+import { IPlayerFeeStatusRow } from '@ltrc-campo/shared-api-model';
 
 @Component({
   selector: 'ltrc-player-viewer',
@@ -53,6 +58,8 @@ import { AvailabilityDialogComponent, AvailabilityDialogResult } from '../availa
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
+    MatSelectModule,
+    MatFormFieldModule,
     DatePipe,
     AllowedRolesDirective,
   ],
@@ -68,14 +75,28 @@ export class PlayerViewerComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly playerFeesService = inject(PlayerFeesAdminService);
 
   RoleEnum = RoleEnum;
   readonly PlayerStatusEnum = PlayerStatusEnum;
+  readonly SportEnum = SportEnum;
   player?: Player;
   loading = signal(false);
+
+  private readonly currentUser = toSignal(this.authService.user$);
+  readonly isAdmin = computed(() => {
+    const user = this.currentUser();
+    return !!user?.roles?.includes(RoleEnum.ADMIN);
+  });
   matchHistory: Match[] = [];
   matchHistoryLoading = signal(false);
   isOwnProfile = signal(false);
+  eligibilityStatus = signal<IPlayerFeeStatusRow | null>(null);
+  readonly fichajeSeasonOptions = (() => {
+    const y = new Date().getFullYear();
+    return [String(y + 1), String(y), String(y - 1)];
+  })();
+  fichajeSeason = signal(String(new Date().getFullYear()));
 
   ngOnInit(): void {
     const playerId = this.route.snapshot.paramMap.get('id');
@@ -95,6 +116,7 @@ export class PlayerViewerComponent implements OnInit {
           this.loading.set(false);
           this.loadMatchHistory(playerId);
           this.checkOwnProfile(player);
+          this.loadFeeStatus(playerId);
         },
         error: () => { this.loading.set(false); this.router.navigate(['/players']); },
       });
@@ -127,6 +149,20 @@ export class PlayerViewerComponent implements OnInit {
       },
       error: () => { this.matchHistoryLoading.set(false); },
     });
+  }
+
+  onFichajeSeason(season: string): void {
+    this.fichajeSeason.set(season);
+    if (this.player?.id) this.loadFeeStatus(this.player.id);
+  }
+
+  private loadFeeStatus(playerId: string): void {
+    this.playerFeesService.getPlayerStatus(playerId, this.fichajeSeason())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => this.eligibilityStatus.set(rows[0] ?? null),
+        error: () => {},
+      });
   }
 
   openAvailabilityDialog(): void {

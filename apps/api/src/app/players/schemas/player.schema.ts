@@ -1,6 +1,7 @@
 import { Schema, Types } from 'mongoose';
 import { PlayerEntity } from './player.entity';
 import {
+  BloodTypeEnum,
   CategoryEnum,
   ClothingSizesEnum,
   HockeyBranchEnum,
@@ -47,6 +48,7 @@ const MedicalDataSchema = new Schema(
     weight: Number,
     torgIndex: Number,
     healthInsurance: String,
+    bloodType: { type: String, enum: Object.values(BloodTypeEnum) },
   },
   { _id: false }
 );

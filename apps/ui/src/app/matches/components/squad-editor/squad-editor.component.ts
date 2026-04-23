@@ -59,6 +59,7 @@ import {
   SaveSquadTemplateDialogResult,
 } from '../save-squad-template-dialog/save-squad-template-dialog.component';
 import { SquadPdfService } from '../../services/squad-pdf.service';
+import { PlayerFeesAdminService } from '../../../player-fees/services/player-fees-admin.service';
 
 @Component({
   selector: 'ltrc-squad-editor',
@@ -90,8 +91,10 @@ export class SquadEditorComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly squadPdf = inject(SquadPdfService);
+  private readonly playerFeesService = inject(PlayerFeesAdminService);
 
   match?: Match;
+  private eligiblePlayerIds = new Set<string>();
   squadRows: SquadEntry[] = [];
   isDirty = false;
   saving = false;
@@ -225,6 +228,7 @@ export class SquadEditorComponent implements OnInit {
           this.squadRows = [...(match.squad ?? [])];
           this.addForm.get('shirtNumber')!.setValue(this.nextShirtNumber());
           this.loadSquads();
+          this.loadEligiblePlayers(match);
         },
         error: () => this.router.navigate(['/dashboard/matches']),
       });
@@ -256,7 +260,10 @@ export class SquadEditorComponent implements OnInit {
       .subscribe(({ result, matchedPosition }) => {
         this.searchingPlayers = false;
         const existingIds = new Set(this.squadRows.map((e) => e.player?.id));
-        let players = result.items.filter((p) => !existingIds.has(p.id));
+        let players = result.items.filter((p) =>
+          !existingIds.has(p.id) &&
+          (this.eligiblePlayerIds.size === 0 || this.eligiblePlayerIds.has(p.id!))
+        );
         if (matchedPosition) {
           players = [...players].sort((a, b) => {
             const aFirst = a.positions?.[0] === matchedPosition ? 0 : 1;
@@ -415,6 +422,20 @@ export class SquadEditorComponent implements OnInit {
           this.saving = false;
         },
         error: () => (this.saving = false),
+      });
+  }
+
+  private loadEligiblePlayers(match: Match): void {
+    const sport = (match.tournament as Tournament | undefined)?.sport ?? match.sport;
+    if (!sport) return;
+    const season = String(new Date((match as any).date).getFullYear());
+    this.playerFeesService.getStatus({ season, sport })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => {
+          this.eligiblePlayerIds = new Set(rows.filter(r => r.eligible).map(r => r.playerId));
+        },
+        error: () => {},
       });
   }
 

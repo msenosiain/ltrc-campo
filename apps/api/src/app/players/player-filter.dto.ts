@@ -59,4 +59,9 @@ export class PlayerFiltersDto {
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   noPosition?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  playerIds?: string[];
 }

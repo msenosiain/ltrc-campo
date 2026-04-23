@@ -1,0 +1,182 @@
+<div class="fee-page">
+  <mat-card class="fee-card">
+    <mat-card-header class="club-header">
+      <img src="/escudo.png" alt="Escudo Los Tordos RC" class="club-crest" />
+      <div>
+        <mat-card-title>Los Tordos Rugby Club</mat-card-title>
+        <mat-card-subtitle>Derecho de Jugador</mat-card-subtitle>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+
+      @if (state === 'loading') {
+        <div class="center">
+          <mat-spinner diameter="40" />
+          <p>Cargando información...</p>
+        </div>
+      }
+
+      @if (state === 'expired') {
+        <div class="status-message status-message--expired">
+          <span class="status-icon">⏱</span>
+          <p>{{ errorMessage }}</p>
+        </div>
+      }
+
+      @if (state === 'error') {
+        <div class="status-message status-message--error">
+          <span class="status-icon">✗</span>
+          <p>{{ errorMessage }}</p>
+        </div>
+      }
+
+      @if (linkInfo && state !== 'loading' && state !== 'expired' && state !== 'error') {
+        <div class="fee-info">
+          <p class="season-label">Temporada {{ linkInfo.season }}</p>
+          <p class="concept">{{ linkInfo.label }}</p>
+          @if (linkInfo.description) {
+            <p class="description">{{ linkInfo.description }}</p>
+          }
+          <p class="expires">Vence: {{ linkInfo.expiresAt | date:'dd/MM/yyyy' }}</p>
+        </div>
+
+        <mat-divider />
+
+        @if (state === 'ready' || state === 'validating') {
+          <div class="dni-form">
+            <p class="dni-hint">Ingresá tu DNI para ver el monto y continuar con el pago.</p>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>DNI del jugador</mat-label>
+              <input
+                matInput
+                type="text"
+                inputmode="numeric"
+                [formControl]="dniControl"
+                placeholder="Sin puntos"
+                autocomplete="off"
+                (keydown.enter)="validateDni()"
+              />
+              @if (dniControl.hasError('required')) {
+                <mat-error>El DNI es obligatorio</mat-error>
+              }
+              @if (dniControl.hasError('minlength') || dniControl.hasError('pattern')) {
+                <mat-error>DNI inválido</mat-error>
+              }
+              @if (dniControl.hasError('notFound')) {
+                <mat-error>No se encontró un jugador con ese DNI</mat-error>
+              }
+            </mat-form-field>
+
+            @if (errorMessage) {
+              <p class="error-text">{{ errorMessage }}</p>
+            }
+
+            <button
+              mat-raised-button
+              color="primary"
+              class="full-width"
+              type="button"
+              [disabled]="dniControl.invalid || state === 'validating'"
+              (click)="validateDni()"
+            >
+              @if (state === 'validating') {
+                <mat-spinner diameter="20" />
+              } @else {
+                Continuar
+              }
+            </button>
+          </div>
+        }
+
+        @if (state === 'paid' && validateResult) {
+          <div class="already-paid">
+            <mat-icon class="paid-icon">check_circle</mat-icon>
+            <p class="paid-title">¡Ya registraste tu pago!</p>
+            <p class="paid-name">{{ validateResult.playerName }}</p>
+            <p class="paid-detail">El derecho de jugador {{ linkInfo.season }} ya fue abonado.</p>
+          </div>
+        }
+
+        @if ((state === 'validated' || state === 'redirecting') && validateResult) {
+          <div class="player-confirmed">
+            <div class="player-confirmed__header">
+              <mat-icon class="player-confirmed__icon">check_circle</mat-icon>
+              <p class="player-confirmed__title">Jugador verificado</p>
+            </div>
+            <div class="player-confirmed__details">
+              <div class="detail-row">
+                <span class="detail-label">Nombre</span>
+                <span class="detail-value">{{ validateResult.playerName }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">DNI</span>
+                <span class="detail-value">{{ validateResult.playerDni }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Categoría</span>
+                <span class="detail-value">{{ validateResult.blockName }}</span>
+              </div>
+            </div>
+          </div>
+
+          <mat-divider />
+
+          <div class="amounts">
+            <div class="amount-row">
+              <span>Monto base</span>
+              <span>{{ formatMoney(validateResult.originalAmount) }}</span>
+            </div>
+            @if (validateResult.discountPct) {
+              <div class="amount-row amount-row--discount">
+                <span>Descuento ({{ validateResult.discountPct }}%) — {{ validateResult.discountReason }}</span>
+                <span>-{{ formatMoney(validateResult.originalAmount - validateResult.finalAmount) }}</span>
+              </div>
+            }
+            @if (validateResult.mpFeeAdded) {
+              <div class="amount-row amount-row--fee">
+                <span>Comisión Mercado Pago</span>
+                <span>{{ formatMoney(validateResult.mpFeeAdded) }}</span>
+              </div>
+            }
+            <mat-divider />
+            <div class="amount-row amount-row--total">
+              <span>Total a pagar</span>
+              <span class="total-amount">{{ formatMoney(validateResult.totalAmount) }}</span>
+            </div>
+          </div>
+
+          @if (errorMessage) {
+            <p class="error-text">{{ errorMessage }}</p>
+          }
+
+          <button
+            mat-raised-button
+            color="primary"
+            class="full-width pay-button"
+            type="button"
+            [disabled]="state === 'redirecting'"
+            (click)="pay()"
+          >
+            @if (state === 'redirecting') {
+              <mat-spinner diameter="20" />
+              <span>Redirigiendo a Mercado Pago...</span>
+            } @else {
+              Pagar {{ formatMoney(validateResult.totalAmount) }} con Mercado Pago
+            }
+          </button>
+          <button
+            mat-button
+            class="full-width"
+            type="button"
+            [disabled]="state === 'redirecting'"
+            (click)="state = 'ready'; validateResult = null; errorMessage = ''"
+          >
+            No soy yo — cambiar DNI
+          </button>
+        }
+      }
+
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -12,6 +12,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlayersService } from '../../services/players.service';
 import { PlayersDataSource } from '../../services/players.datasource';
+import { PlayerFeesAdminService } from '../../../player-fees/services/player-fees-admin.service';
 import {
   ImportResultDialogComponent,
   ImportResultDialogData,
@@ -77,9 +78,13 @@ export class PlayersListComponent implements AfterViewInit, OnDestroy {
   readonly PlayerStatusEnum = PlayerStatusEnum;
   readonly PlayerAvailabilityEnum = PlayerAvailabilityEnum;
 
+  private readonly playerFeesService = inject(PlayerFeesAdminService);
+  eligibilityMap = new Map<string, boolean>();
+
   private readonly baseColumns = ['photoId', 'name', 'nickName', 'idNumber', 'category'];
   private readonly afterCategoryColumns = ['positions', 'actions'];
   displayedColumns = [...this.baseColumns, ...this.afterCategoryColumns];
+  showEligibilityColumn = false;
 
   readonly dataSource = new PlayersDataSource(this.playersService);
   readonly savedState = this.listState.get(PlayersListComponent.STATE_KEY);
@@ -114,7 +119,12 @@ export class PlayersListComponent implements AfterViewInit, OnDestroy {
     });
 
     this.updateColumns((this.currentFilters as any).sport);
-    this.dataSource.setFilters(this.currentFilters as any, pageIndex);
+    const savedSport = (this.currentFilters as any).sport as SportEnum | undefined;
+    if (savedSport) {
+      this.loadEligibility(savedSport, pageIndex);
+    } else {
+      this.dataSource.setFilters(this.currentFilters as any, pageIndex);
+    }
   }
 
   ngOnDestroy(): void {
@@ -126,14 +136,20 @@ export class PlayersListComponent implements AfterViewInit, OnDestroy {
     sport?: SportEnum;
     position?: PlayerPosition;
     noPosition?: boolean;
-    category?: CategoryEnum;
+    categories?: CategoryEnum[];
     availability?: PlayerAvailabilityEnum;
+    eligible?: boolean;
   }): void {
     this.currentFilters = filters;
     if (this.paginator) this.paginator.pageIndex = 0;
     this.updateColumns(filters.sport);
-    this.dataSource.setFilters(filters);
     this.saveState();
+    if (filters.sport) {
+      this.loadEligibility(filters.sport);
+    } else {
+      this.eligibilityMap = new Map();
+      this.dataSource.setFilters(filters as any);
+    }
   }
 
   private saveState(): void {
@@ -147,11 +163,43 @@ export class PlayersListComponent implements AfterViewInit, OnDestroy {
   }
 
   private updateColumns(sport?: SportEnum): void {
-    if (sport === SportEnum.HOCKEY) {
-      this.displayedColumns = [...this.baseColumns, 'branch', ...this.afterCategoryColumns];
+    this.showEligibilityColumn = !!sport;
+    const middle = sport === SportEnum.HOCKEY ? ['branch'] : [];
+    const eligCol = sport ? ['eligible'] : [];
+    this.displayedColumns = [...this.baseColumns, ...middle, 'positions', ...eligCol, 'actions'];
+  }
+
+  private loadEligibility(sport: SportEnum, pageIndex = 0): void {
+    const season = String(new Date().getFullYear());
+    this.playerFeesService.getStatus({ season, sport }).subscribe({
+      next: (rows) => {
+        this.eligibilityMap = new Map(rows.map((r) => [r.playerId, r.eligible]));
+        this.applyFiltersWithEligibility(pageIndex);
+      },
+      error: () => {
+        this.dataSource.setFilters(this.currentFilters as any, pageIndex);
+      },
+    });
+  }
+
+  private applyFiltersWithEligibility(pageIndex = 0): void {
+    const filters = this.currentFilters as any;
+    const eligible: boolean | undefined = filters.eligible;
+    if (eligible !== undefined && eligible !== null && this.eligibilityMap.size > 0) {
+      const matchingIds = [...this.eligibilityMap.entries()]
+        .filter(([, e]) => e === eligible)
+        .map(([id]) => id);
+      this.dataSource.setFilters({ ...filters, playerIds: matchingIds }, pageIndex);
     } else {
-      this.displayedColumns = [...this.baseColumns, ...this.afterCategoryColumns];
+      const { playerIds: _, eligible: __, ...rest } = filters;
+      this.dataSource.setFilters(rest, pageIndex);
     }
+  }
+
+  getEligibilityStatus(player: Player): { eligible: boolean } | null {
+    if (!this.eligibilityMap.size) return null;
+    const v = this.eligibilityMap.get(player.id!);
+    return v !== undefined ? { eligible: v } : null;
   }
 
   getCategoryLabel(category?: CategoryEnum): string {

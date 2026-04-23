@@ -1,0 +1,159 @@
+@use '../../../common/styles/list-layout';
+
+.player-fees-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search-form {
+  margin-bottom: 4px;
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.filter-field {
+  width: 200px;
+
+  &--name {
+    width: 280px;
+  }
+}
+
+@media (max-width: 767px) {
+  .filters-row {
+    display: none;
+
+    &--open {
+      display: flex;
+    }
+  }
+
+  .filter-field {
+    flex: 1 1 calc(50% - 6px);
+    width: auto;
+
+    &--name {
+      flex: 1 1 100%;
+      width: auto;
+    }
+  }
+}
+
+.stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px;
+  font-size: 0.9rem;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &__label {
+    color: var(--mat-sys-on-surface-variant, #666);
+
+    &--disabled {
+      color: #b71c1c;
+    }
+  }
+
+  &__value {
+    font-weight: 600;
+
+    &--paid {
+      color: #1976d2;
+    }
+
+    &--enabled {
+      color: #2e7d32;
+    }
+
+    &--disabled {
+      color: #b71c1c;
+    }
+  }
+}
+
+.status-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+
+  &--ok {
+    color: #2e7d32;
+  }
+
+  &--no {
+    color: #c62828;
+  }
+}
+
+.stat-sep {
+  color: #ccc;
+}
+
+.table-wrapper {
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.fees-table {
+  width: 100%;
+}
+
+.player-name {
+  font-weight: 500;
+}
+
+.player-dni {
+  font-size: 0.78rem;
+  color: var(--mat-sys-on-surface-variant, #666);
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+
+  &--paid {
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  &--pending {
+    background: #f5f5f5;
+    color: #757575;
+  }
+
+  &--enabled {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  &--disabled {
+    background: #fce4ec;
+    color: #c62828;
+  }
+}
+
+.na {
+  color: #bdbdbd;
+}
+
+.empty-state {
+  color: #757575;
+  text-align: center;
+  padding: 32px 0;
+}

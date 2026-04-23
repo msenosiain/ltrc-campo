@@ -288,3 +288,114 @@ $avatar-size: 160px;
     }
   }
 }
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  .section-title {
+    margin: 0;
+  }
+}
+
+.eligible-chip {
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+  }
+
+  &--ok {
+    background: #e8f5e9 !important;
+    color: #2e7d32 !important;
+  }
+
+  &--nok {
+    background: #fce4ec !important;
+    color: #c62828 !important;
+  }
+}
+
+.fee-badge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+
+  &--ok {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  &--nok {
+    background: #fce4ec;
+    color: #c62828;
+  }
+}
+
+.fichaje-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.fichaje-season-field {
+  width: 110px;
+}
+
+.fichaje-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #c62828;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &--ok {
+    color: #2e7d32;
+  }
+}
+
+.fichaje-empty {
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant, #666);
+  font-style: italic;
+}
+
+.fee-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fee-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #c62828;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #c62828;
+  }
+
+  &--ok {
+    color: #2e7d32;
+
+    mat-icon {
+      color: #2e7d32;
+    }
+  }
+}

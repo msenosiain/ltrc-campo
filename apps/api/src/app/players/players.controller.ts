@@ -139,6 +139,12 @@ export class PlayersController {
     stream.pipe(res);
   }
 
+  @Delete(':id/photo')
+  @Roles(RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COACH)
+  async deletePhoto(@Param('id') id: string) {
+    return this.playersService.deletePhoto(id);
+  }
+
   @Patch(':id/availability')
   @Roles(
     RoleEnum.ADMIN,

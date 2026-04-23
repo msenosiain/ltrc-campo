@@ -13,7 +13,6 @@ import {
 } from 'class-validator';
 
 import { Transform, Type, plainToInstance } from 'class-transformer';
-import { toTitleCase, toLowerCase } from '../../shared/text-normalize.util';
 import { parse as dateFnsParse } from 'date-fns';
 import {
   CategoryEnum,
@@ -26,6 +25,8 @@ import {
   PlayerStatusEnum,
   RugbyPositions,
   SportEnum,
+  toTitleCase,
+  toLowerCase,
 } from '@ltrc-campo/shared-api-model';
 
 export class AddressDto {

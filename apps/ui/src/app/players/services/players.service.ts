@@ -204,6 +204,10 @@ export class PlayersService {
     );
   }
 
+  deletePlayerPhoto(playerId: string): Observable<unknown> {
+    return this.httpClient.delete(`${this.playersApiUrl}/${playerId}/photo`);
+  }
+
   calculatePlayerAge(birthDate: Date | string): number {
     const birth = new Date(birthDate);
     const today = new Date();

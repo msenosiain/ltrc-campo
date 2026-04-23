@@ -1,0 +1,56 @@
+.result-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  padding: 16px;
+}
+
+.result-card {
+  width: 100%;
+  max-width: 400px;
+}
+
+.club-header {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 0;
+}
+
+.club-crest {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 16px 32px;
+  text-align: center;
+
+  h2 { margin: 0; }
+  p { margin: 0; color: #555; }
+}
+
+.result-icon {
+  font-size: 56px;
+  line-height: 1;
+}
+
+.result--confirming { color: #1976d2; }
+.result--approved {
+  .result-icon, h2 { color: #2e7d32; }
+}
+.result--pending {
+  .result-icon, h2 { color: #e65100; }
+}
+.result--rejected {
+  .result-icon, h2 { color: #c62828; }
+}
+.result--error {
+  .result-icon, h2 { color: #f57f17; }
+}

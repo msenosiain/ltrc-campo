@@ -277,7 +277,7 @@
       <mat-form-field appearance="outline">
         <mat-label>Estado</mat-label>
         <mat-select formControlName="status">
-          @for (opt of statusOptions; track opt.id) {
+          @for (opt of statusOptions(); track opt.id) {
           <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
           }
         </mat-select>

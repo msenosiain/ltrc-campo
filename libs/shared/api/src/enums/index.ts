@@ -1,4 +1,5 @@
 export * from './attendance-status.enum';
+export * from './blood-type.enum';
 export * from './category.enum';
 export * from './clothing-sizes.enum';
 export * from './day-of-week.enum';
@@ -25,3 +26,4 @@ export * from './payment-entity-type.enum';
 export * from './payment-link-status.enum';
 export * from './payment-type.enum';
 export * from './evaluation-skill.enum';
+export * from './player-fee-status.enum';

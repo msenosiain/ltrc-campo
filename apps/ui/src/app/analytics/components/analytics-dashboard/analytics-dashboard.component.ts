@@ -4,6 +4,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
@@ -18,6 +20,7 @@ import {
   NonCompByCategory,
   PaymentStats,
 } from '../../services/analytics.service';
+import { PlayerFeesAdminService, PlayerFeeStats } from '../../../player-fees/services/player-fees-admin.service';
 
 type Period = '1m' | '3m' | '6m';
 type SportFilter = 'all' | SportEnum;
@@ -37,6 +40,8 @@ const COLOR_GREEN = '#2e7d32';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatSelectModule,
+    MatFormFieldModule,
     BaseChartDirective,
   ],
   templateUrl: './analytics-dashboard.component.html',
@@ -44,6 +49,7 @@ const COLOR_GREEN = '#2e7d32';
 })
 export class AnalyticsDashboardComponent implements OnInit {
   private readonly analyticsService = inject(AnalyticsService);
+  private readonly playerFeesService = inject(PlayerFeesAdminService);
   private readonly destroyRef = inject(DestroyRef);
 
   period = signal<Period>('3m');
@@ -75,6 +81,32 @@ export class AnalyticsDashboardComponent implements OnInit {
   // Carousel indices
   ageCarouselIdx = signal(0);
   nonCompCatIdx = signal(0);
+
+  // ── Derechos de Jugador ───────────────────────────────────────────────────
+  readonly feeSeasonOptions = (() => {
+    const y = new Date().getFullYear();
+    return [String(y + 1), String(y), String(y - 1)];
+  })();
+  feeSeason = signal(String(new Date().getFullYear()));
+  feeSportFilter = signal<SportEnum>(SportEnum.RUGBY);
+  feeStats = signal<PlayerFeeStats | null>(null);
+  feeStatsLoading = signal(false);
+
+  readonly feeCategoryRows = computed(() => {
+    const stats = this.feeStats();
+    if (!stats?.byCategory) return [];
+    return Object.entries(stats.byCategory)
+      .map(([cat, d]) => ({
+        cat: cat as CategoryEnum,
+        label: getCategoryLabel(cat as CategoryEnum),
+        total: d.total,
+        paid: d.paid,
+        eligible: d.eligible,
+        pctPaid: d.total > 0 ? Math.round((d.paid / d.total) * 100) : 0,
+        pctEligible: d.total > 0 ? Math.round((d.eligible / d.total) * 100) : 0,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+  });
 
   // ── Chart data ────────────────────────────────────────────────────────────
 
@@ -170,6 +202,7 @@ export class AnalyticsDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.loadFeeStats();
   }
 
   onPeriodChange(p: Period): void {
@@ -353,6 +386,17 @@ export class AnalyticsDashboardComponent implements OnInit {
   }
 
   readonly getCategoryLabel = getCategoryLabel;
+  readonly SportEnum = SportEnum;
+
+  loadFeeStats(): void {
+    this.feeStatsLoading.set(true);
+    this.playerFeesService.getStats(this.feeSeason(), this.feeSportFilter())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (stats) => { this.feeStats.set(stats); this.feeStatsLoading.set(false); },
+        error: () => this.feeStatsLoading.set(false),
+      });
+  }
 
   formatCurrency(val: number): string {
     return val.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });

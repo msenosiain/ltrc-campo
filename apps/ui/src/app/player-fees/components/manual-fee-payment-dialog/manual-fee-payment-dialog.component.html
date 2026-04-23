@@ -1,0 +1,97 @@
+<h2 mat-dialog-title>Registrar pago manual</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Jugador</mat-label>
+      <input
+        matInput
+        [formControl]="playerSearch"
+        [matAutocomplete]="playerAuto"
+        placeholder="Buscar por nombre o DNI"
+        (input)="onSearchInput($any($event.target).value)"
+      />
+      <mat-autocomplete
+        #playerAuto="matAutocomplete"
+        (optionSelected)="selectPlayer($event.option.value)"
+      >
+        @for (row of filteredRows(); track row.playerId) {
+          <mat-option [value]="row">
+            <span class="option-name">{{ row.playerName }}</span>
+            @if (row.playerDni) {
+              <span class="option-dni">{{ row.playerDni }}</span>
+            }
+          </mat-option>
+        }
+        @if (!filteredRows().length && searchTerm().trim()) {
+          <mat-option disabled>Sin resultados</mat-option>
+        }
+      </mat-autocomplete>
+      @if (!pendingRows.length) {
+        <mat-hint>Todos los jugadores ya tienen el derecho pagado</mat-hint>
+      }
+    </mat-form-field>
+
+    @if (form.get('playerId')?.value) {
+      @if (loadingPreview()) {
+        <div class="amount-display">
+          <span class="amount-label">Calculando monto…</span>
+        </div>
+      }
+      @if (!loadingPreview()) {
+        @if (amountPreview(); as preview) {
+          <div class="amount-display">
+            @if (preview.finalAmount !== null) {
+              @if (preview.discountPct) {
+                <div class="amount-breakdown">
+                  <span class="amount-label">Precio base</span>
+                  <span class="amount-original">${{ preview.originalAmount | number:'1.0-0' }}</span>
+                </div>
+                <div class="amount-breakdown">
+                  <span class="amount-discount-label">Descuento {{ preview.discountPct }}% — {{ preview.discountReason }}</span>
+                </div>
+                <div class="amount-breakdown amount-breakdown--total">
+                  <span class="amount-label">Total</span>
+                  <span class="amount-value">${{ preview.finalAmount | number:'1.0-0' }}</span>
+                </div>
+              } @else {
+                <span class="amount-label">Monto</span>
+                <span class="amount-value">${{ preview.finalAmount | number:'1.0-0' }}</span>
+              }
+            } @else {
+              <span class="amount-unknown">Sin precio configurado para esta categoría</span>
+            }
+          </div>
+        }
+      }
+    }
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Método de pago</mat-label>
+      <mat-select formControlName="method">
+        @for (m of methods; track m.value) {
+          <mat-option [value]="m.value">{{ m.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close type="button">Cancelar</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="form.invalid || saving || !pendingRows.length"
+    (click)="submit()"
+  >
+    @if (saving) {
+      <mat-spinner diameter="18" />
+    } @else {
+      Registrar pago
+    }
+  </button>
+</mat-dialog-actions>

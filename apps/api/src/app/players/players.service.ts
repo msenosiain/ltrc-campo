@@ -22,6 +22,7 @@ import {
   RoleEnum,
   RugbyPositions,
   SportEnum,
+  toTitleCase,
 } from '@ltrc-campo/shared-api-model';
 import { PlayerFiltersDto } from './player-filter.dto';
 import { CreatePlayerDto } from './dto/create-player.dto';
@@ -298,6 +299,11 @@ export class PlayersService {
       });
     }
 
+    // playerIds: restrict results to a specific set of IDs (used for eligibility filter)
+    if (filters.playerIds?.length) {
+      queryFilters['_id'] = { $in: filters.playerIds.map((id) => new Types.ObjectId(id)) };
+    }
+
     // Server-side restriction: limit results to user's assigned scope
     // (applies to any non-admin user with sports/categories/branches assigned)
     if (caller && !caller.roles?.includes(RoleEnum.ADMIN)) {
@@ -402,6 +408,17 @@ export class PlayersService {
 
   async getPhotoStream(photoId: string) {
     return this.gridFsService.getFileStream('playersPhotos', photoId);
+  }
+
+  async deletePhoto(id: string) {
+    const player = await this.playerModel.findById(id);
+    if (!player) throw new NotFoundException('Player not found');
+    if (player.photoId) {
+      await this.gridFsService.deleteFile('playersPhotos', player.photoId);
+      player.photoId = undefined;
+      await player.save();
+    }
+    return { ok: true };
   }
 
   async updateAvailability(
@@ -575,8 +592,6 @@ export class PlayersService {
         const label = `[${sheetName}] fila ${rowNum}`;
 
         const str = (val: unknown) => (val != null ? String(val).trim() : '');
-        const toTitleCase = (s: string) =>
-          s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
         const name = toTitleCase(str(row.Nombre));
         const idNumber = str(row['N° Doc.']).replace(/\D/g, '');

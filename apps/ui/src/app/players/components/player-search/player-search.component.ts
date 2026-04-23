@@ -65,10 +65,11 @@ export class PlayerSearchComponent implements OnInit {
     sport?: SportEnum;
     position?: PlayerPosition;
     noPosition?: boolean;
-    category?: CategoryEnum;
+    categories?: CategoryEnum[];
     branch?: HockeyBranchEnum;
     status?: PlayerStatusEnum;
     availability?: PlayerAvailabilityEnum;
+    eligible?: boolean;
   }>();
 
   positionOptions: PositionOption[] = getPositionOptionsBySport();
@@ -83,10 +84,11 @@ export class PlayerSearchComponent implements OnInit {
     searchTerm: [''],
     sport: [undefined as SportEnum | undefined],
     position: [undefined as PlayerPosition | undefined],
-    category: [undefined as CategoryEnum | undefined],
+    category: this.fb.control<CategoryEnum[]>([]),
     branch: [undefined as HockeyBranchEnum | undefined],
     status: [undefined as PlayerStatusEnum | undefined],
     availability: [undefined as PlayerAvailabilityEnum | undefined],
+    eligible: [undefined as boolean | undefined],
   });
 
   private readonly selectedSport = toSignal(
@@ -117,7 +119,7 @@ export class PlayerSearchComponent implements OnInit {
           this.showBranchFilter = ctx.forcedSport === SportEnum.HOCKEY;
         }
         if (ctx.forcedCategory) {
-          this.searchForm.get('category')!.setValue(ctx.forcedCategory, { emitEvent: false });
+          this.searchForm.get('category')!.setValue([ctx.forcedCategory!], { emitEvent: false });
         }
       });
 
@@ -127,9 +129,9 @@ export class PlayerSearchComponent implements OnInit {
         this.positionOptions = getPositionOptionsBySport(sport);
         this.showBranchFilter = sport === SportEnum.HOCKEY;
 
-        const cat = this.searchForm.get('category')?.value;
-        if (cat && !this.availableCategories().some(c => c.id === cat)) {
-          this.searchForm.get('category')?.setValue(undefined, { emitEvent: false });
+        const cats = this.searchForm.get('category')?.value as CategoryEnum[] | undefined;
+        if (cats?.length && !cats.every(c => this.availableCategories().some(o => o.id === c))) {
+          this.searchForm.get('category')?.setValue([], { emitEvent: false });
         }
         const pos = this.searchForm.get('position')?.value;
         if (pos && !this.positionOptions.find(p => p.id === pos)) {
@@ -137,6 +139,9 @@ export class PlayerSearchComponent implements OnInit {
         }
         if (!this.showBranchFilter) {
           this.searchForm.get('branch')?.setValue(undefined, { emitEvent: false });
+        }
+        if (!sport) {
+          this.searchForm.get('eligible')?.setValue(undefined, { emitEvent: false });
         }
       });
 
@@ -146,16 +151,17 @@ export class PlayerSearchComponent implements OnInit {
   }
 
   clearField(field: string): void {
-    this.searchForm.get(field)?.setValue(undefined);
+    this.searchForm.get(field)?.setValue(field === 'category' ? [] : undefined);
   }
 
   private emitFilters(): void {
-    const raw = nullToUndefined(this.searchForm.value);
-    if ((raw.position as unknown as string) === this.NO_POSITION_SENTINEL) {
-      const { position, ...rest } = raw as any;
-      this.filtersChange.emit({ ...rest, noPosition: true });
+    const raw = nullToUndefined(this.searchForm.value) as any;
+    const categories: CategoryEnum[] | undefined = raw.category?.length ? raw.category : undefined;
+    const { category, position, ...rest } = raw;
+    if ((position as string) === this.NO_POSITION_SENTINEL) {
+      this.filtersChange.emit({ ...rest, categories, noPosition: true });
     } else {
-      this.filtersChange.emit(raw);
+      this.filtersChange.emit({ ...rest, position, categories });
     }
   }
 }

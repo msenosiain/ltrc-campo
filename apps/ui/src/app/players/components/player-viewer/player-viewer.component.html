@@ -132,6 +132,19 @@
             }
           </mat-chip>
           }
+          @if (eligibilityStatus()) {
+            @if (eligibilityStatus()!.eligible) {
+              <mat-chip class="status-chip eligible-chip eligible-chip--ok">
+                <mat-icon>verified</mat-icon>
+                Habilitado
+              </mat-chip>
+            } @else {
+              <mat-chip class="status-chip eligible-chip eligible-chip--nok">
+                <mat-icon>cancel</mat-icon>
+                No habilitado
+              </mat-chip>
+            }
+          }
         </div>
       </div>
     </mat-card-content>
@@ -274,6 +287,51 @@
     </mat-card-content>
   </mat-card>
   }
+
+  <!-- FICHAJE -->
+  <mat-card class="section-card">
+    <mat-card-content>
+      <p class="section-title">Fichaje</p>
+      <div class="fichaje-row">
+        <mat-form-field appearance="outline" class="fichaje-season-field" subscriptSizing="dynamic">
+          <mat-select [value]="fichajeSeason()" (selectionChange)="onFichajeSeason($event.value)">
+            @for (s of fichajeSeasonOptions; track s) {
+              <mat-option [value]="s">{{ s }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (eligibilityStatus()) {
+          <span class="fichaje-item" [class.fichaje-item--ok]="eligibilityStatus()!.membershipCurrent">
+            Cuota al día
+            <mat-icon>{{ eligibilityStatus()!.membershipCurrent ? 'check_circle' : 'cancel' }}</mat-icon>
+          </span>
+          <span class="fichaje-item" [class.fichaje-item--ok]="eligibilityStatus()!.feePaid">
+            Derecho pagado
+            <mat-icon>{{ eligibilityStatus()!.feePaid ? 'check_circle' : 'cancel' }}</mat-icon>
+          </span>
+          <span class="fichaje-item" [class.fichaje-item--ok]="eligibilityStatus()!.bduarRegistered">
+            Ficha Médica
+            <mat-icon>{{ eligibilityStatus()!.bduarRegistered ? 'check_circle' : 'cancel' }}</mat-icon>
+          </span>
+          @if (eligibilityStatus()!.coursesApproved !== undefined) {
+            <span class="fichaje-item" [class.fichaje-item--ok]="eligibilityStatus()!.coursesApproved">
+              Cursos
+              <mat-icon>{{ eligibilityStatus()!.coursesApproved ? 'check_circle' : 'cancel' }}</mat-icon>
+            </span>
+          }
+          @if (eligibilityStatus()!.solidarityFundPaid !== undefined) {
+            <span class="fichaje-item" [class.fichaje-item--ok]="eligibilityStatus()!.solidarityFundPaid">
+              Fondo solidario
+              <mat-icon>{{ eligibilityStatus()!.solidarityFundPaid ? 'check_circle' : 'cancel' }}</mat-icon>
+            </span>
+          }
+        } @else {
+          <span class="fichaje-empty">Sin datos para {{ fichajeSeason() }}</span>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
 
   <!-- HISTORIAL DE PARTIDOS -->
   <mat-card class="section-card">

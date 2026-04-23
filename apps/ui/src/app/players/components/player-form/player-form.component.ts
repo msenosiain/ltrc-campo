@@ -66,6 +66,7 @@ import {
 export interface PlayerFormSubmitEvent {
   payload: PlayerFormValue;
   file?: File;
+  deletePhoto?: boolean;
 }
 
 @Component({
@@ -125,7 +126,11 @@ export class PlayerFormComponent implements OnInit, OnChanges {
   readonly clothingSizesOptions = Object.values(ClothingSizesEnum);
 
   readonly PlayerStatusEnum = PlayerStatusEnum;
-  readonly statusOptions = playerStatusOptions;
+  readonly statusOptions = computed(() =>
+    this.isAdmin()
+      ? playerStatusOptions
+      : playerStatusOptions.filter((o) => o.id === PlayerStatusEnum.TRIAL)
+  );
   readonly availabilityOptions = playerAvailabilityOptions;
 
   positions: PositionOption[] = getPositionOptionsBySport(null);
@@ -391,9 +396,12 @@ export class PlayerFormComponent implements OnInit, OnChanges {
       return;
     }
     const photoValue = this.playerForm.get('photo')?.value;
+    const hadPhoto = !!this.player?.photoId;
+    const deletePhoto = hadPhoto && photoValue === null;
     this.formSubmitWithPhoto.emit({
       payload: this.playerForm.getRawValue() as PlayerFormValue,
       file: photoValue?.file,
+      deletePhoto,
     });
   }
 }

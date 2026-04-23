@@ -20,12 +20,12 @@ mat-sidenav {
 
 
 .sidenav-nav {
-  padding-top: 8px;
+  --mdc-list-list-item-one-line-container-height: 44px;
+  --mat-list-active-indicator-height: 44px;
 
   a[mat-list-item] {
     border-radius: 0 24px 24px 0;
     margin-right: 12px;
-    margin-bottom: 2px;
 
     mat-icon[matListItemIcon] {
       color: rgba(0, 0, 0, 0.54);

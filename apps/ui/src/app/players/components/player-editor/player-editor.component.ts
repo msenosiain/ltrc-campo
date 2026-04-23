@@ -22,6 +22,7 @@ import { FormSkeletonComponent } from '../../../common/components/form-skeleton/
 import { ConfirmDialogComponent } from '../../../common/components/confirm-dialog/confirm-dialog.component';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { switchMap } from 'rxjs/operators';
 import { getErrorMessage } from '../../../common/utils/error-message';
 
 @Component({
@@ -66,7 +67,7 @@ export class PlayerEditorComponent implements OnInit {
     }
   }
 
-  onFormSubmitWithPhoto({ payload, file }: PlayerFormSubmitEvent): void {
+  onFormSubmitWithPhoto({ payload, file, deletePhoto }: PlayerFormSubmitEvent): void {
     this.submitting = true;
 
     const onError = (err: unknown) => {
@@ -75,13 +76,13 @@ export class PlayerEditorComponent implements OnInit {
     };
 
     if (this.editing && this.player?.id) {
-      const obs = file
-        ? this.playersService.updatePlayerWithPhoto(
-            this.player.id,
-            payload,
-            file
-          )
-        : this.playersService.updatePlayer(this.player.id, payload);
+      const playerId = this.player.id;
+      const baseObs = file
+        ? this.playersService.updatePlayerWithPhoto(playerId, payload, file)
+        : this.playersService.updatePlayer(playerId, payload);
+      const obs = deletePhoto
+        ? baseObs.pipe(switchMap(() => this.playersService.deletePlayerPhoto(playerId)))
+        : baseObs;
       obs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.submitting = false;
