@@ -68,10 +68,17 @@
           <span class="info-label">Costo</span>
           <span class="info-value">{{ trip.costPerPerson | currency : 'ARS' : 'symbol' : '1.0-0' }}</span>
         </div>
-        @if (trip.maxParticipants) {
+        @if (effectiveCapacity) {
         <div class="info-item">
-          <span class="info-label">Cupo</span>
-          <span class="info-value">{{ confirmedCount }} / {{ trip.maxParticipants }}</span>
+          <span class="info-label">
+            Cupo
+            @if (trip.transports.length > 0) {
+              <span class="info-label-hint" matTooltip="Calculado por capacidad de transportes">(transportes)</span>
+            }
+          </span>
+          <span class="info-value" [class.capacity-warn]="confirmedCount >= effectiveCapacity">
+            {{ confirmedCount }} / {{ effectiveCapacity }}
+          </span>
         </div>
         }
       </div>
@@ -108,7 +115,7 @@
           </div>
         </div>
 
-        <!-- Botón agregar -->
+        <!-- Botones de acción -->
         <div class="section-actions">
           <button
             *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]"
@@ -119,7 +126,20 @@
             <mat-icon>{{ showAddParticipant ? 'close' : 'person_add' }}</mat-icon>
             {{ showAddParticipant ? 'Cancelar' : 'Agregar participante' }}
           </button>
+          @if (trip.participants.length > 0) {
+            <button
+              *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR]"
+              mat-stroked-button
+              color="warn"
+              type="button"
+              (click)="removeAllParticipants()"
+            >
+              <mat-icon>group_remove</mat-icon>
+              Quitar todos
+            </button>
+          }
         </div>
+
 
         <!-- Form agregar participante -->
         @if (showAddParticipant) {
@@ -151,34 +171,67 @@
             </div>
 
             @if (addParticipantForm.get('type')?.value === TripParticipantTypeEnum.PLAYER) {
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>ID del jugador</mat-label>
-              <input matInput formControlName="playerId" placeholder="ObjectId del jugador" />
-            </mat-form-field>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Buscar jugador</mat-label>
+                <input
+                  matInput
+                  [formControl]="playerSearchCtrl"
+                  [matAutocomplete]="playerAuto"
+                  placeholder="Apellido, nombre, apodo o DNI..."
+                />
+                <mat-autocomplete
+                  #playerAuto="matAutocomplete"
+                  [displayWith]="displayPlayerFn"
+                  (optionSelected)="onPlayerSelected($event)"
+                >
+                  @for (player of playerSuggestions; track player.id) {
+                    <mat-option [value]="player">
+                      {{ player.name }}
+                      @if (player.category) {
+                        <span class="option-meta"> — {{ getCategoryLabel(player.category) }}</span>
+                      }
+                    </mat-option>
+                  }
+                </mat-autocomplete>
+              </mat-form-field>
             }
 
             @if (addParticipantForm.get('type')?.value === TripParticipantTypeEnum.STAFF) {
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>ID del usuario (staff)</mat-label>
-              <input matInput formControlName="userId" placeholder="ObjectId del usuario" />
-            </mat-form-field>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Buscar usuario (staff)</mat-label>
+                <input
+                  matInput
+                  [formControl]="userSearchCtrl"
+                  [matAutocomplete]="userAuto"
+                  placeholder="Nombre o email..."
+                />
+                <mat-autocomplete
+                  #userAuto="matAutocomplete"
+                  [displayWith]="displayUserFn"
+                  (optionSelected)="onUserSelected($event)"
+                >
+                  @for (user of userSuggestions; track user.id) {
+                    <mat-option [value]="user">{{ user.name }}</mat-option>
+                  }
+                </mat-autocomplete>
+              </mat-form-field>
             }
 
             @if (addParticipantForm.get('type')?.value === TripParticipantTypeEnum.EXTERNAL) {
-            <div class="form-row">
-              <mat-form-field appearance="outline">
-                <mat-label>Nombre completo</mat-label>
-                <input matInput formControlName="externalName" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>DNI</mat-label>
-                <input matInput formControlName="externalDni" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Rol / descripción</mat-label>
-                <input matInput formControlName="externalRole" placeholder="Padre de..." />
-              </mat-form-field>
-            </div>
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Apellido y nombre</mat-label>
+                  <input matInput formControlName="externalName" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>DNI</mat-label>
+                  <input matInput formControlName="externalDni" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Rol / descripción</mat-label>
+                  <input matInput formControlName="externalRole" placeholder="Padre de..." />
+                </mat-form-field>
+              </div>
             }
 
             <mat-form-field appearance="outline" class="full-width">
@@ -188,6 +241,27 @@
           </mat-card-content>
           <mat-card-actions align="end">
             <button mat-stroked-button type="button" (click)="toggleAddParticipant()">Cancelar</button>
+            @if (addParticipantForm.get('type')?.value === TripParticipantTypeEnum.PLAYER && trip.categories?.length) {
+              <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR]">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="addingAllPlayers"
+                  [matMenuTriggerFor]="categoryMenu"
+                >
+                  <mat-icon>group_add</mat-icon>
+                  {{ addingAllPlayers ? 'Agregando…' : 'Agregar todos de' }}
+                  <mat-icon>arrow_drop_down</mat-icon>
+                </button>
+                <mat-menu #categoryMenu="matMenu">
+                  @for (cat of trip.categories; track cat) {
+                    <button mat-menu-item (click)="addAllPlayersFromCategory(cat); toggleAddParticipant()">
+                      {{ getCategoryLabel(cat) }}
+                    </button>
+                  }
+                </mat-menu>
+              </ng-container>
+            }
             <button mat-flat-button color="primary" type="button" (click)="submitAddParticipant()">
               Agregar
             </button>
@@ -195,55 +269,119 @@
         </mat-card>
         }
 
+        <!-- Barra de acciones bulk -->
+        @if (selectedIds.size > 0) {
+          <div class="bulk-action-bar" *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]">
+            <span class="bulk-action-bar__count">{{ selectedIds.size }} seleccionado{{ selectedIds.size !== 1 ? 's' : '' }}</span>
+            <span class="bulk-action-bar__sep">·</span>
+            <span class="bulk-action-bar__label">Cambiar estado a:</span>
+            @for (opt of participantStatusOptions; track opt.id) {
+              <button mat-stroked-button [disabled]="bulkUpdating" (click)="bulkUpdateStatus(opt.id)">
+                {{ opt.label }}
+              </button>
+            }
+            <button mat-icon-button matTooltip="Deseleccionar todos" (click)="clearSelection()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        }
+
         <!-- Tabla participantes -->
         @if (trip.participants.length > 0) {
         <table mat-table [dataSource]="trip.participants" class="participants-table">
 
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef>
+              <mat-checkbox
+                *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]"
+                [checked]="allSelected"
+                [indeterminate]="someSelected"
+                (change)="toggleAll()"
+              />
+            </th>
+            <td mat-cell *matCellDef="let p">
+              <mat-checkbox
+                *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]"
+                [checked]="isSelected(p)"
+                (change)="toggleSelection(p)"
+              />
+            </td>
+          </ng-container>
+
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Participante</th>
             <td mat-cell *matCellDef="let p">
-              <span class="participant-name">{{ getParticipantName(p) }}</span>
-              @if (p.externalRole) {
-              <span class="participant-role">{{ p.externalRole }}</span>
+              @if (p.type === TripParticipantTypeEnum.PLAYER && p.player) {
+                <a
+                  class="participant-name participant-name--link"
+                  [routerLink]="['/dashboard/players', (p.player)?.id ?? (p.player)?._id]"
+                >{{ getParticipantName(p) }}</a>
+              } @else {
+                <span class="participant-name">{{ getParticipantName(p) }}</span>
+              }
+              @if (getParticipantDni(p)) {
+                <span class="participant-dni">{{ getParticipantDni(p) }}</span>
               }
               @if (p.specialNeeds) {
-              <mat-icon class="needs-icon" [matTooltip]="p.specialNeeds">info_outline</mat-icon>
+                <mat-icon class="needs-icon" [matTooltip]="p.specialNeeds">info_outline</mat-icon>
               }
             </td>
           </ng-container>
 
-          <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef>Tipo</th>
-            <td mat-cell *matCellDef="let p">{{ getParticipantTypeLabel(p.type) }}</td>
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef>Categoría / Rol</th>
+            <td mat-cell *matCellDef="let p">
+              <span class="participant-cat">{{ getParticipantCategory(p) }}</span>
+            </td>
           </ng-container>
 
           <ng-container matColumnDef="status">
             <th mat-header-cell *matHeaderCellDef>Estado</th>
             <td mat-cell *matCellDef="let p">
-              <span class="status-badge status-{{ p.status }}">
-                {{ getParticipantStatusLabel(p.status) }}
-              </span>
+              <mat-select
+                [value]="p.status"
+                (selectionChange)="updateParticipantStatus(p, $event.value)"
+                class="status-select status-select--{{ p.status }}"
+              >
+                @for (opt of participantStatusOptions; track opt.id) {
+                  <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
             </td>
           </ng-container>
 
           <ng-container matColumnDef="cost">
             <th mat-header-cell *matHeaderCellDef>Costo</th>
             <td mat-cell *matCellDef="let p">
-              {{ p.costAssigned | currency : 'ARS' : 'symbol' : '1.0-0' }}
+              @if (p.costAssigned === 0) {
+                <span class="free-badge">Gratuito</span>
+              } @else {
+                {{ p.costAssigned | currency : 'ARS' : 'symbol' : '1.0-0' }}
+              }
             </td>
           </ng-container>
 
           <ng-container matColumnDef="paid">
             <th mat-header-cell *matHeaderCellDef>Pagado</th>
             <td mat-cell *matCellDef="let p">
-              {{ getTotalPaid(p) | currency : 'ARS' : 'symbol' : '1.0-0' }}
+              @if (p.costAssigned > 0) {
+                {{ getTotalPaid(p) | currency : 'ARS' : 'symbol' : '1.0-0' }}
+              } @else {
+                <span class="na">—</span>
+              }
             </td>
           </ng-container>
 
           <ng-container matColumnDef="balance">
             <th mat-header-cell *matHeaderCellDef>Saldo</th>
-            <td mat-cell *matCellDef="let p" [class.balance-ok]="getBalance(p) <= 0" [class.balance-due]="getBalance(p) > 0">
-              {{ getBalance(p) | currency : 'ARS' : 'symbol' : '1.0-0' }}
+            <td mat-cell *matCellDef="let p">
+              @if (p.costAssigned > 0) {
+                <span [class.balance-ok]="getBalance(p) <= 0" [class.balance-due]="getBalance(p) > 0">
+                  {{ getBalance(p) | currency : 'ARS' : 'symbol' : '1.0-0' }}
+                </span>
+              } @else {
+                <span class="na">—</span>
+              }
             </td>
           </ng-container>
 
@@ -251,15 +389,17 @@
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let p">
               <div class="row-actions">
-                <button
-                  *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]"
-                  mat-icon-button
-                  color="primary"
-                  (click)="openPaymentForm(p)"
-                  matTooltip="Registrar pago"
-                >
-                  <mat-icon>payments</mat-icon>
-                </button>
+                @if (getBalance(p) > 0) {
+                  <button
+                    *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]"
+                    mat-icon-button
+                    color="primary"
+                    (click)="openPaymentForm(p)"
+                    matTooltip="Registrar pago"
+                  >
+                    <mat-icon>payments</mat-icon>
+                  </button>
+                }
                 <button
                   *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR]"
                   mat-icon-button
@@ -282,13 +422,263 @@
       </div>
     </mat-tab>
 
-    <!-- Tab: Transportes (Fase 3) -->
+    <!-- Tab: Transportes -->
     <mat-tab label="Transportes ({{ trip.transports.length }})">
-      <div class="tab-content placeholder-tab">
-        <mat-icon class="placeholder-icon">directions_bus</mat-icon>
-        <p>Gestión de transportes — próximamente en Fase 3</p>
+      <div class="tab-content">
+
+        <!-- Acciones -->
+        <div class="transport-actions">
+          <button
+            *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]"
+            mat-flat-button
+            color="primary"
+            (click)="toggleAddTransport()"
+          >
+            <mat-icon>{{ showAddTransport ? 'close' : 'directions_bus' }}</mat-icon>
+            {{ showAddTransport ? 'Cancelar' : 'Agregar transporte' }}
+          </button>
+          @if (trip.transports.length > 0) {
+            <button
+              *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]"
+              mat-stroked-button
+              (click)="draftTransports()"
+              matTooltip="Asigna automáticamente los participantes confirmados según categoría"
+            >
+              <mat-icon>auto_fix_high</mat-icon>
+              Asignación automática
+            </button>
+          }
+        </div>
+
+        <!-- Formulario agregar transporte -->
+        @if (showAddTransport) {
+          <mat-card class="add-card" [formGroup]="addTransportForm">
+            <mat-card-content>
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput formControlName="name" placeholder="Colectivo 1, Micro azul..." />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo</mat-label>
+                  <mat-select formControlName="type">
+                    @for (opt of transportTypeOptions; track opt.id) {
+                      <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Capacidad</mat-label>
+                  <input matInput type="number" formControlName="capacity" min="1" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Empresa / proveedor</mat-label>
+                  <input matInput formControlName="company" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Hora de salida</mat-label>
+                  <input matInput type="time" formControlName="departureTime" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Notas</mat-label>
+                  <input matInput formControlName="notes" />
+                </mat-form-field>
+              </div>
+            </mat-card-content>
+            <mat-card-actions align="end">
+              <button mat-stroked-button type="button" (click)="toggleAddTransport()">Cancelar</button>
+              <button mat-flat-button color="primary" type="button" [disabled]="addTransportForm.invalid" (click)="submitAddTransport()">
+                Agregar
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        }
+
+        @if (trip.transports.length === 0 && !showAddTransport) {
+          <p class="empty-message">No hay transportes registrados.</p>
+        }
+
+        <!-- Tarjeta por cada transporte -->
+        @for (t of trip.transports; track t.id) {
+          <mat-card class="transport-card">
+            <mat-card-header>
+              <div class="transport-header">
+                <div class="transport-header__info">
+                  <span class="transport-name">{{ t.name }}</span>
+                  <span class="transport-type-badge">{{ getTransportTypeLabel(t.type) }}</span>
+                  @if (t.company) {
+                    <span class="transport-meta">{{ t.company }}</span>
+                  }
+                  @if (t.departureTime) {
+                    <span class="transport-meta">
+                      <mat-icon class="inline-icon">schedule</mat-icon> {{ t.departureTime }}
+                    </span>
+                  }
+                </div>
+                <div class="transport-header__right">
+                  <span class="occupancy-badge" [class.occupancy-full]="getOccupancy(t) >= t.capacity">
+                    <mat-icon class="inline-icon">people</mat-icon>
+                    {{ getOccupancy(t) }} / {{ t.capacity }}
+                  </span>
+                  <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
+                    @if (editingTransportId !== t.id) {
+                      <button mat-icon-button (click)="startEditTransport(t)" matTooltip="Editar">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" (click)="removeTransport(t)" matTooltip="Eliminar">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    } @else {
+                      <button mat-icon-button color="primary" [disabled]="editTransportForm.invalid" (click)="submitEditTransport()" matTooltip="Guardar">
+                        <mat-icon>save</mat-icon>
+                      </button>
+                      <button mat-icon-button (click)="cancelEditTransport()" matTooltip="Cancelar">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    }
+                  </ng-container>
+                </div>
+              </div>
+            </mat-card-header>
+
+            <!-- Formulario edición inline -->
+            @if (editingTransportId === t.id) {
+              <mat-card-content [formGroup]="editTransportForm">
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Nombre</mat-label>
+                    <input matInput formControlName="name" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Tipo</mat-label>
+                    <mat-select formControlName="type">
+                      @for (opt of transportTypeOptions; track opt.id) {
+                        <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Capacidad</mat-label>
+                    <input matInput type="number" formControlName="capacity" min="1" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Empresa</mat-label>
+                    <input matInput formControlName="company" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Hora salida</mat-label>
+                    <input matInput type="time" formControlName="departureTime" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Notas</mat-label>
+                    <input matInput formControlName="notes" />
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            }
+
+            <!-- Notas del transporte -->
+            @if (t.notes && editingTransportId !== t.id) {
+              <div class="transport-notes">{{ t.notes }}</div>
+            }
+
+            <!-- Participantes asignados -->
+            <mat-card-content>
+              @if (getParticipantsForTransport(t.id!).length > 0) {
+                <table mat-table [dataSource]="getParticipantsForTransport(t.id!)" class="transport-participants-table">
+                  <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef>Participante</th>
+                    <td mat-cell *matCellDef="let p">{{ getParticipantName(p) }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="type">
+                    <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                    <td mat-cell *matCellDef="let p">{{ getParticipantTypeLabel(p.type) }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="move">
+                    <th mat-header-cell *matHeaderCellDef></th>
+                    <td mat-cell *matCellDef="let p">
+                      <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
+                        <mat-select placeholder="Mover a…" class="move-select" (selectionChange)="assignTransport(p, $event.value)">
+                          <mat-option [value]="null">Sin asignar</mat-option>
+                          @for (transport of trip.transports; track transport.id) {
+                            @if (transport.id !== t.id) {
+                              <mat-option [value]="transport.id">{{ transport.name }}</mat-option>
+                            }
+                          }
+                        </mat-select>
+                      </ng-container>
+                    </td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="['name', 'type', 'move']"></tr>
+                  <tr mat-row *matRowDef="let row; columns: ['name', 'type', 'move']"></tr>
+                </table>
+              } @else {
+                <p class="empty-message">Sin pasajeros asignados.</p>
+              }
+            </mat-card-content>
+          </mat-card>
+        }
+
+        <!-- Participantes confirmados sin transporte -->
+        @if (getUnassignedParticipants().length > 0) {
+          <mat-card class="transport-card transport-card--unassigned">
+            <mat-card-header>
+              <div class="transport-header">
+                <div class="transport-header__info">
+                  <span class="transport-name">Sin transporte asignado</span>
+                  <span class="occupancy-badge">
+                    <mat-icon class="inline-icon">people</mat-icon>
+                    {{ getUnassignedParticipants().length }}
+                  </span>
+                </div>
+              </div>
+            </mat-card-header>
+            <mat-card-content>
+              <table mat-table [dataSource]="getUnassignedParticipants()" class="transport-participants-table">
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>Participante</th>
+                  <td mat-cell *matCellDef="let p">{{ getParticipantName(p) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="type">
+                  <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                  <td mat-cell *matCellDef="let p">{{ getParticipantTypeLabel(p.type) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="move">
+                  <th mat-header-cell *matHeaderCellDef></th>
+                  <td mat-cell *matCellDef="let p">
+                    @if (trip.transports.length > 0) {
+                      <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
+                        <mat-select placeholder="Asignar a…" class="move-select" (selectionChange)="assignTransport(p, $event.value)">
+                          @for (transport of trip.transports; track transport.id) {
+                            <mat-option [value]="transport.id">{{ transport.name }}</mat-option>
+                          }
+                        </mat-select>
+                      </ng-container>
+                    }
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="['name', 'type', 'move']"></tr>
+                <tr mat-row *matRowDef="let row; columns: ['name', 'type', 'move']"></tr>
+              </table>
+            </mat-card-content>
+          </mat-card>
+        }
+
       </div>
     </mat-tab>
+
+    <!-- Tab: Cobros (solo ADMIN / COORDINATOR) -->
+    @if (canViewCobros()) {
+      <mat-tab label="Cobros">
+        <div class="tab-content">
+          <ltrc-payment-links-panel
+            [entityId]="trip!.id!"
+            [entityType]="PaymentEntityTypeEnum.TRIP"
+            [entityLabel]="tripPaymentLabel"
+          />
+        </div>
+      </mat-tab>
+    }
 
     <!-- Tab: Documentación (Fase 5) -->
     <mat-tab label="Documentación">
@@ -307,27 +697,6 @@
     </mat-tab>
 
   </mat-tab-group>
-
-  <!-- Sección Cobros -->
-  <mat-card class="section-card" *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR]">
-    <mat-card-header>
-      <mat-card-title>
-        <button mat-icon-button (click)="showPaymentsPanel = !showPaymentsPanel">
-          <mat-icon>{{ showPaymentsPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
-        </button>
-        Cobros
-      </mat-card-title>
-    </mat-card-header>
-    @if (showPaymentsPanel) {
-      <mat-card-content>
-        <ltrc-payment-links-panel
-          [entityId]="trip!.id!"
-          [entityType]="PaymentEntityTypeEnum.TRIP"
-          [entityLabel]="tripPaymentLabel"
-        />
-      </mat-card-content>
-    }
-  </mat-card>
 
 </div>
 

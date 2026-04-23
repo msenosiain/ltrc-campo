@@ -6,6 +6,7 @@ import {
   PaymentStatusEnum,
 } from '@ltrc-campo/shared-api-model';
 import { PlayerEntity } from '../../players/schemas/player.entity';
+import { User } from '../../users/schemas/user.schema';
 
 export const PaymentSchema = new Schema<PaymentEntity>(
   {
@@ -16,7 +17,10 @@ export const PaymentSchema = new Schema<PaymentEntity>(
       required: true,
     },
     entityId: { type: Types.ObjectId, required: true, index: true },
-    playerId: { type: Types.ObjectId, ref: PlayerEntity.name, required: true },
+    playerId: { type: Types.ObjectId, ref: PlayerEntity.name, required: false },
+    userId:   { type: Types.ObjectId, ref: User.name,         required: false },
+    payerName: { type: String },
+    payerDni:  { type: String },
     amount: { type: Number, required: true, min: 0.01 },
     method: {
       type: String,

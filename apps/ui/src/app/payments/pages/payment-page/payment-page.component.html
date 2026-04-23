@@ -88,29 +88,34 @@
               @if (dniControl.hasError('minlength') || dniControl.hasError('pattern')) {
                 <mat-error>DNI inválido</mat-error>
               }
-              @if (dniControl.hasError('notFound')) {
-                <mat-error>No se encontró un jugador con ese DNI</mat-error>
-              }
             </mat-form-field>
 
             @if (errorMessage) {
-              <p class="error-text">{{ errorMessage }}</p>
+              <div class="rejection-block">
+                <p class="error-text">{{ errorMessage }}</p>
+                <button mat-stroked-button type="button" class="full-width" (click)="resetDni()">
+                  <mat-icon>refresh</mat-icon>
+                  Ingresar otro DNI
+                </button>
+              </div>
             }
 
-            <button
-              mat-raised-button
-              color="primary"
-              type="button"
-              class="full-width"
-              [disabled]="dniControl.invalid || state === 'validating'"
-              (click)="validateDni()"
-            >
-              @if (state === 'validating') {
-                <mat-spinner diameter="20" />
-              } @else {
-                Continuar
-              }
-            </button>
+            @if (!dniRejected) {
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                class="full-width"
+                [disabled]="dniControl.invalid || state === 'validating'"
+                (click)="validateDni()"
+              >
+                @if (state === 'validating') {
+                  <mat-spinner diameter="20" />
+                } @else {
+                  Continuar
+                }
+              </button>
+            }
           </div>
         }
 

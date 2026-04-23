@@ -8,6 +8,7 @@ export function buildUserForm(fb: FormBuilder, isCreate = false) {
       Validators.minLength(2),
     ]),
     memberNumber: fb.nonNullable.control(''),
+    idNumber: fb.nonNullable.control(''),
     email: fb.nonNullable.control('', [Validators.required, Validators.email]),
     roles: fb.nonNullable.control<RoleEnum[]>([], Validators.required),
     password: fb.control<string | null>(null, isCreate ? [] : []),

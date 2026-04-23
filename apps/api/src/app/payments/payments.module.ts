@@ -17,6 +17,7 @@ import { MatchEntity } from '../matches/schemas/match.entity';
 import { MatchSchema } from '../matches/schemas/match.schema';
 import { TripEntity } from '../trips/schemas/trip.entity';
 import { TripSchema } from '../trips/schemas/trip.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { TripSchema } from '../trips/schemas/trip.schema';
       { name: PlayerEntity.name, schema: PlayerSchema },
       { name: MatchEntity.name, schema: MatchSchema },
       { name: TripEntity.name, schema: TripSchema },
+      { name: User.name, schema: UserSchema },
     ]),
   ],
   controllers: [PaymentsController, PaymentsPublicController],

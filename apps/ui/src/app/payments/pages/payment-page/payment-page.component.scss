@@ -219,3 +219,13 @@
   font-size: 13px;
   margin: 0;
 }
+
+.rejection-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #fff3f3;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+}

@@ -17,6 +17,10 @@ export class CreateUserDto {
   @IsString()
   memberNumber?: string;
 
+  @IsOptional()
+  @IsString()
+  idNumber?: string;
+
   @IsNotEmpty()
   @IsEmail()
   email!: string;

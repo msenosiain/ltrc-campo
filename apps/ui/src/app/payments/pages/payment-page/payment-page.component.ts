@@ -42,6 +42,7 @@ export class PaymentPageComponent implements OnInit {
   linkInfo: IPaymentLinkPublicInfo | null = null;
   playerName = '';
   errorMessage = '';
+  dniRejected = false;
 
   dniControl = new FormControl('', [
     Validators.required,
@@ -69,7 +70,7 @@ export class PaymentPageComponent implements OnInit {
   }
 
   validateDni() {
-    if (this.dniControl.invalid || !this.linkInfo) return;
+    if (this.dniControl.invalid || !this.linkInfo || this.dniRejected) return;
     this.state = 'validating';
     this.errorMessage = '';
     const token = this.route.snapshot.paramMap.get('token') ?? '';
@@ -80,14 +81,20 @@ export class PaymentPageComponent implements OnInit {
       },
       error: (err) => {
         this.state = 'ready';
-        this.errorMessage = '';
+        this.dniRejected = true;
         if (err.status === 404) {
-          this.dniControl.setErrors({ notFound: true });
+          this.errorMessage = 'No se encontró ninguna persona con ese DNI.';
         } else {
           this.errorMessage = this.resolveDniError(err.error);
         }
       },
     });
+  }
+
+  resetDni(): void {
+    this.dniControl.reset();
+    this.dniRejected = false;
+    this.errorMessage = '';
   }
 
   pay() {
@@ -106,6 +113,12 @@ export class PaymentPageComponent implements OnInit {
   }
 
   private resolveDniError(body: any): string {
+    if (body?.code === 'NOT_A_PARTICIPANT') {
+      return `${body.payerName ?? 'La persona'} no está inscripta en este viaje.`;
+    }
+    if (body?.code === 'NO_PAYMENT_REQUIRED') {
+      return `${body.payerName ?? 'La persona'} no tiene costo asignado en este viaje.`;
+    }
     if (body?.code === 'CATEGORY_MISMATCH') {
       const player = getCategoryLabel(body.playerCategory as CategoryEnum);
       const match = getCategoryLabel(body.matchCategory as CategoryEnum);

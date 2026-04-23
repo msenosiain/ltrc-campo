@@ -15,6 +15,7 @@ import { Player } from '@ltrc-campo/shared-api-model';
 export interface CreateUserPayload {
   name: string;
   memberNumber?: string;
+  idNumber?: string;
   email: string;
   roles?: string[];
   password?: string;
@@ -26,6 +27,7 @@ export interface CreateUserPayload {
 export interface UpdateUserPayload {
   name?: string;
   memberNumber?: string;
+  idNumber?: string;
   email?: string;
   roles?: string[];
   sports?: SportEnum[];

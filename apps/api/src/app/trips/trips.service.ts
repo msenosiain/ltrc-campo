@@ -24,8 +24,8 @@ import {
 import { User } from '../users/schemas/user.schema';
 
 const POPULATE_FIELDS = [
-  { path: 'participants.player', select: 'firstName lastName category sport idNumber' },
-  { path: 'participants.user', select: 'firstName lastName email categories sports' },
+  { path: 'participants.player', select: 'name category sport idNumber' },
+  { path: 'participants.user', select: 'name email idNumber categories sports' },
   { path: 'linkedTournament', select: 'name sport' },
 ];
 

@@ -27,6 +27,8 @@ import {
   PaymentLinkStatusEnum,
   PaymentMethodEnum,
   PaymentStatusEnum,
+  TripParticipantStatusEnum,
+  TripParticipantTypeEnum,
   getCategoryLabel,
 } from '@ltrc-campo/shared-api-model';
 
@@ -50,6 +52,8 @@ export class PaymentsService {
     private readonly matchModel: Model<MatchEntity>,
     @InjectModel(TripEntity.name)
     private readonly tripModel: Model<TripEntity>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<User>,
     private readonly configService: ConfigService
   ) {
     // MP_FEE_RATE se configura como porcentaje (ej: 5 = 5%, 4.83 = 4.83%)
@@ -181,11 +185,67 @@ export class PaymentsService {
     };
   }
 
+  private async resolveTripPayer(tripId: string, dni: string): Promise<{
+    payerId: { playerId?: Types.ObjectId; userId?: Types.ObjectId };
+    payerName: string;
+  }> {
+    const trip = await this.tripModel.findById(tripId).select('participants').lean();
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    // 1. Jugador
+    const player = await this.playerModel.findOne({ idNumber: dni }).select('id name idNumber').lean();
+    if (player) {
+      const p = trip.participants.find(
+        (p) =>
+          p.type === TripParticipantTypeEnum.PLAYER &&
+          p.status !== TripParticipantStatusEnum.CANCELLED &&
+          p.player?.toString() === player._id.toString(),
+      );
+      if (!p) throw new HttpException({ code: 'NOT_A_PARTICIPANT', payerName: player.name }, 400);
+      if (p.costAssigned === 0) throw new HttpException({ code: 'NO_PAYMENT_REQUIRED', payerName: player.name }, 400);
+      return { payerId: { playerId: player._id }, payerName: player.name };
+    }
+
+    // 2. Staff (usuario del sistema)
+    const user = await this.userModel.findOne({ idNumber: dni }).select('id name idNumber').lean();
+    if (user) {
+      const p = trip.participants.find(
+        (p) =>
+          p.type === TripParticipantTypeEnum.STAFF &&
+          p.status !== TripParticipantStatusEnum.CANCELLED &&
+          (p as any).user?.toString() === user._id.toString(),
+      );
+      if (!p) throw new HttpException({ code: 'NOT_A_PARTICIPANT', payerName: user.name }, 400);
+      if (p.costAssigned === 0) throw new HttpException({ code: 'NO_PAYMENT_REQUIRED', payerName: user.name }, 400);
+      return { payerId: { userId: user._id }, payerName: user.name };
+    }
+
+    // 3. Externo (padre / acompañante sin cuenta)
+    const ext = trip.participants.find(
+      (p) =>
+        p.type === TripParticipantTypeEnum.EXTERNAL &&
+        p.status !== TripParticipantStatusEnum.CANCELLED &&
+        p.externalDni === dni,
+    );
+    if (ext) {
+      if (ext.costAssigned === 0) throw new HttpException({ code: 'NO_PAYMENT_REQUIRED', payerName: ext.externalName }, 400);
+      return { payerId: {}, payerName: ext.externalName ?? 'Participante' };
+    }
+
+    throw new NotFoundException('No se encontró ninguna persona con ese DNI en el viaje');
+  }
+
   async validateDni(token: string, dni: string) {
     const link = await this.paymentLinkModel.findOne({ linkToken: token });
     if (!link) throw new NotFoundException('Link de pago no encontrado');
     this.assertLinkActive(link);
 
+    if (link.entityType === PaymentEntityTypeEnum.TRIP) {
+      const { payerName } = await this.resolveTripPayer(link.entityId.toString(), dni);
+      return { playerName: payerName };
+    }
+
+    // Partidos: buscar solo jugadores
     const player = await this.playerModel
       .findOne({ idNumber: dni })
       .select('id name idNumber email category')
@@ -193,27 +253,13 @@ export class PaymentsService {
     if (!player) throw new NotFoundException('No se encontró un jugador con ese DNI');
 
     if (link.entityIds?.length) {
-      const matches = await this.matchModel
-        .find({ _id: { $in: link.entityIds } })
-        .select('category')
-        .lean();
+      const matches = await this.matchModel.find({ _id: { $in: link.entityIds } }).select('category').lean();
       const matchForPlayer = matches.find((m) => m.category === player.category);
-      if (!matchForPlayer) {
-        throw new HttpException(
-          { code: 'CATEGORY_NOT_IN_GROUP', playerCategory: player.category },
-          400
-        );
-      }
+      if (!matchForPlayer) throw new HttpException({ code: 'CATEGORY_NOT_IN_GROUP', playerCategory: player.category }, 400);
     } else if (link.entityType === PaymentEntityTypeEnum.MATCH && player.category) {
-      const match = await this.matchModel
-        .findById(link.entityId)
-        .select('category')
-        .lean();
+      const match = await this.matchModel.findById(link.entityId).select('category').lean();
       if (match?.category && match.category !== player.category) {
-        throw new HttpException(
-          { code: 'CATEGORY_MISMATCH', playerCategory: player.category, matchCategory: match.category },
-          400
-        );
+        throw new HttpException({ code: 'CATEGORY_MISMATCH', playerCategory: player.category, matchCategory: match.category }, 400);
       }
     }
 
@@ -225,15 +271,27 @@ export class PaymentsService {
     if (!link) throw new NotFoundException('Link de pago no encontrado');
     this.assertLinkActive(link);
 
-    const player = await this.playerModel
-      .findOne({ idNumber: dni })
-      .select('id name idNumber email category')
-      .lean();
-    if (!player) throw new NotFoundException('No se encontró un jugador con ese DNI');
-
-    // Para links de jornada: resolver el partido correcto según categoría del jugador
+    let payerId: { playerId?: Types.ObjectId; userId?: Types.ObjectId } = {};
+    let payerName: string;
+    let payerDni: string = dni;
     let targetEntityId: Types.ObjectId = link.entityId;
-    if (link.entityIds?.length) {
+
+    if (link.entityType === PaymentEntityTypeEnum.TRIP) {
+      const resolved = await this.resolveTripPayer(link.entityId.toString(), dni);
+      payerId = resolved.payerId;
+      payerName = resolved.payerName;
+    } else {
+      const player = await this.playerModel
+        .findOne({ idNumber: dni })
+        .select('id name idNumber email category')
+        .lean();
+      if (!player) throw new NotFoundException('No se encontró un jugador con ese DNI');
+      payerId = { playerId: player._id };
+      payerName = player.name;
+      payerDni = player.idNumber ?? dni;
+
+      // Para links de jornada: resolver el partido correcto según categoría del jugador
+      if (link.entityIds?.length) {
       const matches = await this.matchModel
         .find({ _id: { $in: link.entityIds } })
         .select('category')
@@ -247,17 +305,12 @@ export class PaymentsService {
       }
       targetEntityId = (matchForPlayer as any)._id;
     } else if (link.entityType === PaymentEntityTypeEnum.MATCH && player.category) {
-      const match = await this.matchModel
-        .findById(link.entityId)
-        .select('category')
-        .lean();
+      const match = await this.matchModel.findById(link.entityId).select('category').lean();
       if (match?.category && match.category !== player.category) {
-        throw new HttpException(
-          { code: 'CATEGORY_MISMATCH', playerCategory: player.category, matchCategory: match.category },
-          400
-        );
+        throw new HttpException({ code: 'CATEGORY_MISMATCH', playerCategory: player.category, matchCategory: match.category }, 400);
       }
     }
+    } // end else (non-trip)
 
     const externalReference = uuidv4();
 
@@ -266,7 +319,9 @@ export class PaymentsService {
       paymentLinkId: link._id,
       entityType: link.entityType,
       entityId: targetEntityId,
-      playerId: player._id,
+      ...payerId,
+      payerName,
+      payerDni,
       amount: link.amount,
       method: PaymentMethodEnum.MERCADOPAGO,
       status: PaymentStatusEnum.PENDING,
@@ -298,8 +353,8 @@ export class PaymentsService {
           },
         ],
         payer: {
-          name: player.name,
-          identification: { type: 'DNI', number: player.idNumber },
+          name: payerName,
+          identification: { type: 'DNI', number: payerDni },
         },
         external_reference: externalReference,
         ...(excludedTypes.length > 0 ? {

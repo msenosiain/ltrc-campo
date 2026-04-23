@@ -10,7 +10,10 @@ export class PaymentEntity extends Document {
   paymentLinkId?: Types.ObjectId;
   entityType: PaymentEntityTypeEnum;
   entityId: Types.ObjectId;
-  playerId: Types.ObjectId;
+  playerId?: Types.ObjectId;
+  userId?: Types.ObjectId;
+  payerName?: string;
+  payerDni?: string;
   amount: number;
   method: PaymentMethodEnum;
   status: PaymentStatusEnum;

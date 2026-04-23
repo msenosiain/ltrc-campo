@@ -11,6 +11,7 @@ export function mapFormToCreateUserDto(
   return {
     name: value.name,
     memberNumber: value.memberNumber || undefined,
+    idNumber: value.idNumber || undefined,
     email: value.email,
     roles: value.roles,
     password: value.password || undefined,
@@ -26,6 +27,7 @@ export function mapFormToUpdateUserDto(
   return {
     name: value.name,
     memberNumber: value.memberNumber || undefined,
+    idNumber: value.idNumber || undefined,
     email: value.email,
     roles: value.roles,
     sports: value.sports,
@@ -38,6 +40,7 @@ export function mapUserToForm(user: User): UserFormValue {
   return {
     name: user.name,
     memberNumber: user.memberNumber ?? '',
+    idNumber: user.idNumber ?? '',
     email: user.email,
     roles: user.roles,
     password: undefined,

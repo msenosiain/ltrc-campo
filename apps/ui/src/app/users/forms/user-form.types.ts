@@ -3,6 +3,7 @@ import { CategoryEnum, HockeyBranchEnum, RoleEnum, SportEnum } from '@ltrc-campo
 export type UserFormValue = {
   name: string;
   memberNumber: string;
+  idNumber: string;
   email: string;
   roles: RoleEnum[];
   password?: string;
