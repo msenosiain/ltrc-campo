@@ -115,10 +115,10 @@ export class PaymentPageComponent implements OnInit {
 
   private resolveDniError(body: any): string {
     if (body?.code === 'NOT_A_PARTICIPANT') {
-      return `${body.payerName ?? 'La persona'} no está inscripta en este viaje.`;
+      return 'El DNI ingresado no corresponde a ningún participante de este viaje.';
     }
     if (body?.code === 'NO_PAYMENT_REQUIRED') {
-      return `${body.payerName ?? 'La persona'} no tiene costo asignado en este viaje.`;
+      return 'Este participante no tiene costo asignado en el viaje.';
     }
     if (body?.code === 'CATEGORY_MISMATCH') {
       const player = getCategoryLabel(body.playerCategory as CategoryEnum);
