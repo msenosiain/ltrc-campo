@@ -833,36 +833,41 @@ export class PlayerFeesService {
       const _bduarRawDate = row.fechaFichaje ? new Date(row.fechaFichaje) : undefined;
       const bduarRegistrationDate = _bduarRawDate && !isNaN(_bduarRawDate.getTime()) ? _bduarRawDate : undefined;
 
-      const playerData: Record<string, unknown> = {
-        name,
-        sport: SportEnum.RUGBY,
-        status: PlayerStatusEnum.ACTIVE,
-        ...(birthDate && { birthDate }),
-        ...(row.email?.trim() && { email: row.email.trim() }),
-        ...(position && { positions: [position] }),
-        ...(height !== null || weight !== null || row.oSocial || bloodType
-          ? {
-              medicalData: {
-                ...(height !== null && { height }),
-                ...(weight !== null && { weight }),
-                ...(row.oSocial?.trim() && { healthInsurance: row.oSocial.trim() }),
-                ...(bloodType && { bloodType }),
-              },
-            }
-          : {}),
-      };
+      const medicalData = (height !== null || weight !== null || row.oSocial || bloodType)
+        ? {
+            ...(height !== null && { height }),
+            ...(weight !== null && { weight }),
+            ...(row.oSocial?.trim() && { healthInsurance: row.oSocial.trim() }),
+            ...(bloodType && { bloodType }),
+          }
+        : undefined;
 
       let player = await this.playerModel.findOne({ idNumber: dni });
 
       if (player) {
-        await this.playerModel.findByIdAndUpdate(player._id, { $set: playerData });
+        // Never overwrite name/nickName/status — only update medical/bio data from BDUAR
+        const updateData: Record<string, unknown> = {
+          ...(birthDate && { birthDate }),
+          ...(row.email?.trim() && { email: row.email.trim() }),
+          ...(position && { positions: [position] }),
+          ...(medicalData && { medicalData }),
+        };
+        if (Object.keys(updateData).length > 0) {
+          await this.playerModel.findByIdAndUpdate(player._id, { $set: updateData });
+        }
         updated++;
         details.push({ dni, name, action: 'updated' });
       } else {
         player = await this.playerModel.create({
-          ...playerData,
+          name,
+          sport: SportEnum.RUGBY,
+          status: PlayerStatusEnum.ACTIVE,
           idNumber: dni,
           nickName: '',
+          ...(birthDate && { birthDate }),
+          ...(row.email?.trim() && { email: row.email.trim() }),
+          ...(position && { positions: [position] }),
+          ...(medicalData && { medicalData }),
           createdBy: new Types.ObjectId(userId),
         });
         created++;

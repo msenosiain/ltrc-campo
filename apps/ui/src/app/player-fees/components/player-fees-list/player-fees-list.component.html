@@ -48,7 +48,7 @@
       @if (availableCategories().length > 1) {
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Categoría</mat-label>
-          <mat-select formControlName="category" multiple (selectionChange)="onFilterChange()">
+          <mat-select [value]="categoryFilter()" multiple (selectionChange)="categoryFilter.set($event.value)">
             @for (cat of availableCategories(); track cat.id) {
               <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
             }

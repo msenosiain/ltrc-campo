@@ -31,6 +31,15 @@ export class PlayersService {
   }
 
   getPlayers(query: PaginationQuery): Observable<PaginatedResponse<Player>> {
+    const hasPlayerIds = (query.filters as any)?.playerIds?.length > 0;
+
+    if (hasPlayerIds) {
+      return this.httpClient.post<PaginatedResponse<Player>>(
+        `${this.playersApiUrl}/filter`,
+        { pagination: query }
+      );
+    }
+
     let params = new HttpParams();
     if (query.page) params = params.set('page', query.page);
     if (query.size) params = params.set('size', query.size);

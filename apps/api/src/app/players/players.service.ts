@@ -629,8 +629,8 @@ export class PlayersService {
             idNumber: { $regex: new RegExp(idNumber) },
           });
           if (existing) {
+            // Never overwrite existing name — only update sport/category/birthDate/memberNumber
             await this.playerModel.findByIdAndUpdate(existing._id, {
-              name,
               birthDate,
               sport,
               category,

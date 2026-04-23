@@ -91,6 +91,7 @@ export class PlayerFeesListComponent implements OnInit {
 
   readonly filteredRows = computed(() => {
     const term = this.nameFilter().toLowerCase().trim();
+    const cats = this.categoryFilter();
     const feePaid = this.feePaidFilter();
     const membership = this.membershipFilter();
     const bduar = this.bduarFilter();
@@ -99,6 +100,7 @@ export class PlayerFeesListComponent implements OnInit {
     const eligible = this.eligibleFilter();
     return this.rows().filter(r => {
       if (term && !r.playerName?.toLowerCase().includes(term) && !r.playerDni?.includes(term)) return false;
+      if (cats.length && !cats.includes(r.category as CategoryEnum)) return false;
       if (feePaid !== null && r.feePaid !== feePaid) return false;
       if (membership !== null && r.membershipCurrent !== membership) return false;
       if (bduar !== null && r.bduarRegistered !== bduar) return false;
@@ -154,7 +156,7 @@ export class PlayerFeesListComponent implements OnInit {
           this.filterForm.get('sport')!.setValue(ctx.forcedSport, { emitEvent: false });
           this.selectedSport.set(ctx.forcedSport);
         }
-        if (ctx.forcedCategory) this.filterForm.get('category')!.setValue(ctx.forcedCategory, { emitEvent: false });
+        if (ctx.forcedCategory) this.categoryFilter.set([ctx.forcedCategory]);
         this.rows.set([]);
         this.search();
       });
@@ -167,12 +169,11 @@ export class PlayerFeesListComponent implements OnInit {
   onSportChange(): void {
     const sport = this.filterForm.get('sport')?.value as SportEnum | null;
     this.selectedSport.set(sport);
-    const currentCats = this.filterForm.get('category')?.value as CategoryEnum[];
-    if (currentCats?.length) {
+    // Clear category filter if selected cats no longer valid for this sport
+    const currentCats = this.categoryFilter();
+    if (currentCats.length) {
       const valid = currentCats.filter(c => this.availableCategories().some(o => o.id === c));
-      if (valid.length !== currentCats.length) {
-        this.filterForm.get('category')?.setValue(valid, { emitEvent: false });
-      }
+      this.categoryFilter.set(valid);
     }
     this.rows.set([]);
     this.search();
@@ -184,11 +185,10 @@ export class PlayerFeesListComponent implements OnInit {
   }
 
   search(silent = false): void {
-    const { season, sport, category } = this.filterForm.getRawValue();
+    const { season, sport } = this.filterForm.getRawValue();
     if (!season || !sport) return;
     if (!silent) this.loading.set(true);
-    const categories: CategoryEnum[] | undefined = category?.length ? category : undefined;
-    this.adminService.getStatus({ season, sport, categories })
+    this.adminService.getStatus({ season, sport })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => { this.rows.set(data); if (!silent) this.loading.set(false); },

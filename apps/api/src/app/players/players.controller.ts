@@ -44,6 +44,14 @@ export class PlayersController {
     return this.playersService.findPaginated(pagination, (req as any).user);
   }
 
+  @Post('filter')
+  async findPaginatedPost(
+    @Body() body: { pagination: PaginationDto<PlayerFiltersDto> },
+    @Req() req: Request
+  ) {
+    return this.playersService.findPaginated(body.pagination, (req as any).user);
+  }
+
   @Post('import')
   @Roles(RoleEnum.ADMIN)
   @UseInterceptors(FileInterceptor('file'))

@@ -107,7 +107,12 @@ export class PlayerSearchComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.initialFilters) {
-      this.searchForm.patchValue(this.initialFilters, { emitEvent: false });
+      const patch: Record<string, unknown> = { ...this.initialFilters };
+      // Saved state uses 'categories' (emitted key) but the form control is 'category'
+      if (patch['categories'] && !patch['category']) {
+        patch['category'] = patch['categories'];
+      }
+      this.searchForm.patchValue(patch, { emitEvent: false });
     }
 
     this.filterContext.filterContext$
