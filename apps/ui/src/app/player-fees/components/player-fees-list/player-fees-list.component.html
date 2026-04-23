@@ -163,7 +163,7 @@
         <ng-container matColumnDef="player">
           <th mat-header-cell *matHeaderCellDef>Jugador</th>
           <td mat-cell *matCellDef="let row">
-            <div class="player-name">{{ row.playerName }}</div>
+            <a class="player-name player-name--link" [routerLink]="['/dashboard/players', row.playerId]">{{ row.playerName }}</a>
             <div class="player-dni">{{ row.playerDni }}</div>
           </td>
         </ng-container>

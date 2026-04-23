@@ -430,7 +430,7 @@
               <div class="members-cell-inner">
                 @for (m of f.members; track m.playerId; let i = $index) {
                   <span class="member-inline">
-                    {{ m.playerName ?? '?' }}<span class="member-discount">({{ discountLabel(m.order) }})</span>
+                    <a class="member-link" [routerLink]="['/dashboard/players', m.playerId]">{{ m.playerName ?? '?' }}</a><span class="member-discount">({{ discountLabel(m.order) }})</span>
                   </span>
                   @if (i < f.members.length - 1) { <span class="member-sep">·</span> }
                 }

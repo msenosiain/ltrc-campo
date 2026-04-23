@@ -113,6 +113,15 @@
 
 .player-name {
   font-weight: 500;
+
+  &--link {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 .player-dni {

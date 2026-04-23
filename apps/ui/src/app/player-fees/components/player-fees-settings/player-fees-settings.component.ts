@@ -29,6 +29,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { CategoryEnum, IFamilyGroup, IPlayerFeeConfig, Player, SportEnum, toTitleCase } from '@ltrc-campo/shared-api-model';
 import { categoryOptions, getCategoryLabel, getCategoryOptionsBySport } from '../../../common/category-options';
 import { sportOptions } from '../../../common/sport-options';
@@ -59,6 +60,7 @@ import { PlayersService } from '../../../players/services/players.service';
     MatPaginatorModule,
     DecimalPipe,
     DatePipe,
+    RouterLink,
   ],
   templateUrl: './player-fees-settings.component.html',
   styleUrl: './player-fees-settings.component.scss',

@@ -16,6 +16,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { MatDialogModule } from '@angular/material/dialog';
 import { DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { CategoryEnum, IPlayerFeeConfig, IPlayerFeeStatusRow, RoleEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 import { CategoryOption, getCategoryLabel, getCategoryOptionsBySport } from '../../../common/category-options';
 import { UserFilterContextService } from '../../../common/services/user-filter-context.service';
@@ -42,6 +43,7 @@ import { ManualFeePaymentDialogComponent } from '../manual-fee-payment-dialog/ma
     MatSnackBarModule,
     MatChipsModule,
     DecimalPipe,
+    RouterLink,
     AllowedRolesDirective,
     MatDialogModule,
   ],
