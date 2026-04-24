@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, OnInit, signal, untracked } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
@@ -15,7 +15,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { MatDialogModule } from '@angular/material/dialog';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CategoryEnum, IPlayerFeeConfig, IPlayerFeeStatusRow, RoleEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 import { CategoryOption, getCategoryLabel, getCategoryOptionsBySport } from '../../../common/category-options';
@@ -46,6 +46,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
     MatSnackBarModule,
     MatChipsModule,
     DecimalPipe,
+    NgTemplateOutlet,
     RouterLink,
     AllowedRolesDirective,
     MatDialogModule,
@@ -104,6 +105,14 @@ export class PlayerFeesListComponent implements OnInit {
   savingKey = signal<string | null>(null);
   configs = signal<IPlayerFeeConfig[]>([]);
 
+  page = signal(0);
+  readonly PAGE_SIZE = 50;
+
+  private readonly _resetPage = effect(() => {
+    this.filteredRows(); // se suscribe a todos los filtros
+    untracked(() => this.page.set(0));
+  }, { allowSignalWrites: true });
+
   readonly filteredRows = computed(() => {
     const term = this.nameFilter().toLowerCase().trim();
     const cats = this.categoryFilter();
@@ -124,6 +133,23 @@ export class PlayerFeesListComponent implements OnInit {
       if (eligible !== null && r.eligible !== eligible) return false;
       return true;
     });
+  });
+
+  readonly pagedRows = computed(() => {
+    const start = this.page() * this.PAGE_SIZE;
+    return this.filteredRows().slice(start, start + this.PAGE_SIZE);
+  });
+
+  readonly totalPages = computed(() =>
+    Math.ceil(this.filteredRows().length / this.PAGE_SIZE)
+  );
+
+  readonly paginatorLabel = computed(() => {
+    const total = this.filteredRows().length;
+    if (total === 0) return '';
+    const start = this.page() * this.PAGE_SIZE + 1;
+    const end = Math.min(start + this.PAGE_SIZE - 1, total);
+    return `${start}–${end} de ${total}`;
   });
 
   readonly stats = computed(() => {

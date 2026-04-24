@@ -157,8 +157,25 @@
       </span>
     </div>
 
+    <ng-template #paginator>
+      @if (totalPages() > 1) {
+        <div class="fees-paginator">
+          <span class="fees-paginator__label">{{ paginatorLabel() }}</span>
+          <button mat-icon-button [disabled]="page() === 0" (click)="page.set(page() - 1)">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="fees-paginator__pages">{{ page() + 1 }} / {{ totalPages() }}</span>
+          <button mat-icon-button [disabled]="page() >= totalPages() - 1" (click)="page.set(page() + 1)">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      }
+    </ng-template>
+
+    <ng-container *ngTemplateOutlet="paginator" />
+
     <div class="table-wrapper mat-elevation-z2">
-      <table mat-table [dataSource]="filteredRows()" class="fees-table">
+      <table mat-table [dataSource]="pagedRows()" class="fees-table">
 
         <ng-container matColumnDef="player">
           <th mat-header-cell *matHeaderCellDef>Jugador</th>
@@ -275,6 +292,8 @@
         <tr mat-row *matRowDef="let row; columns: displayedColumns();"></tr>
       </table>
     </div>
+
+    <ng-container *ngTemplateOutlet="paginator" />
   }
 
   @if (!loading() && filteredRows().length === 0 && filterForm.get('sport')?.value) {
