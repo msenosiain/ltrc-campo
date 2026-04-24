@@ -24,6 +24,7 @@ import { PAYMENT_CONFIG_MODEL } from './schemas/payment-config.entity';
 import { PlayerEntity } from '../players/schemas/player.entity';
 import { MatchEntity } from '../matches/schemas/match.entity';
 import { TripEntity } from '../trips/schemas/trip.entity';
+import { User } from '../users/schemas/user.schema';
 import {
   PaymentEntityTypeEnum,
   PaymentLinkStatusEnum,
@@ -120,6 +121,7 @@ describe('PaymentsService', () => {
         { provide: getModelToken(PlayerEntity.name), useValue: mockPlayerModel },
         { provide: getModelToken(MatchEntity.name), useValue: mockMatchModel },
         { provide: getModelToken(TripEntity.name), useValue: mockTripModel },
+        { provide: getModelToken(User.name), useValue: { findOne: jest.fn() } },
         {
           provide: ConfigService,
           useValue: {
