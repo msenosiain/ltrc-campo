@@ -5,6 +5,7 @@ import { PlayersService } from '../../services/players.service';
 import { of } from 'rxjs';
 import { ListStateService } from '../../../common/services/list-state.service';
 import { SortOrder, SportEnum } from '@ltrc-campo/shared-api-model';
+import { API_CONFIG_TOKEN } from '../../../app.config';
 
 describe('PlayersList', () => {
   let component: PlayersListComponent;
@@ -35,6 +36,7 @@ describe('PlayersList', () => {
       imports: [PlayersListComponent, RouterModule.forRoot([])],
       providers: [
         { provide: PlayersService, useValue: playersServiceMock },
+        { provide: API_CONFIG_TOKEN, useValue: { baseUrl: 'http://localhost:3000/api/v1' } },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: {}, paramMap: { get: () => null } },
