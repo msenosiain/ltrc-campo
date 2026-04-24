@@ -47,11 +47,6 @@ export class CreateTripDto {
   @Min(0)
   readonly costPerPerson?: number;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  readonly maxParticipants?: number;
 
   @IsOptional()
   @IsEnum(TripStatusEnum)

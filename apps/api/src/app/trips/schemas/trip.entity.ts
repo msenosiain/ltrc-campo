@@ -54,7 +54,6 @@ export class TripEntity extends Document {
   returnDate?: Date;
   registrationDeadline?: Date;
   costPerPerson!: number;
-  maxParticipants?: number;
   status!: TripStatusEnum;
   linkedTournament?: Types.ObjectId;
   description?: string;

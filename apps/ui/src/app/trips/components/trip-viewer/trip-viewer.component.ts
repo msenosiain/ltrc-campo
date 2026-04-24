@@ -48,6 +48,7 @@ import {
 import { PaymentLinksPanelComponent } from '../../../payments/components/payment-links-panel/payment-links-panel.component';
 import { TripRecordPaymentDialogComponent } from '../trip-record-payment-dialog/trip-record-payment-dialog.component';
 import { TripsService, AddParticipantPayload, AddTransportPayload } from '../../services/trips.service';
+import { TripTransportPdfService } from '../../services/trip-transport-pdf.service';
 import { ConfirmDialogComponent } from '../../../common/components/confirm-dialog/confirm-dialog.component';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
 import { AuthService } from '../../../auth/auth.service';
@@ -103,6 +104,7 @@ export class TripViewerComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly tripsService = inject(TripsService);
+  private readonly transportPdfService = inject(TripTransportPdfService);
   private readonly playersService = inject(PlayersService);
   private readonly usersService = inject(UsersService);
   private readonly authService = inject(AuthService);
@@ -296,6 +298,7 @@ export class TripViewerComponent implements OnInit {
   // ── Estado transportes ────────────────────────────────────────────────────
   showAddTransport = false;
   editingTransportId: string | null = null;
+  generatingTransportPdf = false;
 
   addTransportForm = this.fb.group({
     name: ['', Validators.required],
@@ -466,13 +469,11 @@ export class TripViewerComponent implements OnInit {
     ).length ?? 0;
   }
 
-  /** Cupo efectivo: suma de capacidades de transportes o maxParticipants como fallback */
+  /** Cupo efectivo: suma de capacidades de transportes */
   get effectiveCapacity(): number | null {
     const transports = this.trip?.transports ?? [];
-    if (transports.length > 0) {
-      return transports.reduce((sum, t) => sum + t.capacity, 0);
-    }
-    return this.trip?.maxParticipants ?? null;
+    if (transports.length === 0) return null;
+    return transports.reduce((sum, t) => sum + t.capacity, 0);
   }
 
   get totalCollected(): number {
@@ -725,6 +726,16 @@ export class TripViewerComponent implements OnInit {
     return this.trip?.participants.filter((p) => p.transportId === t.id).length ?? 0;
   }
 
+  async generateTransportPosters(): Promise<void> {
+    if (!this.trip) return;
+    this.generatingTransportPdf = true;
+    try {
+      await this.transportPdfService.generate(this.trip);
+    } finally {
+      this.generatingTransportPdf = false;
+    }
+  }
+
   toggleAddTransport(): void {
     this.showAddTransport = !this.showAddTransport;
     if (!this.showAddTransport) {
@@ -847,8 +858,11 @@ export class TripViewerComponent implements OnInit {
       });
   }
 
-  assignTransport(p: TripParticipant, transportId: string | null): void {
+  readonly UNASSIGN_SENTINEL = '__unassign__';
+
+  assignTransport(p: TripParticipant, value: string): void {
     if (!this.trip?.id || !p.id) return;
+    const transportId = value === this.UNASSIGN_SENTINEL ? null : value;
     this.tripsService
       .moveParticipant(this.trip.id, p.id, transportId)
       .pipe(takeUntilDestroyed(this.destroyRef))

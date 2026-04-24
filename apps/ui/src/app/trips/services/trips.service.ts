@@ -22,7 +22,6 @@ export interface CreateTripPayload {
   returnDate?: string | null;
   registrationDeadline?: string | null;
   costPerPerson: number;
-  maxParticipants?: number | null;
   status?: TripStatusEnum;
   linkedTournament?: string | null;
   description?: string;

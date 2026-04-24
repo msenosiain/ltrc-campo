@@ -63,7 +63,6 @@ export interface Trip extends Document {
   readonly returnDate?: Date;
   readonly registrationDeadline?: Date;
   readonly costPerPerson: number;
-  readonly maxParticipants?: number;
   readonly status: TripStatusEnum;
   readonly linkedTournament?: Tournament;
   readonly description?: string;

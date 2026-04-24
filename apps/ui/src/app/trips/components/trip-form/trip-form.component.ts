@@ -89,7 +89,6 @@ export class TripFormComponent implements OnInit, OnChanges {
     returnDate: [null],
     registrationDeadline: [null],
     costPerPerson: [0, [Validators.required, Validators.min(0)]],
-    maxParticipants: [null],
     status: [TripStatusEnum.DRAFT],
     description: [''],
   });
@@ -166,7 +165,6 @@ export class TripFormComponent implements OnInit, OnChanges {
         ? format(new Date(v.registrationDeadline), 'yyyy-MM-dd')
         : undefined,
       costPerPerson: v.costPerPerson ?? 0,
-      maxParticipants: v.maxParticipants ?? undefined,
       status: v.status,
       description: v.description ?? undefined,
     };

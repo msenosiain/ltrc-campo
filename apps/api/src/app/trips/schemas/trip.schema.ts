@@ -82,7 +82,6 @@ export const TripSchema = new Schema<TripEntity>(
     returnDate: { type: Date },
     registrationDeadline: { type: Date },
     costPerPerson: { type: Number, required: true, default: 0 },
-    maxParticipants: { type: Number },
     status: {
       type: String,
       enum: Object.values(TripStatusEnum),
