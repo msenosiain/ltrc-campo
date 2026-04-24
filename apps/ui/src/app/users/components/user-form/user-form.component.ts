@@ -55,6 +55,7 @@ export class UserFormComponent implements OnInit, OnChanges {
   @Input() submitting = false;
   @Output() readonly formSubmit = new EventEmitter<UserFormValue>();
   @Output() readonly cancel = new EventEmitter<void>();
+  @Output() readonly deleteRequested = new EventEmitter<void>();
 
   private static readonly NON_SPORT_ROLES: RoleEnum[] = [RoleEnum.PLAYER];
 
@@ -128,5 +129,9 @@ export class UserFormComponent implements OnInit, OnChanges {
 
   onCancel(): void {
     this.cancel.emit();
+  }
+
+  onDelete(): void {
+    this.deleteRequested.emit();
   }
 }

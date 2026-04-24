@@ -10,7 +10,7 @@
       }
       @if (filterForm.get('sport')?.value) {
         <button
-          *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER]"
+          *ltrcAllowedRoles="[RoleEnum.ADMIN]"
           mat-stroked-button
           type="button"
           (click)="openManualPayment()"

@@ -4,6 +4,12 @@
       <span class="sticky-toolbar__name">{{ isCreate ? 'Nuevo usuario' : 'Editar usuario' }}</span>
     </div>
     <div class="sticky-toolbar__actions">
+      @if (!isCreate) {
+        <button mat-stroked-button color="warn" type="button" (click)="onDelete()">
+          <mat-icon>delete</mat-icon>
+          Eliminar usuario
+        </button>
+      }
       <button mat-stroked-button type="button" (click)="onCancel()">
         Cancelar
       </button>

@@ -531,6 +531,7 @@ export class PaymentsService {
   private async buildGlobalQuery(filters: {
     status?: string;
     method?: string;
+    concept?: string;
     entityType?: PaymentEntityTypeEnum;
     sport?: string;
     category?: string;
@@ -547,6 +548,10 @@ export class PaymentsService {
     if (filters.method) {
       const methods = filters.method.split(',').filter(Boolean);
       query['method'] = methods.length === 1 ? methods[0] : { $in: methods };
+    }
+    if (filters.concept) {
+      const concepts = filters.concept.split(',').filter(Boolean);
+      query['concept'] = concepts.length === 1 ? concepts[0] : { $in: concepts };
     }
     if (filters.entityType) query['entityType'] = filters.entityType;
 
@@ -639,6 +644,7 @@ export class PaymentsService {
   async getGlobalReport(filters: {
     status?: string;
     method?: string;
+    concept?: string;
     entityType?: PaymentEntityTypeEnum;
     sport?: string;
     category?: string;

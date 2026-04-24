@@ -1,25 +1,4 @@
 <div class="user-editor">
-  <div class="sticky-toolbar">
-    <div class="sticky-toolbar__title">
-      <span class="sticky-toolbar__name">
-        {{ editing ? 'Editar usuario' : 'Nuevo usuario' }}
-      </span>
-    </div>
-    <div class="sticky-toolbar__actions">
-      @if (editing && user) {
-      <button
-        mat-stroked-button
-        color="warn"
-        type="button"
-        (click)="onDelete()"
-      >
-        <mat-icon>delete</mat-icon>
-        Eliminar usuario
-      </button>
-      }
-    </div>
-  </div>
-
   @if (submitting) {
   <mat-progress-bar mode="indeterminate" />
   }
@@ -32,6 +11,7 @@
     [submitting]="submitting"
     (formSubmit)="onFormSubmit($event)"
     (cancel)="onCancel()"
+    (deleteRequested)="onDelete()"
   />
   }
 </div>

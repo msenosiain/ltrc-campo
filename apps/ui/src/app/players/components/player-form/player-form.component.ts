@@ -221,6 +221,16 @@ export class PlayerFormComponent implements OnInit, OnChanges {
   filteredHealthInsurances$!: Observable<string[]>;
 
   ngOnInit(): void {
+    // Non-admin editando: deshabilitar campo status (no puede cambiar a ACTIVE/INACTIVE)
+    if (!this.isAdmin() && this.player) {
+      this.playerForm.get('status')?.disable();
+    }
+
+    // Non-admin creando: forzar TRIAL
+    if (!this.isAdmin() && !this.player) {
+      this.playerForm.get('status')?.setValue(PlayerStatusEnum.TRIAL);
+    }
+
     // Non-admin: pre-fill and lock sport/category based on user assignments
     if (!this.isAdmin() && !this.player) {
       const sports = this.managerSports();

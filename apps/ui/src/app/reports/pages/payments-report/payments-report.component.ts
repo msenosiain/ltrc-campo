@@ -102,11 +102,14 @@ export class PaymentsReportComponent implements OnInit {
     tournament: new FormControl<string | null>(null),
     status: new FormControl<PaymentStatusEnum[]>([]),
     method: new FormControl<PaymentMethodEnum[]>([]),
+    concept: new FormControl<string[]>([]),
     sport: new FormControl<SportEnum | null>(null),
     category: new FormControl<CategoryEnum | null>(null),
     dateFrom: new FormControl<Date | null>(null),
     dateTo: new FormControl<Date | null>(null),
   });
+
+  concepts = signal<string[]>([]);
 
   private readonly selectedSport = toSignal(
     this.filterForm.get('sport')!.valueChanges.pipe(startWith(null as SportEnum | null))
@@ -178,7 +181,14 @@ export class PaymentsReportComponent implements OnInit {
       .subscribe(() => this.search());
 
     this.loadTournaments();
+    this.loadConcepts();
     this.search();
+  }
+
+  private loadConcepts() {
+    this.paymentsService.getFieldOptions()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (opts) => this.concepts.set(opts.concepts) });
   }
 
   private loadTournaments() {
@@ -201,6 +211,7 @@ export class PaymentsReportComponent implements OnInit {
       tournamentId: v.tournament ?? undefined,
       status: v.status?.length ? v.status.join(',') : undefined,
       method: v.method?.length ? v.method.join(',') : undefined,
+      concept: v.concept?.length ? v.concept.join(',') : undefined,
       sport: v.sport ?? undefined,
       category: v.category ?? undefined,
       dateFrom: v.dateFrom ? format(v.dateFrom, 'yyyy-MM-dd') : undefined,
@@ -333,6 +344,7 @@ export class PaymentsReportComponent implements OnInit {
     if (v.tournament) n++;
     if (v.status?.length) n++;
     if (v.method?.length) n++;
+    if (v.concept?.length) n++;
     if (v.sport && this.showSport()) n++;
     if (v.category) n++;
     if (v.dateFrom) n++;

@@ -278,6 +278,57 @@
         </mat-card>
         }
 
+        <!-- Filtros -->
+        <div class="participant-filters">
+          <mat-form-field appearance="outline" class="pfilter-search">
+            <mat-label>Buscar</mat-label>
+            <input matInput [value]="participantSearch" (input)="onParticipantSearchChange($any($event.target).value)" placeholder="Nombre o DNI" />
+            @if (participantSearch) {
+              <button mat-icon-button matSuffix type="button" (click)="onParticipantSearchChange('')"><mat-icon>close</mat-icon></button>
+            } @else {
+              <mat-icon matSuffix>search</mat-icon>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="pfilter-select">
+            <mat-label>Tipo</mat-label>
+            <mat-select [(value)]="participantTypeFilter" (selectionChange)="onParticipantFilterChange()">
+              <mat-option [value]="null">Todos</mat-option>
+              @for (opt of participantTypeOptions; track opt.id) {
+                <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="pfilter-select">
+            <mat-label>Estado</mat-label>
+            <mat-select [(value)]="participantStatusFilter" (selectionChange)="onParticipantFilterChange()">
+              <mat-option [value]="null">Todos</mat-option>
+              @for (opt of participantStatusOptions; track opt.id) {
+                <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          @if (trip.categories?.length) {
+            <mat-form-field appearance="outline" class="pfilter-select">
+              <mat-label>Categoría</mat-label>
+              <mat-select [(value)]="participantCategoryFilter" (selectionChange)="onParticipantFilterChange()">
+                <mat-option [value]="null">Todas</mat-option>
+                @for (cat of trip.categories; track cat) {
+                  <mat-option [value]="cat">{{ getCategoryLabel(cat) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+
+          @if (hasActiveParticipantFilters) {
+            <button mat-icon-button matTooltip="Limpiar filtros" (click)="resetParticipantFilters()">
+              <mat-icon>filter_alt_off</mat-icon>
+            </button>
+          }
+        </div>
+
         <!-- Barra de acciones bulk -->
         @if (selectedIds.size > 0) {
           <div class="bulk-action-bar" *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]">
@@ -295,9 +346,25 @@
           </div>
         }
 
+        <ng-template #participantPaginator>
+          @if (totalPages > 1) {
+            <div class="participant-paginator">
+              <span class="participant-paginator__label">{{ paginatorLabel }}</span>
+              <button mat-icon-button [disabled]="participantPage === 0" (click)="participantPage = participantPage - 1">
+                <mat-icon>chevron_left</mat-icon>
+              </button>
+              <span class="participant-paginator__pages">{{ participantPage + 1 }} / {{ totalPages }}</span>
+              <button mat-icon-button [disabled]="participantPage >= totalPages - 1" (click)="participantPage = participantPage + 1">
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+          }
+        </ng-template>
+
         <!-- Tabla participantes -->
         @if (trip.participants.length > 0) {
-        <table mat-table [dataSource]="trip.participants" class="participants-table">
+        <ng-container *ngTemplateOutlet="participantPaginator" />
+        <table mat-table [dataSource]="pagedParticipants" class="participants-table">
 
           <ng-container matColumnDef="select">
             <th mat-header-cell *matHeaderCellDef>
@@ -414,8 +481,12 @@
           <tr mat-header-row *matHeaderRowDef="participantColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: participantColumns"></tr>
         </table>
+        <ng-container *ngTemplateOutlet="participantPaginator" />
         } @else {
         <p class="empty-message">Sin participantes aún.</p>
+        }
+        @if (participantSearch && totalFilteredCount === 0) {
+          <p class="empty-message">No hay resultados para "{{ participantSearch }}".</p>
         }
       </div>
     </mat-tab>

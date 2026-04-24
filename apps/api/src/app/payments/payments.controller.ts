@@ -102,6 +102,7 @@ export class PaymentsController {
   getGlobalReport(
     @Query('status') status?: string,
     @Query('method') method?: string,
+    @Query('concept') concept?: string,
     @Query('entityType') entityType?: PaymentEntityTypeEnum,
     @Query('sport') sport?: string,
     @Query('category') category?: string,
@@ -114,7 +115,7 @@ export class PaymentsController {
     @Query('sortDir') sortDir?: string,
   ) {
     return this.paymentsService.getGlobalReport({
-      status, method, entityType, sport, category, tournamentId, dateFrom, dateTo,
+      status, method, concept, entityType, sport, category, tournamentId, dateFrom, dateTo,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       sortBy,
@@ -155,7 +156,7 @@ export class PaymentsController {
   }
 
   @Post()
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
+  @Roles(RoleEnum.ADMIN)
   recordManual(@Body() dto: RecordManualPaymentDto, @Req() req: Request) {
     return this.paymentsService.recordManualPayment(dto, (req as any).user);
   }

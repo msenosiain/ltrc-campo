@@ -104,6 +104,10 @@ export class TripsService {
     return this.http.post<Trip>(`${this.baseUrl}/${tripId}/participants`, payload);
   }
 
+  bulkAddParticipants(tripId: string, participants: AddParticipantPayload[]): Observable<Trip> {
+    return this.http.post<Trip>(`${this.baseUrl}/${tripId}/participants/bulk`, { participants });
+  }
+
   updateParticipant(
     tripId: string,
     participantId: string,
@@ -119,6 +123,10 @@ export class TripsService {
     return this.http.delete<Trip>(
       `${this.baseUrl}/${tripId}/participants/${participantId}`
     );
+  }
+
+  removeAllParticipants(tripId: string): Observable<Trip> {
+    return this.http.delete<Trip>(`${this.baseUrl}/${tripId}/participants`);
   }
 
   recordPayment(

@@ -7,7 +7,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { concat, of, Subject } from 'rxjs';
@@ -74,6 +74,7 @@ import { getErrorMessage } from '../../../common/utils/error-message';
   imports: [
     CurrencyPipe,
     DatePipe,
+    NgTemplateOutlet,
     ReactiveFormsModule,
     MatAutocompleteModule,
     MatButtonModule,
@@ -142,6 +143,73 @@ export class TripViewerComponent implements OnInit {
     'actions',
   ];
 
+  // ── Filtro y paginación de participantes ─────────────────────────────────
+  participantSearch = '';
+  participantTypeFilter: TripParticipantTypeEnum | null = null;
+  participantStatusFilter: TripParticipantStatusEnum | null = null;
+  participantCategoryFilter: string | null = null;
+  participantPage = 0;
+  readonly PARTICIPANT_PAGE_SIZE = 50;
+
+  get filteredParticipants(): TripParticipant[] {
+    const term = this.participantSearch.toLowerCase().trim();
+    return (this.trip?.participants ?? []).filter((p) => {
+      if (term &&
+        !this.getParticipantName(p).toLowerCase().includes(term) &&
+        !(this.getParticipantDni(p) ?? '').includes(term)) return false;
+      if (this.participantTypeFilter && p.type !== this.participantTypeFilter) return false;
+      if (this.participantStatusFilter && p.status !== this.participantStatusFilter) return false;
+      if (this.participantCategoryFilter) {
+        const cat = (p.player as any)?.category ?? p.externalRole ?? (p as any).user?.categories?.[0];
+        if (cat !== this.participantCategoryFilter) return false;
+      }
+      return true;
+    });
+  }
+
+  resetParticipantFilters(): void {
+    this.participantSearch = '';
+    this.participantTypeFilter = null;
+    this.participantStatusFilter = null;
+    this.participantCategoryFilter = null;
+    this.participantPage = 0;
+  }
+
+  get hasActiveParticipantFilters(): boolean {
+    return !!(this.participantSearch || this.participantTypeFilter || this.participantStatusFilter || this.participantCategoryFilter);
+  }
+
+  get pagedParticipants(): TripParticipant[] {
+    const start = this.participantPage * this.PARTICIPANT_PAGE_SIZE;
+    return this.filteredParticipants.slice(start, start + this.PARTICIPANT_PAGE_SIZE);
+  }
+
+  get totalFilteredCount(): number {
+    return this.filteredParticipants.length;
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalFilteredCount / this.PARTICIPANT_PAGE_SIZE);
+  }
+
+  get paginatorLabel(): string {
+    const total = this.totalFilteredCount;
+    if (total === 0) return '0 participantes';
+    const start = this.participantPage * this.PARTICIPANT_PAGE_SIZE + 1;
+    const end = Math.min(start + this.PARTICIPANT_PAGE_SIZE - 1, total);
+    return `${start}–${end} de ${total}`;
+  }
+
+  onParticipantFilterChange(): void {
+    this.participantPage = 0;
+  }
+
+  onParticipantSearchChange(term: string): void {
+    this.participantSearch = term;
+    this.participantPage = 0;
+  }
+
+  // ── Selección ────────────────────────────────────────────────────────────
   readonly selectedIds = new Set<string>();
   bulkUpdating = false;
 
@@ -155,8 +223,8 @@ export class TripViewerComponent implements OnInit {
   }
 
   get allSelected(): boolean {
-    const participants = this.trip?.participants ?? [];
-    return participants.length > 0 && participants.every((p) => p.id && this.selectedIds.has(p.id));
+    const visible = this.pagedParticipants;
+    return visible.length > 0 && visible.every((p) => p.id && this.selectedIds.has(p.id));
   }
 
   get someSelected(): boolean {
@@ -165,9 +233,9 @@ export class TripViewerComponent implements OnInit {
 
   toggleAll(): void {
     if (this.allSelected) {
-      this.selectedIds.clear();
+      this.pagedParticipants.forEach((p) => p.id && this.selectedIds.delete(p.id));
     } else {
-      this.trip?.participants.forEach((p) => p.id && this.selectedIds.add(p.id));
+      this.pagedParticipants.forEach((p) => p.id && this.selectedIds.add(p.id));
     }
   }
 
@@ -513,19 +581,13 @@ export class TripViewerComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter((confirmed) => !!confirmed),
-        switchMap(() =>
-          concat(
-            ...this.trip!.participants.map((p) =>
-              this.tripsService.removeParticipant(this.trip!.id!, p.id!)
-            )
-          ).pipe(last())
-        ),
-        switchMap(() => this.tripsService.getTripById(this.trip!.id!)),
+        switchMap(() => this.tripsService.removeAllParticipants(this.trip!.id!)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: (trip) => {
           this.trip = trip;
+          this.selectedIds.clear();
           this.snackBar.open('Todos los participantes fueron quitados', 'Cerrar', { duration: 3000 });
         },
         error: (err) =>
@@ -554,24 +616,17 @@ export class TripViewerComponent implements OnInit {
               .map((p) => (p.player as any)?.id ?? (p.player as any)?._id)
           );
           const toAdd = result.items.filter((p) => p.id && !existingPlayerIds.has(p.id));
-          if (toAdd.length === 0) return of({ added: 0 });
+          if (toAdd.length === 0) return of({ added: 0, trip: this.trip! });
 
-          // Secuencial para evitar race conditions en MongoDB
-          return concat(
-            ...toAdd.map((p) =>
-              this.tripsService.addParticipant(this.trip!.id!, {
-                type: TripParticipantTypeEnum.PLAYER,
-                playerId: p.id!,
-                status: TripParticipantStatusEnum.INTERESTED,
-                costAssigned: this.trip!.costPerPerson,
-              })
-            )
-          ).pipe(last(), map(() => ({ added: toAdd.length })));
+          return this.tripsService
+            .bulkAddParticipants(this.trip!.id!, toAdd.map((p) => ({
+              type: TripParticipantTypeEnum.PLAYER,
+              playerId: p.id!,
+              status: TripParticipantStatusEnum.INTERESTED,
+              costAssigned: this.trip!.costPerPerson,
+            })))
+            .pipe(map((trip) => ({ added: toAdd.length, trip })));
         }),
-        // Recargar el viaje para tener los datos populados correctamente
-        switchMap(({ added }) =>
-          this.tripsService.getTripById(this.trip!.id!).pipe(map((trip) => ({ added, trip })))
-        ),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({

@@ -107,6 +107,7 @@ export interface GlobalPaymentsReport {
 export interface GlobalReportFilters {
   status?: string;
   method?: string;
+  concept?: string;
   entityType?: string;
   sport?: string;
   category?: string;
@@ -194,6 +195,7 @@ export class PaymentsService {
     let params = new HttpParams();
     if (filters.status) params = params.set('status', filters.status);
     if (filters.method) params = params.set('method', filters.method);
+    if (filters.concept) params = params.set('concept', filters.concept);
     if (filters.entityType) params = params.set('entityType', filters.entityType);
     if (filters.sport) params = params.set('sport', filters.sport);
     if (filters.category) params = params.set('category', filters.category);

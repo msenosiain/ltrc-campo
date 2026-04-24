@@ -40,6 +40,12 @@
             <span class="stat-value">{{ user.memberNumber }}</span>
           </div>
           }
+          @if (user.idNumber) {
+          <div class="stat">
+            <span class="stat-label">DNI</span>
+            <span class="stat-value">{{ user.idNumber }}</span>
+          </div>
+          }
         </div>
 
         <div class="chips-row">

@@ -124,6 +124,16 @@ export class PlayersService {
           : new Date(dto.trialStartDate as unknown as string);
       player.markModified('trialStartDate');
     }
+    if (dto.availability !== undefined) {
+      player.markModified('availability');
+    }
+    // Solo admins pueden cambiar status a ACTIVE o INACTIVE
+    const callerRoles: string[] = (caller as any)?.roles ?? [];
+    const callerIsAdmin = callerRoles.includes(RoleEnum.ADMIN);
+    if (!callerIsAdmin && dto.status && dto.status !== PlayerStatusEnum.TRIAL) {
+      delete cleanDto['status'];
+    }
+
     if (caller) player.updatedBy = (caller as any)._id;
     if (dto.status === PlayerStatusEnum.INACTIVE && player.status !== PlayerStatusEnum.INACTIVE) {
       (player as any).inactivatedAt = new Date();

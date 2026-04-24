@@ -184,6 +184,29 @@
   }
 }
 
+.participant-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pfilter-search { flex: 1; min-width: 180px; }
+.pfilter-select { width: 140px; }
+
+.participant-paginator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+
+  &__label { flex: 1; }
+  &__pages  { min-width: 48px; text-align: center; }
+}
+
 .bulk-action-bar {
   display: flex;
   align-items: center;

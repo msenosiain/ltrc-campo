@@ -145,6 +145,46 @@ export class TripsService {
     return this.findOne(id);
   }
 
+  async bulkAddParticipants(id: string, dtos: AddParticipantDto[], caller?: User) {
+    const trip = await this.tripModel.findById(id);
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    const existingPlayerIds = new Set(
+      trip.participants
+        .filter((p) => p.type === TripParticipantTypeEnum.PLAYER)
+        .map((p) => p.player?.toString())
+    );
+
+    for (const dto of dtos) {
+      if (dto.type === TripParticipantTypeEnum.PLAYER) {
+        if (!dto.playerId) continue;
+        if (existingPlayerIds.has(dto.playerId)) continue;
+        existingPlayerIds.add(dto.playerId);
+        trip.participants.push({
+          type: dto.type,
+          status: dto.status ?? TripParticipantStatusEnum.INTERESTED,
+          costAssigned: dto.costAssigned ?? trip.costPerPerson,
+          payments: [],
+          specialNeeds: dto.specialNeeds,
+          player: new Types.ObjectId(dto.playerId),
+        } as TripParticipantEntity);
+      }
+    }
+
+    if (caller) trip.updatedBy = (caller as any)._id;
+    await trip.save();
+    return this.findOne(id);
+  }
+
+  async removeAllParticipants(id: string, caller?: User) {
+    const trip = await this.tripModel.findById(id);
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+    trip.participants = [] as any;
+    if (caller) trip.updatedBy = (caller as any)._id;
+    await trip.save();
+    return this.findOne(id);
+  }
+
   async updateParticipant(
     id: string,
     participantId: string,
