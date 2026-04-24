@@ -86,8 +86,8 @@
   <!-- Tabs -->
   <mat-tab-group class="viewer-tabs">
 
-    <!-- Tab: Participantes -->
-    <mat-tab label="Participantes ({{ trip.participants.length }})">
+    <!-- Tab: Pasajeros -->
+    <mat-tab label="Pasajeros ({{ trip.participants.length }})">
       <div class="tab-content">
 
         <!-- Resumen financiero -->
@@ -108,6 +108,17 @@
               {{ totalDebt | currency : 'ARS' : 'symbol' : '1.0-0' }}
             </span>
           </div>
+          @if (confirmedByCategory.length > 0) {
+            <div class="summary-chip summary-chip--cats">
+              <span class="summary-label">Por categoría</span>
+              <span class="summary-value summary-cats">
+                @for (item of confirmedByCategory; track item.label; let last = $last) {
+                  <span class="summary-cat-item">{{ item.label }}: <strong>{{ item.count }}</strong></span>
+                  @if (!last) { <span class="summary-cat-sep">·</span> }
+                }
+              </span>
+            </div>
+          }
         </div>
 
         <!-- Botones de acción -->
@@ -380,7 +391,7 @@
           </ng-container>
 
           <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef>Participante</th>
+            <th mat-header-cell *matHeaderCellDef>Pasajero</th>
             <td mat-cell *matCellDef="let p">
               @if (p.type === TripParticipantTypeEnum.PLAYER && p.player) {
                 <a
@@ -662,7 +673,7 @@
                   @if (getParticipantsForTransport(t.id!).length > 0) {
                     <table mat-table [dataSource]="getParticipantsForTransport(t.id!)" class="transport-participants-table">
                       <ng-container matColumnDef="name">
-                        <th mat-header-cell *matHeaderCellDef>Participante</th>
+                        <th mat-header-cell *matHeaderCellDef>Pasajero</th>
                         <td mat-cell *matCellDef="let p">{{ getParticipantName(p) }}</td>
                       </ng-container>
                       <ng-container matColumnDef="type">
@@ -683,7 +694,10 @@
                               <mat-option [value]="UNASSIGN_SENTINEL">Sin asignar</mat-option>
                               @for (transport of trip.transports; track transport.id) {
                                 @if (transport.id !== t.id) {
-                                  <mat-option [value]="transport.id">{{ transport.name }}</mat-option>
+                                  <mat-option [value]="transport.id" [disabled]="isTransportFull(transport)">
+                                    {{ transport.name }}
+                                    @if (isTransportFull(transport)) { (lleno) }
+                                  </mat-option>
                                 }
                               }
                             </mat-select>
@@ -715,7 +729,7 @@
                 <div class="transport-tab-content">
                   <table mat-table [dataSource]="getUnassignedParticipants()" class="transport-participants-table">
                     <ng-container matColumnDef="name">
-                      <th mat-header-cell *matHeaderCellDef>Participante</th>
+                      <th mat-header-cell *matHeaderCellDef>Pasajero</th>
                       <td mat-cell *matCellDef="let p">{{ getParticipantName(p) }}</td>
                     </ng-container>
                     <ng-container matColumnDef="type">
@@ -735,7 +749,10 @@
                           <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
                             <mat-select placeholder="Asignar a…" class="move-select" (selectionChange)="assignTransport(p, $event.value)">
                               @for (transport of trip.transports; track transport.id) {
-                                <mat-option [value]="transport.id">{{ transport.name }}</mat-option>
+                                <mat-option [value]="transport.id" [disabled]="isTransportFull(transport)">
+                                  {{ transport.name }}
+                                  @if (isTransportFull(transport)) { (lleno) }
+                                </mat-option>
                               }
                             </mat-select>
                           </ng-container>

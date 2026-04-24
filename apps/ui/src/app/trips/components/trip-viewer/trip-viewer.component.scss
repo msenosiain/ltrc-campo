@@ -139,6 +139,12 @@
     min-width: 120px;
   }
 
+  &--cats {
+    align-items: flex-start;
+    min-width: 0;
+    flex: 1;
+  }
+
   .summary-label {
     font-size: 0.72rem;
     color: var(--mat-sys-on-surface-variant);
@@ -153,6 +159,17 @@
     &.accent { color: #2e7d32; }
     &.warn   { color: #c62828; }
   }
+
+  .summary-cats {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.92rem;
+  }
+
+  .summary-cat-item { white-space: nowrap; }
+  .summary-cat-sep  { color: #ccc; font-size: 0.75rem; }
 }
 
 .section-actions {

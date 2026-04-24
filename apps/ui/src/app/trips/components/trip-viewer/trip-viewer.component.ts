@@ -482,6 +482,22 @@ export class TripViewerComponent implements OnInit {
     ) ?? 0;
   }
 
+  get confirmedByCategory(): { label: string; count: number }[] {
+    const map = new Map<string, number>();
+    this.trip?.participants
+      .filter((p) => p.status === TripParticipantStatusEnum.CONFIRMED && p.type === TripParticipantTypeEnum.PLAYER)
+      .forEach((p) => {
+        const cat = (p.player as any)?.category;
+        if (cat) {
+          const label = getCategoryLabel(cat);
+          map.set(label, (map.get(label) ?? 0) + 1);
+        }
+      });
+    return [...map.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([label, count]) => ({ label, count }));
+  }
+
   get totalDebt(): number {
     return this.trip?.participants
       .filter((p) => p.status !== TripParticipantStatusEnum.CANCELLED)
@@ -724,6 +740,10 @@ export class TripViewerComponent implements OnInit {
 
   getOccupancy(t: TripTransport): number {
     return this.trip?.participants.filter((p) => p.transportId === t.id).length ?? 0;
+  }
+
+  isTransportFull(t: TripTransport): boolean {
+    return this.getOccupancy(t) >= t.capacity;
   }
 
   async generateTransportPosters(): Promise<void> {
