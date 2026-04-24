@@ -185,6 +185,25 @@ export class TripsService {
     return this.findOne(id);
   }
 
+  async bulkUpdateStatus(
+    id: string,
+    participantIds: string[],
+    status: TripParticipantStatusEnum,
+    caller?: User
+  ) {
+    const trip = await this.tripModel.findById(id);
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    for (const pid of participantIds) {
+      const participant = (trip.participants as any).id(pid);
+      if (participant) participant.status = status;
+    }
+
+    if (caller) trip.updatedBy = (caller as any)._id;
+    await trip.save();
+    return this.findOne(id);
+  }
+
   async updateParticipant(
     id: string,
     participantId: string,

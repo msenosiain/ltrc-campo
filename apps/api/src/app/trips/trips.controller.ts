@@ -17,6 +17,7 @@ import { UpdateTripDto } from './dto/update-trip.dto';
 import { TripFilterDto } from './dto/trip-filter.dto';
 import { AddParticipantDto } from './dto/add-participant.dto';
 import { BulkAddParticipantsDto } from './dto/bulk-add-participants.dto';
+import { BulkUpdateStatusDto } from './dto/bulk-update-status.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { RecordPaymentDto } from './dto/record-payment.dto';
 import { AddTransportDto } from './dto/add-transport.dto';
@@ -66,6 +67,16 @@ export class TripsController {
   }
 
   // ── Participantes ──────────────────────────────────────────────────────────
+
+  @Patch(':id/participants/bulk-status')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
+  bulkUpdateStatus(
+    @Param('id') id: string,
+    @Body() dto: BulkUpdateStatusDto,
+    @Req() req: Request
+  ) {
+    return this.tripsService.bulkUpdateStatus(id, dto.participantIds, dto.status, (req as any).user);
+  }
 
   @Post(':id/participants/bulk')
   @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)

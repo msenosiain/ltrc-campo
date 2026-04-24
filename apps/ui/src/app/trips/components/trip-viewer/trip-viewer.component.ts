@@ -247,13 +247,9 @@ export class TripViewerComponent implements OnInit {
     if (!this.trip?.id || this.selectedIds.size === 0) return;
     this.bulkUpdating = true;
     const ids = [...this.selectedIds];
-    const requests$ = ids
-      .map((id) => this.trip!.participants.find((p) => p.id === id))
-      .filter((p): p is TripParticipant => !!p)
-      .map((p) => this.tripsService.updateParticipant(this.trip!.id!, p.id!, { status }));
 
-    concat(...requests$)
-      .pipe(last(), switchMap(() => this.tripsService.getTripById(this.trip!.id!)), takeUntilDestroyed(this.destroyRef))
+    this.tripsService.bulkUpdateStatus(this.trip.id, ids, status)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (trip) => {
           this.trip = trip;

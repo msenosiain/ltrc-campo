@@ -108,6 +108,10 @@ export class TripsService {
     return this.http.post<Trip>(`${this.baseUrl}/${tripId}/participants/bulk`, { participants });
   }
 
+  bulkUpdateStatus(tripId: string, participantIds: string[], status: TripParticipantStatusEnum): Observable<Trip> {
+    return this.http.patch<Trip>(`${this.baseUrl}/${tripId}/participants/bulk-status`, { participantIds, status });
+  }
+
   updateParticipant(
     tripId: string,
     participantId: string,
