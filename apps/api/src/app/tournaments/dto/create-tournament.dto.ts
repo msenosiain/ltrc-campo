@@ -35,4 +35,5 @@ export class CreateTournamentDto {
   @IsEnum(MatchTypeEnum)
   @Transform(({ value }) => value ?? undefined)
   readonly type?: MatchTypeEnum;
+
 }

@@ -34,6 +34,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -58,6 +59,7 @@ import { PaymentEntityTypeEnum } from '@ltrc-campo/shared-api-model';
     MatDividerModule,
     MatSnackBarModule,
     MatProgressBarModule,
+    MatMenuModule,
     MatTooltipModule,
     DatePipe,
     AllowedRolesDirective,
@@ -203,7 +205,19 @@ export class MatchViewerComponent implements OnInit {
 
   downloadSquadPdf(): void {
     if (this.match) {
-      this.squadPdf.generate(this.match, this.match.squad ?? []);
+      this.squadPdf.generateSquad(this.match, this.match.squad ?? []);
+    }
+  }
+
+  downloadRunSheet(): void {
+    if (this.match) {
+      this.squadPdf.generateRunSheet(this.match);
+    }
+  }
+
+  downloadPosters(): void {
+    if (this.match) {
+      this.squadPdf.generatePosters(this.match, this.match.squad ?? []);
     }
   }
 

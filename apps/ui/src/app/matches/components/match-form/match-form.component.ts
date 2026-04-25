@@ -273,6 +273,7 @@ export class MatchFormComponent implements OnInit, OnChanges {
       const storedOpponent = (this.match as any).opponent as string | undefined;
       this.opponents = storedOpponent ? storedOpponent.split(', ').filter(Boolean) : [];
 
+      const md = (this.match as any).matchDay;
       this.matchForm.patchValue({
         ...this.match,
         date: matchDate,
@@ -280,6 +281,12 @@ export class MatchFormComponent implements OnInit, OnChanges {
         tournament: tournament?.id ?? '',
         name: (this.match as any).name ?? '',
         branch: (this.match as any).branch ?? null,
+        matchDay: {
+          referee: md?.referee ?? '',
+          ar1: md?.ar1 ?? '',
+          ar2: md?.ar2 ?? '',
+          headCoach: md?.headCoach ?? '',
+        },
       });
 
       if (tournament) {

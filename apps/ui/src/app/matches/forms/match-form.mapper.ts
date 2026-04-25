@@ -23,5 +23,13 @@ export function mapFormToCreateMatchDto(value: MatchFormValue) {
         }
       : undefined,
     notes: value.notes || undefined,
+    matchDay: (value.matchDay?.referee || value.matchDay?.ar1 || value.matchDay?.ar2 || value.matchDay?.headCoach)
+      ? {
+          referee: value.matchDay.referee || undefined,
+          ar1: value.matchDay.ar1 || undefined,
+          ar2: value.matchDay.ar2 || undefined,
+          headCoach: value.matchDay.headCoach || undefined,
+        }
+      : undefined,
   };
 }

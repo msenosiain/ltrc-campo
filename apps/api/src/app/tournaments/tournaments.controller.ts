@@ -46,6 +46,28 @@ export class TournamentsController {
     return this.tournamentsService.create(dto, (req as any).user);
   }
 
+  // --- Logo ---
+
+  @Post(':id/logo')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadLogo(@Param('id') id: string, @UploadedFile() file: MulterFile) {
+    return this.tournamentsService.uploadLogo(id, file);
+  }
+
+  @Get(':id/logo')
+  async getLogo(@Param('id') id: string, @Res() res: Response) {
+    const { stream, mimetype } = await this.tournamentsService.getLogoStream(id);
+    res.setHeader('Content-Type', mimetype);
+    stream.pipe(res);
+  }
+
+  @Delete(':id/logo')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
+  async deleteLogo(@Param('id') id: string) {
+    return this.tournamentsService.removeLogo(id);
+  }
+
   // --- Attachments (before :id to avoid route conflicts) ---
 
   @Post(':id/attachments')

@@ -26,8 +26,17 @@ export interface VideoClip {
   targetPlayers?: Player[];
 }
 
+export interface MatchDayStaff {
+  referee?: string;
+  ar1?: string;
+  ar2?: string;
+  headCoach?: string;
+}
+
 export interface SquadEntry {
   shirtNumber: number;
+  dorsalNumber?: number;
+  isCaptain?: boolean;
   player: Player;
 }
 
@@ -55,6 +64,7 @@ export interface Match extends Document {
   readonly division?: string;
   readonly branch?: HockeyBranchEnum;
   readonly tournament?: Tournament;
+  readonly matchDay?: MatchDayStaff;
   readonly squad: SquadEntry[];
   readonly attendance: AttendanceEntry[];
   readonly attachments?: MatchAttachment[];

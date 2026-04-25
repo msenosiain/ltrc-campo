@@ -18,9 +18,21 @@ const MatchResultSchema = new Schema(
   { _id: false }
 );
 
+const MatchDayStaffSchema = new Schema(
+  {
+    referee: { type: String },
+    ar1: { type: String },
+    ar2: { type: String },
+    headCoach: { type: String },
+  },
+  { _id: false }
+);
+
 const MatchSquadEntrySchema = new Schema(
   {
     shirtNumber: { type: Number, required: true, min: 1, max: 99 },
+    dorsalNumber: { type: Number, min: 1, max: 99 },
+    isCaptain: { type: Boolean },
     player: { type: Types.ObjectId, ref: PlayerEntity.name, required: true },
   },
   { _id: false }
@@ -60,6 +72,7 @@ export const MatchSchema = new Schema<MatchEntity>(
     division: { type: String },
     branch: { type: String, enum: [...Object.values(HockeyBranchEnum), null] },
     tournament: { type: Types.ObjectId, ref: TournamentEntity.name, required: false },
+    matchDay: { type: MatchDayStaffSchema },
     squad: [MatchSquadEntrySchema],
     attendance: [AttendanceEntrySchema],
     attachments: [

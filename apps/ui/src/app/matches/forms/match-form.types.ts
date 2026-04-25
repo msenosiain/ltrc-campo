@@ -6,6 +6,13 @@ import {
 } from '@ltrc-campo/shared-api-model';
 
 
+export interface MatchDayStaffFormValue {
+  referee: string;
+  ar1: string;
+  ar2: string;
+  headCoach: string;
+}
+
 export interface MatchFormValue {
   date: Date | null;
   opponent: string;
@@ -25,6 +32,7 @@ export interface MatchFormValue {
     awayScore: number | null;
   };
   notes: string;
+  matchDay: MatchDayStaffFormValue;
   payment: {
     enabled: boolean;
     concept: string;

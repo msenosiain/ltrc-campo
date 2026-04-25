@@ -25,8 +25,16 @@ export class MatchEntity extends Document {
   division?: string;
   branch?: HockeyBranchEnum;
   tournament?: PopulatedDoc<TournamentEntity & Document>;
+  matchDay?: {
+    referee?: string;
+    ar1?: string;
+    ar2?: string;
+    headCoach?: string;
+  };
   squad: {
     shirtNumber: number;
+    dorsalNumber?: number;
+    isCaptain?: boolean;
     player: PopulatedDoc<PlayerEntity & Document>;
   }[];
   attendance: AttendanceEntry[];

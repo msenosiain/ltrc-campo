@@ -48,8 +48,36 @@ export class SquadEntryDto {
   @Max(99)
   shirtNumber!: number;
 
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(99)
+  dorsalNumber?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isCaptain?: boolean;
+
   @IsMongoId()
   playerId!: string;
+}
+
+export class MatchDayStaffDto {
+  @IsOptional()
+  @IsString()
+  referee?: string;
+
+  @IsOptional()
+  @IsString()
+  ar1?: string;
+
+  @IsOptional()
+  @IsString()
+  ar2?: string;
+
+  @IsOptional()
+  @IsString()
+  headCoach?: string;
 }
 
 export class MatchResultDto {
@@ -132,4 +160,9 @@ export class CreateMatchDto {
   @IsOptional()
   @IsString()
   readonly notes?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MatchDayStaffDto)
+  readonly matchDay?: MatchDayStaffDto;
 }

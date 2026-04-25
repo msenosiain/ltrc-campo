@@ -194,6 +194,29 @@
   </mat-card>
   }
 
+  <!-- DÍA DEL PARTIDO -->
+  <mat-card>
+    <mat-card-title>Día del partido</mat-card-title>
+    <div formGroupName="matchDay" class="match-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Árbitro principal</mat-label>
+        <input matInput formControlName="referee" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Juez de línea 1</mat-label>
+        <input matInput formControlName="ar1" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Juez de línea 2</mat-label>
+        <input matInput formControlName="ar2" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Head Coach</mat-label>
+        <input matInput formControlName="headCoach" />
+      </mat-form-field>
+    </div>
+  </mat-card>
+
   <!-- NOTAS -->
   <mat-card>
     <mat-card-title>Notas</mat-card-title>

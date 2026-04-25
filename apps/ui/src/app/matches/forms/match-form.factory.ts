@@ -24,6 +24,12 @@ export function buildCreateMatchForm(fb: FormBuilder): FormGroup {
       awayScore: [null],
     }),
     notes: [''],
+    matchDay: fb.group({
+      referee: [''],
+      ar1: [''],
+      ar2: [''],
+      headCoach: [''],
+    }),
     payment: fb.group({
       enabled: [false],
       concept: ['Tercer tiempo'],

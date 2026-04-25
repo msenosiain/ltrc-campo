@@ -118,7 +118,7 @@ export class SquadEditorComponent implements OnInit {
   selectedPlayer: Player | null = null;
   private readonly searchSubject = new Subject<string>();
 
-  readonly displayedColumns = ['shirtNumber', 'player', 'actions'];
+  readonly displayedColumns = ['shirtNumber', 'dorsalNumber', 'player', 'captain', 'actions'];
 
   readonly displayPlayerFn = (player: Player | null): string =>
     player ? player.name : '';
@@ -314,6 +314,28 @@ export class SquadEditorComponent implements OnInit {
     this.persistSquad();
   }
 
+  toggleCaptain(entry: SquadEntry): void {
+    const alreadyCaptain = entry.isCaptain;
+    this.squadRows = this.squadRows.map((e) => ({
+      ...e,
+      isCaptain: e === entry ? !alreadyCaptain : false,
+    }));
+    this.isDirty = true;
+    this.persistSquad();
+  }
+
+  updateDorsal(entry: SquadEntry, event: Event): void {
+    const raw = (event.target as HTMLInputElement).value;
+    const num = parseInt(raw, 10);
+    const dorsal = isNaN(num) || raw === '' ? undefined : num;
+    if (dorsal !== undefined && (dorsal < 1 || dorsal > 99)) return;
+    this.squadRows = this.squadRows.map((e) =>
+      e === entry ? { ...e, dorsalNumber: dorsal } : e
+    );
+    this.isDirty = true;
+    this.persistSquad();
+  }
+
   removePlayer(entry: SquadEntry): void {
     this.squadRows = this.squadRows.filter((e) => e !== entry);
     this.isDirty = true;
@@ -446,12 +468,6 @@ export class SquadEditorComponent implements OnInit {
       .subscribe((squads) => (this.squads = squads));
   }
 
-  downloadPdf(): void {
-    if (this.match) {
-      this.squadPdf.generate(this.match, this.squadRows);
-    }
-  }
-
   saveSquad(): void {
     this.persistSquad(() =>
       this.router.navigate(['/dashboard/matches', this.match!.id])
@@ -463,6 +479,8 @@ export class SquadEditorComponent implements OnInit {
     this.saving = true;
     const squad = this.squadRows.map((e) => ({
       shirtNumber: e.shirtNumber,
+      ...(e.dorsalNumber !== undefined && e.dorsalNumber !== e.shirtNumber && { dorsalNumber: e.dorsalNumber }),
+      ...(e.isCaptain && { isCaptain: true }),
       playerId: e.player.id!,
     }));
 

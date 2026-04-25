@@ -18,6 +18,7 @@ export interface TournamentFormValue {
   sport?: SportEnum | null;
   categories?: CategoryEnum[];
   type?: MatchTypeEnum | null;
+  logoFileId?: string;
 }
 
 @Injectable({
@@ -64,6 +65,25 @@ export class TournamentsService {
 
   deleteTournament(id: string): Observable<void> {
     return this.httpClient.delete<void>(`${this.tournamentsApiUrl}/${id}`);
+  }
+
+  uploadLogo(tournamentId: string, file: File): Observable<Tournament> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.httpClient.post<Tournament>(
+      `${this.tournamentsApiUrl}/${tournamentId}/logo`,
+      formData
+    );
+  }
+
+  getLogoUrl(tournamentId: string): string {
+    return `${this.tournamentsApiUrl}/${tournamentId}/logo`;
+  }
+
+  deleteLogo(tournamentId: string): Observable<Tournament> {
+    return this.httpClient.delete<Tournament>(
+      `${this.tournamentsApiUrl}/${tournamentId}/logo`
+    );
   }
 
   uploadAttachment(tournamentId: string, file: File): Observable<Tournament> {

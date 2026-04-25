@@ -215,13 +215,55 @@
   margin-bottom: 8px;
 
   .mat-column-shirtNumber {
-    width: 50px;
+    width: 44px;
     font-weight: 700;
+  }
+
+  .mat-column-dorsalNumber {
+    width: 70px;
+  }
+
+  .mat-column-captain {
+    width: 40px;
+    text-align: center;
   }
 
   .mat-column-actions {
     width: 48px;
     text-align: center;
+  }
+}
+
+.captain-active {
+  color: var(--mat-app-primary, #1976d2);
+}
+
+.dorsal-input {
+  width: 48px;
+  padding: 2px 4px;
+  border: 1px solid var(--mat-app-outline-variant, #ccc);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  text-align: center;
+  background: transparent;
+  color: inherit;
+  appearance: textfield;
+  -moz-appearance: textfield;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+  }
+
+  &:focus {
+    outline: 2px solid var(--mat-app-primary, #1976d2);
+    border-color: transparent;
+  }
+
+  &.dorsal-modified {
+    font-weight: 700;
+    color: var(--mat-app-primary, #1976d2);
+    border-color: var(--mat-app-primary, #1976d2);
   }
 }
 

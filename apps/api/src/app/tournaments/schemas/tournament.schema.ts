@@ -33,6 +33,7 @@ export const TournamentSchema = new Schema<TournamentEntity>(
     sport: { type: String, enum: Object.values(SportEnum) },
     categories: [{ type: String, enum: Object.values(CategoryEnum) }],
     type: { type: String, enum: Object.values(MatchTypeEnum) },
+    logoFileId: { type: String },
     attachments: { type: [TournamentAttachmentSchema], default: [] },
     createdBy: { type: Types.ObjectId, ref: 'User' },
     updatedBy: { type: Types.ObjectId, ref: 'User' },

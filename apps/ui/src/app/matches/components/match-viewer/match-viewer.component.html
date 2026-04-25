@@ -12,11 +12,25 @@
       <span class="sticky-toolbar__name">{{ match.opponent ? (match.branch ? 'Rama ' + match.branch + ' ' : '') + (match.division ? match.division + ' ' : '') + 'vs ' + match.opponent : (tournamentName || 'Encuentro') }}</span>
     </div>
     <div class="sticky-toolbar__actions">
-      @if (match!.squad.length) {
-        <button mat-stroked-button type="button" (click)="downloadSquadPdf()">
-          <mat-icon>picture_as_pdf</mat-icon>
-          PDF Plantel
+      <button mat-stroked-button type="button" [matMenuTriggerFor]="docsMenu">
+        <mat-icon>description</mat-icon>
+        Documentos
+      </button>
+      <mat-menu #docsMenu="matMenu">
+        <button mat-menu-item [disabled]="!match!.squad.length" (click)="downloadSquadPdf()">
+          <mat-icon>group</mat-icon>
+          Plantel convocado
         </button>
+        <button mat-menu-item (click)="downloadRunSheet()">
+          <mat-icon>event_note</mat-icon>
+          Hoja de ruta del partido
+        </button>
+        <button mat-menu-item [disabled]="!match!.squad.length" (click)="downloadPosters()">
+          <mat-icon>campaign</mat-icon>
+          Carteles de vestuario
+        </button>
+      </mat-menu>
+      @if (match!.squad.length) {
         <button
           *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH]"
           mat-stroked-button
@@ -132,6 +146,41 @@
       }
     </mat-card-content>
   </mat-card>
+
+  <!-- DÍA DEL PARTIDO -->
+  @if (match.matchDay && (match.matchDay.referee || match.matchDay.ar1 || match.matchDay.ar2 || match.matchDay.headCoach)) {
+  <mat-card>
+    <mat-card-content>
+      <p class="section-title">Día del partido</p>
+      <div class="info-grid">
+        @if (match.matchDay.referee) {
+        <div class="info-item">
+          <span class="info-label">Árbitro principal</span>
+          <span class="info-value">{{ match.matchDay.referee }}</span>
+        </div>
+        }
+        @if (match.matchDay.ar1) {
+        <div class="info-item">
+          <span class="info-label">Juez de línea 1</span>
+          <span class="info-value">{{ match.matchDay.ar1 }}</span>
+        </div>
+        }
+        @if (match.matchDay.ar2) {
+        <div class="info-item">
+          <span class="info-label">Juez de línea 2</span>
+          <span class="info-value">{{ match.matchDay.ar2 }}</span>
+        </div>
+        }
+        @if (match.matchDay.headCoach) {
+        <div class="info-item">
+          <span class="info-label">Head Coach</span>
+          <span class="info-value">{{ match.matchDay.headCoach }}</span>
+        </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+  }
 
   <!-- PLANTEL CONVOCADO (no infantiles) -->
   @if (!isInfantiles) {

@@ -12,16 +12,6 @@
   </div>
   <div class="sticky-toolbar__actions">
     <button
-      mat-stroked-button
-      type="button"
-      [disabled]="!squadRows.length || saving"
-      (click)="downloadPdf()"
-      matTooltip="Descargar PDF del plantel"
-    >
-      <mat-icon>picture_as_pdf</mat-icon>
-      PDF
-    </button>
-    <button
       mat-flat-button
       color="primary"
       type="button"
@@ -185,17 +175,43 @@
   <p class="squad-group-label">Titulares</p>
   <table mat-table [dataSource]="titulares" class="squad-table">
     <ng-container matColumnDef="shirtNumber">
-      <th mat-header-cell *matHeaderCellDef>#</th>
+      <th mat-header-cell *matHeaderCellDef>Pos</th>
       <td mat-cell *matCellDef="let entry">{{ entry.shirtNumber }}</td>
+    </ng-container>
+    <ng-container matColumnDef="dorsalNumber">
+      <th mat-header-cell *matHeaderCellDef>Dorsal</th>
+      <td mat-cell *matCellDef="let entry">
+        <input
+          class="dorsal-input"
+          type="number"
+          [value]="entry.dorsalNumber ?? entry.shirtNumber"
+          min="1"
+          max="99"
+          [class.dorsal-modified]="entry.dorsalNumber !== undefined && entry.dorsalNumber !== entry.shirtNumber"
+          (change)="updateDorsal(entry, $event)"
+          [disabled]="saving"
+        />
+      </td>
     </ng-container>
     <ng-container matColumnDef="player">
       <th mat-header-cell *matHeaderCellDef>Jugador</th>
       <td mat-cell *matCellDef="let entry">
-        {{
-          entry.player
-            ? entry.player.name
-            : '(eliminado)'
-        }}
+        {{ entry.player ? entry.player.name : '(eliminado)' }}
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="captain">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let entry">
+        <button
+          mat-icon-button
+          type="button"
+          (click)="toggleCaptain(entry)"
+          [disabled]="saving"
+          [class.captain-active]="entry.isCaptain"
+          matTooltip="{{ entry.isCaptain ? 'Quitar capitán' : 'Marcar como capitán' }}"
+        >
+          <mat-icon>{{ entry.isCaptain ? 'star' : 'star_outline' }}</mat-icon>
+        </button>
       </td>
     </ng-container>
     <ng-container matColumnDef="actions">
@@ -219,17 +235,43 @@
   <p class="squad-group-label">Suplentes</p>
   <table mat-table [dataSource]="suplentes" class="squad-table">
     <ng-container matColumnDef="shirtNumber">
-      <th mat-header-cell *matHeaderCellDef>#</th>
+      <th mat-header-cell *matHeaderCellDef>Pos</th>
       <td mat-cell *matCellDef="let entry">{{ entry.shirtNumber }}</td>
+    </ng-container>
+    <ng-container matColumnDef="dorsalNumber">
+      <th mat-header-cell *matHeaderCellDef>Dorsal</th>
+      <td mat-cell *matCellDef="let entry">
+        <input
+          class="dorsal-input"
+          type="number"
+          [value]="entry.dorsalNumber ?? entry.shirtNumber"
+          min="1"
+          max="99"
+          [class.dorsal-modified]="entry.dorsalNumber !== undefined && entry.dorsalNumber !== entry.shirtNumber"
+          (change)="updateDorsal(entry, $event)"
+          [disabled]="saving"
+        />
+      </td>
     </ng-container>
     <ng-container matColumnDef="player">
       <th mat-header-cell *matHeaderCellDef>Jugador</th>
       <td mat-cell *matCellDef="let entry">
-        {{
-          entry.player
-            ? entry.player.name
-            : '(eliminado)'
-        }}
+        {{ entry.player ? entry.player.name : '(eliminado)' }}
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="captain">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let entry">
+        <button
+          mat-icon-button
+          type="button"
+          (click)="toggleCaptain(entry)"
+          [disabled]="saving"
+          [class.captain-active]="entry.isCaptain"
+          matTooltip="{{ entry.isCaptain ? 'Quitar capitán' : 'Marcar como capitán' }}"
+        >
+          <mat-icon>{{ entry.isCaptain ? 'star' : 'star_outline' }}</mat-icon>
+        </button>
       </td>
     </ng-container>
     <ng-container matColumnDef="actions">

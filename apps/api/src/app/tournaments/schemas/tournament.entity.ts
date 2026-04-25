@@ -9,6 +9,7 @@ export class TournamentEntity extends Document {
   sport?: SportEnum;
   categories?: CategoryEnum[];
   type?: MatchTypeEnum;
+  logoFileId?: string;
   attachments: TournamentAttachment[];
   createdBy?: Types.ObjectId;
   updatedBy?: Types.ObjectId;

@@ -3,6 +3,7 @@ import {
   DestroyRef,
   EventEmitter,
   Input,
+  OnDestroy,
   Output,
   OnChanges,
   OnInit,
@@ -23,8 +24,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CategoryEnum, MatchTypeEnum, SportEnum, Tournament } from '@ltrc-campo/shared-api-model';
-import { TournamentFormValue } from '../../services/tournaments.service';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { TournamentsService, TournamentFormValue } from '../../services/tournaments.service';
 import { SportOption, sportOptions } from '../../../common/sport-options';
 import {
   CategoryOption,
@@ -48,14 +53,18 @@ import {
     MatCardModule,
     MatFormFieldModule,
     MatSelectModule,
+    MatTooltipModule,
   ],
   templateUrl: './tournament-form.component.html',
   styleUrl: './tournament-form.component.scss',
 })
-export class TournamentFormComponent implements OnInit, OnChanges {
+export class TournamentFormComponent implements OnInit, OnChanges, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly userFilterContext = inject(UserFilterContextService);
+  private readonly tournamentsService = inject(TournamentsService);
+  private readonly http = inject(HttpClient);
+  private readonly sanitizer = inject(DomSanitizer);
 
   @Input() tournament?: Tournament;
   @Input() submitting = false;
@@ -67,6 +76,10 @@ export class TournamentFormComponent implements OnInit, OnChanges {
   readonly typeOptions: MatchOption<MatchTypeEnum>[] = matchTypeOptions;
   categoryOptions: CategoryOption[] = getCategoryOptionsBySport();
   private filterCtx?: FilterContext;
+
+  logoUploading = false;
+  logoPreview: SafeUrl | null = null;
+  private logoBlobUrl: string | null = null;
 
   tournamentForm: FormGroup = this.fb.group({
     name: ['', Validators.required],
@@ -128,7 +141,64 @@ export class TournamentFormComponent implements OnInit, OnChanges {
         categories: this.tournament.categories ?? [],
         type: this.tournament.type ?? null,
       });
+      if (this.tournament.logoFileId && this.tournament.id) {
+        this.loadLogoPreview(this.tournament.id);
+      } else {
+        this.clearLogoPreview();
+      }
     }
+  }
+
+  onLogoSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file || !this.tournament?.id) return;
+    this.logoUploading = true;
+    this.tournamentsService.uploadLogo(this.tournament.id, file)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.setLogoPreviewFromFile(file);
+          this.logoUploading = false;
+        },
+        error: () => (this.logoUploading = false),
+      });
+  }
+
+  removeLogo(): void {
+    if (!this.tournament?.id) return;
+    this.tournamentsService.deleteLogo(this.tournament.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.clearLogoPreview());
+  }
+
+  private setLogoPreviewFromFile(file: File): void {
+    this.clearLogoPreview();
+    this.logoBlobUrl = URL.createObjectURL(file);
+    this.logoPreview = this.sanitizer.bypassSecurityTrustUrl(this.logoBlobUrl);
+  }
+
+  private async loadLogoPreview(tournamentId: string): Promise<void> {
+    try {
+      const url = this.tournamentsService.getLogoUrl(tournamentId);
+      const blob = await firstValueFrom(this.http.get(url, { responseType: 'blob' }));
+      this.clearLogoPreview();
+      this.logoBlobUrl = URL.createObjectURL(blob);
+      this.logoPreview = this.sanitizer.bypassSecurityTrustUrl(this.logoBlobUrl);
+    } catch {
+      this.logoPreview = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.clearLogoPreview();
+  }
+
+  private clearLogoPreview(): void {
+    if (this.logoBlobUrl) {
+      URL.revokeObjectURL(this.logoBlobUrl);
+      this.logoBlobUrl = null;
+    }
+    this.logoPreview = null;
   }
 
   onCancel(): void {

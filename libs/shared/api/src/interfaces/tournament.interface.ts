@@ -18,6 +18,7 @@ export interface Tournament extends Document {
   readonly sport?: SportEnum;
   readonly categories?: CategoryEnum[];
   readonly type?: MatchTypeEnum;
+  readonly logoFileId?: string;
   readonly attachments?: TournamentAttachment[];
   readonly createdAt?: Date;
   readonly updatedAt?: Date;

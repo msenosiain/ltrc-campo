@@ -59,7 +59,26 @@
       </mat-form-field>
     </div>
 
-    <!-- Fila 5: Adjuntos (proyectado desde editor) -->
+    <!-- Logo -->
+    @if (tournament) {
+    <div class="logo-upload-row">
+      <span class="logo-upload-label">Logo del torneo</span>
+      @if (logoPreview) {
+        <img [src]="logoPreview" alt="Logo" class="logo-preview" />
+        <button mat-icon-button type="button" color="warn" (click)="removeLogo()" matTooltip="Eliminar logo">
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+      } @else {
+        <button mat-stroked-button type="button" (click)="logoInput.click()" [disabled]="logoUploading">
+          <mat-icon>upload</mat-icon>
+          {{ logoUploading ? 'Subiendo...' : 'Subir logo' }}
+        </button>
+      }
+      <input #logoInput type="file" accept="image/jpeg,image/png,image/webp" hidden (change)="onLogoSelected($event)" />
+    </div>
+    }
+
+    <!-- Adjuntos (proyectado desde editor) -->
     <ng-content></ng-content>
   </mat-card>
 

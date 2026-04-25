@@ -11,6 +11,8 @@ import { PaginationDto } from '../shared/pagination.dto';
 import { GridFsService } from '../shared/gridfs/gridfs.service';
 
 const ATTACHMENTS_BUCKET = 'tournamentAttachments';
+const LOGO_BUCKET = 'tournamentLogos';
+const LOGO_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const ALLOWED_MIMETYPES = [
   'application/pdf',
@@ -99,14 +101,53 @@ export class TournamentsService {
     const tournament = await this.tournamentModel.findById(id);
     if (!tournament) throw new NotFoundException('Tournament not found');
 
-    // Clean up GridFS files
     for (const att of tournament.attachments ?? []) {
-      await this.gridFsService
-        .deleteFile(ATTACHMENTS_BUCKET, att.fileId)
-        .catch(() => {/* file may already be gone */});
+      await this.gridFsService.deleteFile(ATTACHMENTS_BUCKET, att.fileId).catch(() => {});
+    }
+    if (tournament.logoFileId) {
+      await this.gridFsService.deleteFile(LOGO_BUCKET, tournament.logoFileId).catch(() => {});
     }
 
     return tournament.deleteOne();
+  }
+
+  async uploadLogo(
+    id: string,
+    file: { originalname: string; mimetype: string; buffer: Buffer }
+  ) {
+    if (!LOGO_MIMETYPES.includes(file.mimetype)) {
+      throw new NotFoundException(`Tipo de archivo no permitido: ${file.mimetype}`);
+    }
+    const tournament = await this.tournamentModel.findById(id);
+    if (!tournament) throw new NotFoundException('Tournament not found');
+
+    if (tournament.logoFileId) {
+      await this.gridFsService.deleteFile(LOGO_BUCKET, tournament.logoFileId).catch(() => {});
+    }
+
+    const fileId = await this.gridFsService.uploadFile(
+      LOGO_BUCKET, file.originalname, file.buffer, file.mimetype
+    );
+    tournament.logoFileId = fileId;
+    return tournament.save();
+  }
+
+  async getLogoStream(id: string) {
+    const tournament = await this.tournamentModel.findById(id);
+    if (!tournament?.logoFileId) throw new NotFoundException('Logo not found');
+    const stream = this.gridFsService.getFileStream(LOGO_BUCKET, tournament.logoFileId);
+    return { stream, mimetype: 'image/png' };
+  }
+
+  async removeLogo(id: string) {
+    const tournament = await this.tournamentModel.findById(id);
+    if (!tournament) throw new NotFoundException('Tournament not found');
+    if (tournament.logoFileId) {
+      await this.gridFsService.deleteFile(LOGO_BUCKET, tournament.logoFileId).catch(() => {});
+      tournament.logoFileId = undefined;
+      return tournament.save();
+    }
+    return tournament;
   }
 
   async addAttachment(
