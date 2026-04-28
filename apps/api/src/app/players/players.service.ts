@@ -318,8 +318,12 @@ export class PlayersService {
     // (applies to any non-admin user with sports/categories/branches assigned)
     if (caller && !caller.roles?.includes(RoleEnum.ADMIN)) {
       if (caller.sports?.length) queryFilters['sport'] = { $in: caller.sports };
-      if (caller.categories?.length)
-        queryFilters['category'] = { $in: caller.categories };
+      if (caller.categories?.length) {
+        const requested = queryFilters['category']?.$in as string[] | undefined;
+        const allowed = caller.categories as string[];
+        const intersection = requested ? requested.filter((c) => allowed.includes(c)) : allowed;
+        queryFilters['category'] = { $in: intersection };
+      }
       if (caller.branches?.length)
         queryFilters['branch'] = { $in: caller.branches };
     }

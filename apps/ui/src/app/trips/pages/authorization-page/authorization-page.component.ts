@@ -58,10 +58,6 @@ export class AuthorizationPageComponent implements OnInit {
     });
   }
 
-  downloadCalibration(): void {
-    this.pdfService.generateCalibration();
-  }
-
   download(): void {
     if (this.dniControl.invalid) return;
     const tripId = this.route.snapshot.paramMap.get('tripId') ?? '';
