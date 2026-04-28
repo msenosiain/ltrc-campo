@@ -33,8 +33,8 @@
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "1.7mb",
-              "maximumError": "2.5mb"
+              "maximumWarning": "2000kb",
+              "maximumError": "2500kb"
             },
             {
               "type": "anyComponentStyle",
@@ -48,6 +48,9 @@
             "jspdf",
             "html2canvas",
             "pako",
+            "pdf-lib",
+            "@pdf-lib/standard-fonts",
+            "@pdf-lib/upng",
             "qrcode",
             "raf",
             "rgbcolor"
@@ -73,6 +76,9 @@
             "jspdf",
             "html2canvas",
             "pako",
+            "pdf-lib",
+            "@pdf-lib/standard-fonts",
+            "@pdf-lib/upng",
             "qrcode",
             "raf",
             "rgbcolor"

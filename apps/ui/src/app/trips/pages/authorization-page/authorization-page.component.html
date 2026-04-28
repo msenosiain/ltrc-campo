@@ -73,11 +73,10 @@
           >
             @if (state === 'looking-up' || state === 'downloading') {
               <mat-spinner diameter="20" />
-              <span>Generando PDF...</span>
             } @else {
               <mat-icon>download</mat-icon>
-              Descargar autorización
             }
+            <span>{{ (state === 'looking-up' || state === 'downloading') ? 'Generando PDF…' : 'Descargar autorización' }}</span>
           </button>
         </div>
       }
