@@ -112,7 +112,7 @@ export class TripsService {
 
     const participant: Partial<TripParticipantEntity> = {
       type: dto.type,
-      status: dto.status ?? TripParticipantStatusEnum.INTERESTED,
+      status: dto.status ?? TripParticipantStatusEnum.PENDING,
       costAssigned: dto.costAssigned ?? trip.costPerPerson,
       payments: [],
       specialNeeds: dto.specialNeeds,
@@ -162,7 +162,7 @@ export class TripsService {
         existingPlayerIds.add(dto.playerId);
         trip.participants.push({
           type: dto.type,
-          status: dto.status ?? TripParticipantStatusEnum.INTERESTED,
+          status: dto.status ?? TripParticipantStatusEnum.PENDING,
           costAssigned: dto.costAssigned ?? trip.costPerPerson,
           payments: [],
           specialNeeds: dto.specialNeeds,
@@ -265,6 +265,11 @@ export class TripsService {
       recordedBy: caller ? (caller as any)._id : undefined,
     });
 
+    const totalPaid = participant.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
+    if (participant.costAssigned > 0 && totalPaid >= participant.costAssigned) {
+      participant.status = TripParticipantStatusEnum.CONFIRMED;
+    }
+
     if (caller) trip.updatedBy = (caller as any)._id;
     await trip.save();
     return this.findOne(id);
@@ -286,6 +291,14 @@ export class TripsService {
     if (!payment) throw new NotFoundException('Pago no encontrado');
 
     payment.deleteOne();
+
+    const totalPaid = participant.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
+    if (participant.status === TripParticipantStatusEnum.CONFIRMED) {
+      if (participant.costAssigned === 0 || totalPaid < participant.costAssigned) {
+        participant.status = TripParticipantStatusEnum.PENDING;
+      }
+    }
+
     if (caller) trip.updatedBy = (caller as any)._id;
     await trip.save();
     return this.findOne(id);

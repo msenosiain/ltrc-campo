@@ -13,7 +13,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { format } from 'date-fns';
-import { PaymentMethodEnum, Trip, TripParticipant, TripParticipantStatusEnum, TripParticipantTypeEnum } from '@ltrc-campo/shared-api-model';
+import { PaymentMethodEnum, Trip, TripParticipant, TripParticipantTypeEnum } from '@ltrc-campo/shared-api-model';
 import { TripsService } from '../../services/trips.service';
 
 interface DialogData {
@@ -83,11 +83,7 @@ export class TripRecordPaymentDialogComponent {
     this.notFound = false;
     this.foundParticipant = null;
 
-    const participants = this.data.trip.participants.filter(
-      (p) => p.status !== TripParticipantStatusEnum.CANCELLED
-    );
-
-    const found = participants.find((p) => {
+    const found = this.data.trip.participants.find((p) => {
       if (p.type === TripParticipantTypeEnum.PLAYER) return (p.player as any)?.idNumber === dni;
       if (p.type === TripParticipantTypeEnum.STAFF) return (p as any).user?.idNumber === dni;
       if (p.type === TripParticipantTypeEnum.EXTERNAL) return p.externalDni === dni;

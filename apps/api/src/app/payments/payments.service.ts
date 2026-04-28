@@ -198,7 +198,6 @@ export class PaymentsService {
       const p = trip.participants.find(
         (p) =>
           p.type === TripParticipantTypeEnum.PLAYER &&
-          p.status !== TripParticipantStatusEnum.CANCELLED &&
           p.player?.toString() === player._id.toString(),
       );
       if (!p) throw new HttpException({ code: 'NOT_A_PARTICIPANT', payerName: player.name }, 400);
@@ -212,7 +211,6 @@ export class PaymentsService {
       const p = trip.participants.find(
         (p) =>
           p.type === TripParticipantTypeEnum.STAFF &&
-          p.status !== TripParticipantStatusEnum.CANCELLED &&
           (p as any).user?.toString() === user._id.toString(),
       );
       if (!p) throw new HttpException({ code: 'NOT_A_PARTICIPANT', payerName: user.name }, 400);
@@ -224,7 +222,6 @@ export class PaymentsService {
     const ext = trip.participants.find(
       (p) =>
         p.type === TripParticipantTypeEnum.EXTERNAL &&
-        p.status !== TripParticipantStatusEnum.CANCELLED &&
         p.externalDni === dni,
     );
     if (ext) {
@@ -408,6 +405,9 @@ export class PaymentsService {
         ? new Date(mpData.date_approved)
         : new Date();
       await payment.save();
+      if (payment.status === PaymentStatusEnum.APPROVED) {
+        await this.autoConfirmTripParticipantIfNeeded(payment);
+      }
     } catch {
       // Si falla la verificación con MP, guardamos lo que vino del redirect
       payment.status = this.mapMpStatus(dto.status ?? 'pending');
@@ -519,10 +519,54 @@ export class PaymentsService {
           : new Date();
       }
       await payment.save();
+      if (payment.status === PaymentStatusEnum.APPROVED) {
+        await this.autoConfirmTripParticipantIfNeeded(payment);
+      }
 
       return { status: payment.status, updated: payment.status !== previousStatus };
     } catch {
       return { status: payment.status, updated: false };
+    }
+  }
+
+  private async autoConfirmTripParticipantIfNeeded(payment: PaymentEntity): Promise<void> {
+    if (payment.entityType !== PaymentEntityTypeEnum.TRIP) return;
+
+    const trip = await this.tripModel.findById(payment.entityId);
+    if (!trip) return;
+
+    const participantQuery: Record<string, unknown> = {};
+    let participant: any;
+
+    if (payment.playerId) {
+      participantQuery['playerId'] = payment.playerId;
+      participant = trip.participants.find(
+        (p) => p.type === TripParticipantTypeEnum.PLAYER && p.player?.toString() === payment.playerId!.toString(),
+      );
+    } else if (payment.payerDni) {
+      participantQuery['payerDni'] = payment.payerDni;
+      participant = trip.participants.find(
+        (p) => p.type === TripParticipantTypeEnum.EXTERNAL && p.externalDni === payment.payerDni,
+      );
+    }
+
+    if (!participant || participant.costAssigned <= 0) return;
+    if (participant.status === TripParticipantStatusEnum.CONFIRMED) return;
+
+    const approved = await this.paymentModel
+      .find({
+        entityType: PaymentEntityTypeEnum.TRIP,
+        entityId: payment.entityId,
+        status: PaymentStatusEnum.APPROVED,
+        ...participantQuery,
+      })
+      .select('amount')
+      .lean();
+
+    const totalPaid = approved.reduce((sum, p) => sum + p.amount, 0);
+    if (totalPaid >= participant.costAssigned) {
+      participant.status = TripParticipantStatusEnum.CONFIRMED;
+      await trip.save();
     }
   }
 

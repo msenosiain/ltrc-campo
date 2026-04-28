@@ -31,9 +31,8 @@ export const participantTypeOptions: TripOption<TripParticipantTypeEnum>[] = [
 ];
 
 export const participantStatusOptions: TripOption<TripParticipantStatusEnum>[] = [
-  { id: TripParticipantStatusEnum.INTERESTED, label: 'Interesado' },
+  { id: TripParticipantStatusEnum.PENDING, label: 'Pendiente' },
   { id: TripParticipantStatusEnum.CONFIRMED, label: 'Confirmado' },
-  { id: TripParticipantStatusEnum.CANCELLED, label: 'Cancelado' },
 ];
 
 export function getTripStatusLabel(status: TripStatusEnum): string {

@@ -58,7 +58,7 @@ const TripParticipantSchema = new Schema(
     status: {
       type: String,
       enum: Object.values(TripParticipantStatusEnum),
-      default: TripParticipantStatusEnum.INTERESTED,
+      default: TripParticipantStatusEnum.PENDING,
     },
     costAssigned: { type: Number, required: true, default: 0 },
     payments: { type: [PaymentEntrySchema], default: [] },

@@ -1,5 +1,4 @@
 export enum TripParticipantStatusEnum {
-  INTERESTED = 'interested',
+  PENDING = 'pending',
   CONFIRMED = 'confirmed',
-  CANCELLED = 'cancelled',
 }

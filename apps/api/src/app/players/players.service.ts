@@ -319,7 +319,7 @@ export class PlayersService {
     if (caller && !caller.roles?.includes(RoleEnum.ADMIN)) {
       if (caller.sports?.length) queryFilters['sport'] = { $in: caller.sports };
       if (caller.categories?.length) {
-        const requested = queryFilters['category']?.$in as string[] | undefined;
+        const requested = (queryFilters['category'] as { $in?: string[] } | undefined)?.$in;
         const allowed = caller.categories as string[];
         const intersection = requested ? requested.filter((c) => allowed.includes(c)) : allowed;
         queryFilters['category'] = { $in: intersection };

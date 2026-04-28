@@ -291,9 +291,8 @@
   border-radius: 10px;
   font-size: 0.75rem;
 
-  &.status-interested { background: #f3e5f5; color: #6a1b9a; }
-  &.status-confirmed  { background: #e8f5e9; color: #2e7d32; }
-  &.status-cancelled  { background: #ffebee; color: #c62828; }
+  &.status-pending   { background: #fff8e1; color: #f57f17; }
+  &.status-confirmed { background: #e8f5e9; color: #2e7d32; }
 }
 
 .balance-ok  { color: #2e7d32; font-weight: 500; }
@@ -492,9 +491,8 @@
   font-weight: 500;
   min-width: 110px;
 
-  &--interested { color: #6a1b9a; }
-  &--confirmed  { color: #2e7d32; }
-  &--cancelled  { color: #c62828; }
+  &--pending   { color: #f57f17; }
+  &--confirmed { color: #2e7d32; }
 }
 
 .placeholder-tab {

@@ -272,7 +272,7 @@ export class TripViewerComponent implements OnInit {
     externalName: [''],
     externalDni: [''],
     externalRole: [''],
-    status: [TripParticipantStatusEnum.INTERESTED as TripParticipantStatusEnum],
+    status: [TripParticipantStatusEnum.PENDING as TripParticipantStatusEnum],
     costAssigned: [null as number | null],
     specialNeeds: [''],
   });
@@ -500,7 +500,6 @@ export class TripViewerComponent implements OnInit {
 
   get totalDebt(): number {
     return this.trip?.participants
-      .filter((p) => p.status !== TripParticipantStatusEnum.CANCELLED)
       .reduce((sum, p) => sum + Math.max(0, this.getBalance(p)), 0) ?? 0;
   }
 
@@ -520,7 +519,7 @@ export class TripViewerComponent implements OnInit {
     if (!this.showAddParticipant) {
       this.addParticipantForm.reset({
         type: TripParticipantTypeEnum.PLAYER,
-        status: TripParticipantStatusEnum.INTERESTED,
+        status: TripParticipantStatusEnum.PENDING,
         costAssigned: this.trip?.costPerPerson ?? 0,
       });
       this.clearParticipantSelections();
@@ -635,7 +634,7 @@ export class TripViewerComponent implements OnInit {
             .bulkAddParticipants(this.trip!.id!, toAdd.map((p) => ({
               type: TripParticipantTypeEnum.PLAYER,
               playerId: p.id!,
-              status: TripParticipantStatusEnum.INTERESTED,
+              status: TripParticipantStatusEnum.PENDING,
               costAssigned: this.trip!.costPerPerson,
             })))
             .pipe(map((trip) => ({ added: toAdd.length, trip })));
