@@ -37,6 +37,7 @@ export interface SquadEntry {
   shirtNumber: number;
   dorsalNumber?: number;
   isCaptain?: boolean;
+  posterLabel?: string;
   player: Player;
 }
 

@@ -199,6 +199,20 @@
         {{ entry.player ? entry.player.name : '(eliminado)' }}
       </td>
     </ng-container>
+    <ng-container matColumnDef="posterLabel">
+      <th mat-header-cell *matHeaderCellDef>Cartel</th>
+      <td mat-cell *matCellDef="let entry">
+        <input
+          class="poster-label-input"
+          type="text"
+          [value]="entry.posterLabel ?? ''"
+          [placeholder]="defaultPosterLabel(entry)"
+          (change)="updatePosterLabel(entry, $event)"
+          [disabled]="saving"
+          maxlength="20"
+        />
+      </td>
+    </ng-container>
     <ng-container matColumnDef="captain">
       <th mat-header-cell *matHeaderCellDef></th>
       <td mat-cell *matCellDef="let entry">
@@ -257,6 +271,20 @@
       <th mat-header-cell *matHeaderCellDef>Jugador</th>
       <td mat-cell *matCellDef="let entry">
         {{ entry.player ? entry.player.name : '(eliminado)' }}
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="posterLabel">
+      <th mat-header-cell *matHeaderCellDef>Cartel</th>
+      <td mat-cell *matCellDef="let entry">
+        <input
+          class="poster-label-input"
+          type="text"
+          [value]="entry.posterLabel ?? ''"
+          [placeholder]="defaultPosterLabel(entry)"
+          (change)="updatePosterLabel(entry, $event)"
+          [disabled]="saving"
+          maxlength="20"
+        />
       </td>
     </ng-container>
     <ng-container matColumnDef="captain">

@@ -118,7 +118,7 @@ export class SquadEditorComponent implements OnInit {
   selectedPlayer: Player | null = null;
   private readonly searchSubject = new Subject<string>();
 
-  readonly displayedColumns = ['shirtNumber', 'dorsalNumber', 'player', 'captain', 'actions'];
+  readonly displayedColumns = ['shirtNumber', 'dorsalNumber', 'player', 'posterLabel', 'captain', 'actions'];
 
   readonly displayPlayerFn = (player: Player | null): string =>
     player ? player.name : '';
@@ -314,6 +314,19 @@ export class SquadEditorComponent implements OnInit {
     this.persistSquad();
   }
 
+  defaultPosterLabel(entry: SquadEntry): string {
+    return entry.player?.name?.trim().split(/\s+/)[0] ?? '';
+  }
+
+  updatePosterLabel(entry: SquadEntry, event: Event): void {
+    const val = (event.target as HTMLInputElement).value.trim();
+    this.squadRows = this.squadRows.map((e) =>
+      e === entry ? { ...e, posterLabel: val || undefined } : e
+    );
+    this.isDirty = true;
+    this.persistSquad();
+  }
+
   toggleCaptain(entry: SquadEntry): void {
     const alreadyCaptain = entry.isCaptain;
     this.squadRows = this.squadRows.map((e) => ({
@@ -481,6 +494,7 @@ export class SquadEditorComponent implements OnInit {
       shirtNumber: e.shirtNumber,
       ...(e.dorsalNumber !== undefined && e.dorsalNumber !== e.shirtNumber && { dorsalNumber: e.dorsalNumber }),
       ...(e.isCaptain && { isCaptain: true }),
+      ...(e.posterLabel && { posterLabel: e.posterLabel }),
       playerId: e.player.id!,
     }));
 

@@ -35,6 +35,7 @@ export class MatchEntity extends Document {
     shirtNumber: number;
     dorsalNumber?: number;
     isCaptain?: boolean;
+    posterLabel?: string;
     player: PopulatedDoc<PlayerEntity & Document>;
   }[];
   attendance: AttendanceEntry[];

@@ -119,7 +119,7 @@ export class MatchesService {
 
   updateSquad(
     matchId: string,
-    squad: { shirtNumber: number; dorsalNumber?: number; isCaptain?: boolean; playerId: string }[]
+    squad: { shirtNumber: number; dorsalNumber?: number; isCaptain?: boolean; posterLabel?: string; playerId: string }[]
   ): Observable<Match> {
     return this.httpClient.patch<Match>(
       `${this.matchesApiUrl}/${matchId}/squad`,

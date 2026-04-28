@@ -49,7 +49,7 @@
     <ng-container matColumnDef="departureDate">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Salida</th>
       <td mat-cell *matCellDef="let trip">
-        {{ trip.departureDate | date : 'dd/MM/yyyy' }}
+        {{ trip.departureDate | date : 'dd/MM/yyyy' : 'UTC' }}
       </td>
     </ng-container>
 

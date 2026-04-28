@@ -58,6 +58,10 @@ export class SquadEntryDto {
   @IsBoolean()
   isCaptain?: boolean;
 
+  @IsOptional()
+  @IsString()
+  posterLabel?: string;
+
   @IsMongoId()
   playerId!: string;
 }

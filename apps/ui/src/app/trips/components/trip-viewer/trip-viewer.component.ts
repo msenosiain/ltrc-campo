@@ -409,7 +409,7 @@ export class TripViewerComponent implements OnInit {
 
   get tripPaymentLabel(): string {
     if (!this.trip) return '';
-    const date = new Date(this.trip.departureDate).toLocaleDateString('es-AR');
+    const date = new Date(this.trip.departureDate + 'T12:00:00Z').toLocaleDateString('es-AR');
     return `${this.trip.name} — ${this.trip.destination} (${date})`;
   }
 

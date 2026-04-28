@@ -38,18 +38,18 @@
         </div>
         <div class="info-item">
           <span class="info-label">Salida</span>
-          <span class="info-value">{{ trip.departureDate | date : 'dd/MM/yyyy' }}</span>
+          <span class="info-value">{{ trip.departureDate | date : 'dd/MM/yyyy' : 'UTC' }}</span>
         </div>
         @if (trip.returnDate) {
         <div class="info-item">
           <span class="info-label">Regreso</span>
-          <span class="info-value">{{ trip.returnDate | date : 'dd/MM/yyyy' }}</span>
+          <span class="info-value">{{ trip.returnDate | date : 'dd/MM/yyyy' : 'UTC' }}</span>
         </div>
         }
         @if (trip.registrationDeadline) {
         <div class="info-item">
           <span class="info-label">Límite inscripción</span>
-          <span class="info-value">{{ trip.registrationDeadline | date : 'dd/MM/yyyy' }}</span>
+          <span class="info-value">{{ trip.registrationDeadline | date : 'dd/MM/yyyy' : 'UTC' }}</span>
         </div>
         }
         @if (trip.sport) {

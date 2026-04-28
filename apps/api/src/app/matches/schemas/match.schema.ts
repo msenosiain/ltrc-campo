@@ -33,6 +33,7 @@ const MatchSquadEntrySchema = new Schema(
     shirtNumber: { type: Number, required: true, min: 1, max: 99 },
     dorsalNumber: { type: Number, min: 1, max: 99 },
     isCaptain: { type: Boolean },
+    posterLabel: { type: String },
     player: { type: Types.ObjectId, ref: PlayerEntity.name, required: true },
   },
   { _id: false }
