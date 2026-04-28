@@ -33,27 +33,23 @@
 
       @if (linkInfo && (state === 'ready' || state === 'validating' || state === 'validated' || state === 'redirecting')) {
         <div class="payment-info">
-          @if (linkInfo.matchTournamentName) {
-            <p class="tournament-name">{{ linkInfo.matchTournamentName }}</p>
-          }
-          <p class="concept">{{ linkInfo.concept }}</p>
-          @if (linkInfo.matchOpponents || linkInfo.matchDate) {
-            <p class="match-description">
-              @if (linkInfo.matchOpponents) {<span>vs {{ linkInfo.matchOpponents }}</span>}
-              @if (linkInfo.matchDate) {
+          @if (isTrip) {
+            <p class="entity-label">{{ linkInfo.entityLabel }}</p>
+            <p class="concept">{{ linkInfo.concept }}</p>
+          } @else {
+            @if (linkInfo.matchTournamentName) {
+              <p class="tournament-name">{{ linkInfo.matchTournamentName }}</p>
+            }
+            <p class="entity-label">{{ matchTitle }}</p>
+            <p class="concept">{{ linkInfo.concept }}</p>
+            @if (linkInfo.matchDate) {
+              <p class="match-description">
                 <span class="match-date">
                   {{ linkInfo.matchDate }}
                   @if (linkInfo.matchTime) { · {{ linkInfo.matchTime }}hs }
                 </span>
-              }
-            </p>
-          }
-          @if (linkInfo.matchCategories?.length) {
-            <div class="category-chips">
-              @for (cat of linkInfo.matchCategories; track cat) {
-                <span class="category-chip">{{ getCategoryLabel($any(cat)) }}</span>
-              }
-            </div>
+              </p>
+            }
           }
           <p class="installment-label">{{ installmentLabel }}</p>
         </div>

@@ -64,6 +64,12 @@
 .payment-info {
   padding: 16px 0;
 
+  .entity-label {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
   .tournament-name {
     font-size: 13px;
     font-weight: 600;
@@ -74,8 +80,9 @@
   }
 
   .concept {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--mat-app-on-surface-variant, #666);
     margin: 0 0 6px;
   }
 

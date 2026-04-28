@@ -138,6 +138,13 @@ export class PaymentPageComponent implements OnInit {
     return this.linkInfo?.entityType === PaymentEntityTypeEnum.TRIP;
   }
 
+  get matchTitle(): string {
+    if (!this.linkInfo) return '';
+    const cats = this.linkInfo.matchCategories?.map(c => getCategoryLabel(c as CategoryEnum)).join(' / ') ?? '';
+    const vs = this.linkInfo.matchOpponents ? ` vs ${this.linkInfo.matchOpponents}` : '';
+    return cats + vs;
+  }
+
   get verifiedLabel(): string {
     return this.isTrip ? 'Pasajero verificado' : 'Jugador verificado';
   }

@@ -141,14 +141,18 @@ export class TripFormComponent implements OnInit, OnChanges {
       this.updateCategoryOptions(this.trip.sport ?? null);
       this.form.patchValue({
         ...this.trip,
-        departureDate: this.trip.departureDate ? new Date(this.trip.departureDate + 'T12:00:00Z') : null,
-        returnDate: this.trip.returnDate ? new Date(this.trip.returnDate + 'T12:00:00Z') : null,
+        departureDate: this.trip.departureDate ? this.utcToLocalDate(new Date(this.trip.departureDate)) : null,
+        returnDate: this.trip.returnDate ? this.utcToLocalDate(new Date(this.trip.returnDate)) : null,
         registrationDeadline: this.trip.registrationDeadline
-          ? new Date(this.trip.registrationDeadline + 'T12:00:00Z')
+          ? this.utcToLocalDate(new Date(this.trip.registrationDeadline))
           : null,
         categories: this.trip.categories ?? [],
       });
     }
+  }
+
+  private utcToLocalDate(d: Date): Date {
+    return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
   }
 
   onSubmit(): void {
