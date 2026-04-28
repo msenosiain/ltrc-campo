@@ -185,9 +185,9 @@ export class MatchesListComponent implements AfterViewInit, OnDestroy {
     ref.afterClosed().subscribe((result: SetResultDialogResult | null) => {
       if (!result) return;
       this.matchesService.patchResult(match.id!, result.homeScore, result.awayScore).subscribe({
-        next: () => {
+        next: (updated) => {
           this.snackBar.open('Resultado guardado', '', { duration: 2500 });
-          this.dataSource.refresh();
+          this.dataSource.updateItem(updated);
         },
         error: () => this.snackBar.open('Error al guardar el resultado', 'Cerrar', { duration: 3000 }),
       });
@@ -197,9 +197,9 @@ export class MatchesListComponent implements AfterViewInit, OnDestroy {
   changeStatus(event: Event, match: Match, status: MatchStatusEnum): void {
     event.stopPropagation();
     this.matchesService.patchStatus(match.id!, status).subscribe({
-      next: () => {
+      next: (updated) => {
         this.snackBar.open('Estado actualizado', '', { duration: 2500 });
-        this.dataSource.refresh();
+        this.dataSource.updateItem(updated);
       },
       error: () => this.snackBar.open('Error al actualizar el estado', 'Cerrar', { duration: 3000 }),
     });

@@ -60,6 +60,11 @@ export class MatchesDataSource implements DataSource<Match> {
     this.load();
   }
 
+  updateItem(updated: Match): void {
+    const items = this.matchesSubject.getValue();
+    this.matchesSubject.next(items.map(m => (m.id === updated.id ? updated : m)));
+  }
+
   refresh(): void {
     this.load();
   }
