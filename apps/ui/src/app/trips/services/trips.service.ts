@@ -190,4 +190,31 @@ export class TripsService {
       { transportId }
     );
   }
+
+  // ── Public (no auth) ──────────────────────────────────────────────────────
+
+  getPublicTripInfo(tripId: string): Observable<TripPublicInfo> {
+    return this.http.get<TripPublicInfo>(`${this.baseUrl}/public/${tripId}`);
+  }
+
+  lookupAuthorization(tripId: string, dni: string): Observable<AuthorizationData> {
+    return this.http.post<AuthorizationData>(`${this.baseUrl}/public/${tripId}/authorization-lookup`, { dni });
+  }
+}
+
+export interface TripPublicInfo {
+  name: string;
+  destination: string;
+  departureDate: string;
+  returnDate?: string;
+}
+
+export interface AuthorizationData {
+  passengerName: string;
+  passengerDni: string;
+  transportCompany: string | null;
+  tripName: string;
+  destination: string;
+  departureDate: string;
+  returnDate?: string;
 }

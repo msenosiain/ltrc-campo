@@ -581,4 +581,55 @@ export class TripsService {
     await trip.save();
     return this.findOne(id);
   }
+
+  async getPublicTripInfo(id: string) {
+    const trip = await this.tripModel
+      .findById(id)
+      .select('name destination departureDate returnDate transports')
+      .lean()
+      .exec();
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+    return {
+      name: trip.name,
+      destination: trip.destination,
+      departureDate: trip.departureDate,
+      returnDate: trip.returnDate,
+    };
+  }
+
+  async lookupAuthorizationByDni(tripId: string, dni: string) {
+    const trip = await this.tripModel
+      .findById(tripId)
+      .populate([{ path: 'participants.player', select: 'name idNumber' }])
+      .lean()
+      .exec();
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    const normalizedDni = dni.replace(/\D/g, '');
+
+    const participant = trip.participants.find((p) => {
+      if (p.externalDni) return p.externalDni.replace(/\D/g, '') === normalizedDni;
+      const player = p.player as any;
+      return player?.idNumber?.replace(/\D/g, '') === normalizedDni;
+    });
+
+    if (!participant) throw new NotFoundException('No se encontró un pasajero con ese DNI');
+
+    const player = participant.player as any;
+    const name = participant.externalName ?? player?.name ?? '';
+
+    const transport = participant.transportId
+      ? trip.transports.find((t: any) => t._id.toString() === participant.transportId.toString())
+      : undefined;
+
+    return {
+      passengerName: name,
+      passengerDni: dni,
+      transportCompany: transport?.company ?? transport?.name ?? null,
+      tripName: trip.name,
+      destination: trip.destination,
+      departureDate: trip.departureDate,
+      returnDate: trip.returnDate,
+    };
+  }
 }

@@ -897,6 +897,13 @@ export class TripViewerComponent implements OnInit {
 
   // ── Navegación ────────────────────────────────────────────────────────────
 
+  copyAuthorizationLink(): void {
+    const url = `${window.location.origin}/authorization/${this.trip?.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      this.snackBar.open('Link de autorización copiado', '', { duration: 2500 });
+    });
+  }
+
   goToEdit(): void {
     this.router.navigate(['/dashboard/trips', this.trip?.id, 'edit']);
   }

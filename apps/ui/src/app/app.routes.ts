@@ -46,6 +46,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'authorization/:tripId',
+    loadComponent: () =>
+      import('./trips/pages/authorization-page/authorization-page.component').then(
+        (m) => m.AuthorizationPageComponent
+      ),
+  },
+  {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [authGuard],

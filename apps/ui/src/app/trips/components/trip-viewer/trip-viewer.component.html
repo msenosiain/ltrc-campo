@@ -153,6 +153,16 @@
               Quitar todos
             </button>
           }
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="copyAuthorizationLink()"
+            matTooltip="Copiá y compartí este link con los padres para que descarguen la autorización de viaje"
+            class="section-actions__right"
+          >
+            <mat-icon>link</mat-icon>
+            Link de autorización
+          </button>
         </div>
 
 
@@ -785,15 +795,8 @@
       </mat-tab>
     }
 
-    <!-- Tab: Documentación (Fase 5) -->
-    <mat-tab label="Documentación">
-      <div class="tab-content placeholder-tab">
-        <mat-icon class="placeholder-icon">badge</mat-icon>
-        <p>Control de documentación — próximamente</p>
-      </div>
-    </mat-tab>
 
-    <!-- Tab: Exportar (Fase 4) -->
+<!-- Tab: Exportar (Fase 4) -->
     <mat-tab label="Exportar">
       <div class="tab-content placeholder-tab">
         <mat-icon class="placeholder-icon">download</mat-icon>
