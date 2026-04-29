@@ -557,8 +557,10 @@ export class PaymentsService {
       (p: any) => p.sourcePaymentId?.toString() === (payment as any)._id.toString(),
     );
     if (!alreadySynced) {
+      // Record net amount (costAssigned) so balance shows $0 — gross is tracked in PaymentEntity
+      const netAmount = participant.costAssigned > 0 ? participant.costAssigned : payment.amount;
       participant.payments.push({
-        amount: payment.amount,
+        amount: netAmount,
         date: payment.date ?? new Date(),
         method: payment.method,
         notes: `MercadoPago${payment.mpPaymentId ? ` #${payment.mpPaymentId}` : ''}`,
