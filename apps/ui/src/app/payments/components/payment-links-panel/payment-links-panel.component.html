@@ -14,11 +14,11 @@
         <mat-icon>picture_as_pdf</mat-icon> Reporte PDF
       </button>
       <button mat-stroked-button (click)="openRecordManualDialog()"
-        *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR]">
+        *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
         <mat-icon>payments</mat-icon> Pago manual
       </button>
       <button mat-raised-button color="primary" (click)="openCreateLinkDialog()"
-        *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR]">
+        *ltrcAllowedRoles="[RoleEnum.ADMIN]">
         <mat-icon>add_link</mat-icon> Nuevo cobro
       </button>
     </div>
@@ -73,7 +73,7 @@
               <mat-icon>share</mat-icon>
             </button>
             <button mat-icon-button matTooltip="Cancelar link" color="warn" (click)="cancelLink(link)"
-              *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR]">
+              *ltrcAllowedRoles="[RoleEnum.ADMIN]">
               <mat-icon>delete</mat-icon>
             </button>
           }

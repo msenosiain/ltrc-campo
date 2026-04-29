@@ -28,7 +28,7 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post('links')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
+  @Roles(RoleEnum.ADMIN)
   createLink(@Body() dto: CreatePaymentLinkDto, @Req() req: Request) {
     return this.paymentsService.createLink(dto, (req as any).user);
   }
@@ -42,7 +42,7 @@ export class PaymentsController {
   }
 
   @Delete('links/:id')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
+  @Roles(RoleEnum.ADMIN)
   cancelLink(@Param('id') id: string) {
     return this.paymentsService.cancelLink(id);
   }
@@ -156,7 +156,7 @@ export class PaymentsController {
   }
 
   @Post()
-  @Roles(RoleEnum.ADMIN)
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
   recordManual(@Body() dto: RecordManualPaymentDto, @Req() req: Request) {
     return this.paymentsService.recordManualPayment(dto, (req as any).user);
   }
