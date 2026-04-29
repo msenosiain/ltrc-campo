@@ -454,7 +454,8 @@ export class TripViewerComponent implements OnInit {
   }
 
   getTotalPaid(p: TripParticipant): number {
-    return p.payments?.reduce((sum, pay) => sum + pay.amount, 0) ?? 0;
+    const raw = p.payments?.reduce((sum, pay) => sum + pay.amount, 0) ?? 0;
+    return p.costAssigned > 0 ? Math.min(raw, p.costAssigned) : raw;
   }
 
   getBalance(p: TripParticipant): number {
