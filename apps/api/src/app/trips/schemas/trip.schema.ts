@@ -29,6 +29,7 @@ const PaymentEntrySchema = new Schema(
     method: { type: String },
     notes: { type: String },
     recordedBy: { type: Types.ObjectId, ref: 'User' },
+    sourcePaymentId: { type: Types.ObjectId },
   },
   { _id: true }
 );

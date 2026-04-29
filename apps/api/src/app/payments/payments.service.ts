@@ -550,8 +550,26 @@ export class PaymentsService {
       );
     }
 
-    if (!participant || participant.costAssigned <= 0) return;
-    if (participant.status === TripParticipantStatusEnum.CONFIRMED) return;
+    if (!participant) return;
+
+    // Sync this MP payment into participant.payments[] if not already there
+    const alreadySynced = participant.payments.some(
+      (p: any) => p.sourcePaymentId?.toString() === (payment as any)._id.toString(),
+    );
+    if (!alreadySynced) {
+      participant.payments.push({
+        amount: payment.amount,
+        date: payment.date ?? new Date(),
+        method: payment.method,
+        notes: `MercadoPago${payment.mpPaymentId ? ` #${payment.mpPaymentId}` : ''}`,
+        sourcePaymentId: (payment as any)._id,
+      });
+    }
+
+    if (participant.costAssigned <= 0) {
+      await trip.save();
+      return;
+    }
 
     const approved = await this.paymentModel
       .find({
@@ -566,8 +584,9 @@ export class PaymentsService {
     const totalPaid = approved.reduce((sum, p) => sum + p.amount, 0);
     if (totalPaid >= participant.costAssigned) {
       participant.status = TripParticipantStatusEnum.CONFIRMED;
-      await trip.save();
     }
+
+    await trip.save();
   }
 
   // ── Reporte global ────────────────────────────────────────────────────────

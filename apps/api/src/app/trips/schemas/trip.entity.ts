@@ -12,8 +12,10 @@ export class PaymentEntryEntity {
   _id!: Types.ObjectId;
   amount!: number;
   date!: Date;
+  method?: string;
   notes?: string;
   recordedBy?: Types.ObjectId;
+  sourcePaymentId?: Types.ObjectId;
 }
 
 export class TripTransportEntity {
