@@ -557,8 +557,8 @@ export class PaymentsService {
       (p: any) => p.sourcePaymentId?.toString() === (payment as any)._id.toString(),
     );
     if (!alreadySynced) {
-      // Record net amount (costAssigned) so balance shows $0 — gross is tracked in PaymentEntity
-      const netAmount = participant.costAssigned > 0 ? participant.costAssigned : payment.amount;
+      // Record net amount (gross minus MP fee) — gross is tracked in PaymentEntity
+      const netAmount = Math.round(payment.amount * (1 - this.mpFeeRate));
       participant.payments.push({
         amount: netAmount,
         date: payment.date ?? new Date(),
