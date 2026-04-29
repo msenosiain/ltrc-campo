@@ -46,9 +46,9 @@ import {
   TripTransport,
 } from '@ltrc-campo/shared-api-model';
 import { PaymentLinksPanelComponent } from '../../../payments/components/payment-links-panel/payment-links-panel.component';
-import { TripRecordPaymentDialogComponent } from '../trip-record-payment-dialog/trip-record-payment-dialog.component';
 import { TripsService, AddParticipantPayload, AddTransportPayload } from '../../services/trips.service';
 import { TripTransportPdfService } from '../../services/trip-transport-pdf.service';
+import { TripPassengerExportService } from '../../services/trip-passenger-export.service';
 import { ConfirmDialogComponent } from '../../../common/components/confirm-dialog/confirm-dialog.component';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
 import { AuthService } from '../../../auth/auth.service';
@@ -105,6 +105,7 @@ export class TripViewerComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly tripsService = inject(TripsService);
   private readonly transportPdfService = inject(TripTransportPdfService);
+  private readonly passengerExportService = inject(TripPassengerExportService);
   private readonly playersService = inject(PlayersService);
   private readonly usersService = inject(UsersService);
   private readonly authService = inject(AuthService);
@@ -299,6 +300,7 @@ export class TripViewerComponent implements OnInit {
   showAddTransport = false;
   editingTransportId: string | null = null;
   generatingTransportPdf = false;
+  generatingPassengerPdf = false;
 
   addTransportForm = this.fb.group({
     name: ['', Validators.required],
@@ -504,6 +506,12 @@ export class TripViewerComponent implements OnInit {
       .reduce((sum, p) => sum + Math.max(0, this.getBalance(p)), 0) ?? 0;
   }
 
+  get totalInTransports(): number {
+    return this.trip?.participants.filter(
+      (p) => !!p.transportId && p.status === TripParticipantStatusEnum.CONFIRMED,
+    ).length ?? 0;
+  }
+
   // ── Acciones participantes ────────────────────────────────────────────────
 
   private clearParticipantSelections(): void {
@@ -687,20 +695,6 @@ export class TripViewerComponent implements OnInit {
 
   // ── Pagos ─────────────────────────────────────────────────────────────────
 
-  openManualPaymentDialog(): void {
-    if (!this.trip) return;
-    this.dialog
-      .open(TripRecordPaymentDialogComponent, {
-        width: '440px',
-        data: { trip: this.trip },
-      })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((updatedTrip: Trip | undefined) => {
-        if (updatedTrip) this.trip = updatedTrip;
-      });
-  }
-
   removePayment(p: TripParticipant, paymentId: string): void {
     if (!this.trip?.id) return;
     this.dialog
@@ -876,6 +870,31 @@ export class TripViewerComponent implements OnInit {
             duration: 4000,
           }),
       });
+  }
+
+  // ── Exportación pasajeros ─────────────────────────────────────────────────
+
+  exportAllExcel(): void {
+    if (!this.trip) return;
+    this.passengerExportService.generateExcel(this.trip);
+  }
+
+  exportAllPdf(): void {
+    if (!this.trip) return;
+    this.generatingPassengerPdf = true;
+    this.passengerExportService.generatePdf(this.trip).finally(() => {
+      this.generatingPassengerPdf = false;
+    });
+  }
+
+  exportTransportExcel(transport: TripTransport): void {
+    if (!this.trip) return;
+    this.passengerExportService.generateExcel(this.trip, transport);
+  }
+
+  exportTransportPdf(transport: TripTransport): void {
+    if (!this.trip) return;
+    this.passengerExportService.generatePdf(this.trip, transport);
   }
 
   readonly UNASSIGN_SENTINEL = '__unassign__';
