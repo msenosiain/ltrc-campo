@@ -458,7 +458,7 @@ export class TripViewerComponent implements OnInit {
   }
 
   getBalance(p: TripParticipant): number {
-    return p.costAssigned - this.getTotalPaid(p);
+    return Math.max(0, p.costAssigned - this.getTotalPaid(p));
   }
 
   // ── Resumen ───────────────────────────────────────────────────────────────
