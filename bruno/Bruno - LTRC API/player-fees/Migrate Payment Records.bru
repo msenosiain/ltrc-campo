@@ -1,0 +1,19 @@
+meta {
+  name: Player Fees - POST /migrate-payment-records
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/player-fees/migrate-payment-records
+  body: none
+  auth: inherit
+}
+
+docs {
+  Migración única: crea registros Payment en la colección general para todos los
+  PlayerFeePayment aprobados que aún no tienen Payment asociado.
+
+  Devuelve { migrated, skipped }.
+  Es idempotente — se puede llamar varias veces sin duplicar datos.
+}
