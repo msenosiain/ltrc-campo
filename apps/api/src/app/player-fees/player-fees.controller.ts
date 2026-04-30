@@ -164,6 +164,12 @@ export class PlayerFeesController {
     return this.service.getStatus(season, sport, cats?.length ? undefined : category, cats);
   }
 
+  @Post('migrate-payment-records')
+  @Roles(RoleEnum.ADMIN)
+  migratePaymentRecords() {
+    return this.service.migratePaymentRecords();
+  }
+
   @Get('stats')
   @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
   getStats(

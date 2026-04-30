@@ -1034,4 +1034,42 @@ export class PlayerFeesService {
 
     return null;
   }
+
+  async migratePaymentRecords(): Promise<{ migrated: number; skipped: number }> {
+    const approvedFees = await this.paymentModel
+      .find({ status: PlayerFeeStatusEnum.APPROVED })
+      .populate({ path: 'configId', select: 'label' })
+      .lean();
+
+    const existingEntityIds = new Set(
+      (await this.generalPaymentModel
+        .find({ entityType: PaymentEntityTypeEnum.PLAYER_FEE })
+        .distinct('entityId'))
+        .map((id) => id.toString())
+    );
+
+    let migrated = 0;
+    let skipped = 0;
+
+    for (const fee of approvedFees) {
+      const feeId = (fee as any)._id.toString();
+      if (existingEntityIds.has(feeId)) { skipped++; continue; }
+
+      const config = fee.configId as any;
+      const concept = config?.label ?? `Derecho ${fee.sport} ${fee.season}`;
+      await this.generalPaymentModel.create({
+        entityType: PaymentEntityTypeEnum.PLAYER_FEE,
+        entityId:   (fee as any)._id,
+        playerId:   fee.playerId,
+        amount:     fee.finalAmount,
+        method:     (fee.paymentMethod ?? 'cash') as PaymentMethodEnum,
+        status:     PaymentStatusEnum.APPROVED,
+        concept,
+        date:       fee.paidAt ?? fee.createdAt,
+      });
+      migrated++;
+    }
+
+    return { migrated, skipped };
+  }
 }
