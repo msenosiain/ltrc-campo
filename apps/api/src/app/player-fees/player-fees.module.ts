@@ -13,6 +13,8 @@ import { PlayerSeasonRecordEntity } from './schemas/player-season-record.entity'
 import { PlayerSeasonRecordSchema } from './schemas/player-season-record.schema';
 import { PlayerEntity } from '../players/schemas/player.entity';
 import { PlayerSchema } from '../players/schemas/player.schema';
+import { PaymentEntity } from '../payments/schemas/payment.entity';
+import { PaymentSchema } from '../payments/schemas/payment.schema';
 
 @Module({
   imports: [
@@ -22,6 +24,7 @@ import { PlayerSchema } from '../players/schemas/player.schema';
       { name: PlayerFeePaymentEntity.name, schema: PlayerFeePaymentSchema },
       { name: PlayerSeasonRecordEntity.name, schema: PlayerSeasonRecordSchema },
       { name: PlayerEntity.name, schema: PlayerSchema },
+      { name: PaymentEntity.name, schema: PaymentSchema },
     ]),
   ],
   controllers: [PlayerFeesController, PlayerFeesPublicController],

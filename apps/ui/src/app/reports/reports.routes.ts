@@ -19,6 +19,13 @@ export const REPORTS_ROUTES: Routes = [
           ),
       },
       {
+        path: 'player-fees',
+        loadComponent: () =>
+          import('./pages/player-fees-report/player-fees-report.component').then(
+            (m) => m.PlayerFeesReportComponent
+          ),
+      },
+      {
         path: 'eligibility',
         loadComponent: () =>
           import('./pages/eligibility-report/eligibility-report.component').then(

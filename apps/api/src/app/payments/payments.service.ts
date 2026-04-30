@@ -688,7 +688,9 @@ export class PaymentsService {
     const entityLabel =
       p.entityType === PaymentEntityTypeEnum.MATCH
         ? (matchLabelMap.get(p.entityId.toString()) ?? 'Partido')
-        : (tripLabelMap.get(p.entityId.toString()) ?? 'Viaje');
+        : p.entityType === PaymentEntityTypeEnum.TRIP
+          ? (tripLabelMap.get(p.entityId.toString()) ?? 'Viaje')
+          : p.concept;
     return {
       id: p._id.toString(),
       playerName: player?.name ?? '—',

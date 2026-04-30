@@ -14,6 +14,7 @@ import { FamilyGroupEntity } from './schemas/family-group.entity';
 import { PlayerFeePaymentEntity } from './schemas/player-fee-payment.entity';
 import { PlayerSeasonRecordEntity } from './schemas/player-season-record.entity';
 import { PlayerEntity } from '../players/schemas/player.entity';
+import { PaymentEntity } from '../payments/schemas/payment.entity';
 import { CreatePlayerFeeConfigDto } from './dto/create-player-fee-config.dto';
 import { UpdatePlayerFeeConfigDto } from './dto/update-player-fee-config.dto';
 import { CreateFamilyGroupDto } from './dto/create-family-group.dto';
@@ -29,6 +30,9 @@ import {
   RugbyPositions,
   SportEnum,
   IPlayerFeeStatusRow,
+  PaymentEntityTypeEnum,
+  PaymentMethodEnum,
+  PaymentStatusEnum,
 } from '@ltrc-campo/shared-api-model';
 
 // Rugby categories M15 → PS: requieren cursos obligatorios y fondo solidario
@@ -91,6 +95,8 @@ export class PlayerFeesService {
     private readonly seasonRecordModel: Model<PlayerSeasonRecordEntity>,
     @InjectModel(PlayerEntity.name)
     private readonly playerModel: Model<PlayerEntity>,
+    @InjectModel(PaymentEntity.name)
+    private readonly generalPaymentModel: Model<PaymentEntity>,
     private readonly configService: ConfigService,
   ) {
     const rawRate = parseFloat(
@@ -406,7 +412,8 @@ export class PlayerFeesService {
       }
     }
 
-    await this.paymentModel.create({
+    const paidAt = new Date();
+    const feePayment = await this.paymentModel.create({
       playerId: new Types.ObjectId(dto.playerId),
       ...(config ? { configId: (config as any)._id } : {}),
       season: dto.season,
@@ -417,8 +424,9 @@ export class PlayerFeesService {
       finalAmount,
       status: PlayerFeeStatusEnum.APPROVED,
       paymentMethod: dto.method,
-      paidAt: new Date(),
+      paidAt,
     });
+    await this.createPaymentRecord(feePayment, config, dto.method, finalAmount, paidAt);
   }
 
   // ── Status list ───────────────────────────────────────────────────────────
@@ -746,6 +754,8 @@ export class PlayerFeesService {
       return { status: payment.status };
     }
 
+    const wasApproved = payment.status === PlayerFeeStatusEnum.APPROVED;
+
     try {
       const mpPayment = new MpPayment(this.mpClient);
       const mpData = await mpPayment.get({ id: dto.paymentId });
@@ -759,6 +769,13 @@ export class PlayerFeesService {
     } catch {
       payment.status = this.mapMpStatus(dto.status ?? 'pending');
       await payment.save();
+    }
+
+    if (!wasApproved && payment.status === PlayerFeeStatusEnum.APPROVED) {
+      const config = payment.configId
+        ? await this.configModel.findById(payment.configId).lean()
+        : null;
+      await this.createPaymentRecord(payment, config, PaymentMethodEnum.MERCADOPAGO, payment.finalAmount, payment.paidAt!);
     }
 
     return { status: payment.status };
@@ -964,6 +981,26 @@ export class PlayerFeesService {
     return Object.values(RugbyPositions).includes(num as RugbyPositions)
       ? (num as RugbyPositions)
       : null;
+  }
+
+  private async createPaymentRecord(
+    feePayment: any,
+    config: any | null,
+    method: string,
+    amount: number,
+    paidAt: Date,
+  ): Promise<void> {
+    const concept = config?.label ?? `Derecho ${feePayment.sport} ${feePayment.season}`;
+    await this.generalPaymentModel.create({
+      entityType: PaymentEntityTypeEnum.PLAYER_FEE,
+      entityId: feePayment._id,
+      playerId: feePayment.playerId,
+      amount,
+      method: method as PaymentMethodEnum,
+      status: PaymentStatusEnum.APPROVED,
+      concept,
+      date: paidAt,
+    });
   }
 
   async resolveFamilyDiscount(

@@ -82,7 +82,8 @@
             "@pdf-lib/upng",
             "qrcode",
             "raf",
-            "rgbcolor"
+            "rgbcolor",
+            "xlsx-js-style"
           ]
         }
       },
