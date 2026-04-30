@@ -65,9 +65,10 @@ export class PlayerFeesReportComponent implements OnInit {
   sortDir = signal<'asc' | 'desc'>('desc');
 
   readonly filterForm = new FormGroup({
-    concept: new FormControl<string[]>([]),
-    sport:   new FormControl<SportEnum | null>(null),
-    status:  new FormControl<PaymentStatusEnum[]>([]),
+    concept:  new FormControl<string[]>([]),
+    sport:    new FormControl<SportEnum | null>(null),
+    status:   new FormControl<PaymentStatusEnum[]>([]),
+    method:   new FormControl<PaymentMethodEnum[]>([]),
     dateFrom: new FormControl<Date | null>(null),
     dateTo:   new FormControl<Date | null>(null),
   });
@@ -98,6 +99,7 @@ export class PlayerFeesReportComponent implements OnInit {
     if (v.concept?.length) n++;
     if (v.sport) n++;
     if (v.status?.length) n++;
+    if (v.method?.length) n++;
     if (v.dateFrom) n++;
     if (v.dateTo) n++;
     return n;
@@ -125,6 +127,7 @@ export class PlayerFeesReportComponent implements OnInit {
       concept:    v.concept?.length  ? v.concept.join(',')  : undefined,
       sport:      v.sport            ?? undefined,
       status:     v.status?.length   ? v.status.join(',')   : undefined,
+      method:     v.method?.length   ? v.method.join(',')   : undefined,
       dateFrom:   v.dateFrom ? format(v.dateFrom, 'yyyy-MM-dd') : undefined,
       dateTo:     v.dateTo   ? format(v.dateTo,   'yyyy-MM-dd') : undefined,
       sortBy:     this.sortBy(),
