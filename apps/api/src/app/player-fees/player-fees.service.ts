@@ -700,6 +700,7 @@ export class PlayerFeesService {
       finalAmount,
       mpFeeAdded: mpFeeAdded || undefined,
       status: PlayerFeeStatusEnum.PENDING,
+      paymentMethod: 'mercadopago',
       mpExternalReference: externalReference,
     });
 
@@ -1063,12 +1064,15 @@ export class PlayerFeesService {
 
       const config = fee.configId as any;
       const concept = config?.label ?? `Derecho ${fee.sport} ${fee.season}`;
+      const method = fee.mpPaymentId
+        ? PaymentMethodEnum.MERCADOPAGO
+        : (fee.paymentMethod as PaymentMethodEnum | undefined) ?? PaymentMethodEnum.CASH;
       await this.generalPaymentModel.create({
         entityType: PaymentEntityTypeEnum.PLAYER_FEE,
         entityId:   (fee as any)._id,
         playerId:   fee.playerId,
         amount:     fee.finalAmount,
-        method:     (fee.paymentMethod ?? PaymentMethodEnum.CASH) as PaymentMethodEnum,
+        method,
         status:     PaymentStatusEnum.APPROVED,
         concept,
         date:       fee.paidAt ?? fee.createdAt,
