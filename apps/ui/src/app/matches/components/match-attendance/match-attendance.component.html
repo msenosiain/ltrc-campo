@@ -10,7 +10,8 @@
     @if (!loading()) {
     <span class="attendance-counter">
       <mat-icon>group</mat-icon>
-      {{ presentCount }} / {{ totalCount }} presentes
+      Jugadores {{ presentCount }}/{{ totalCount }}
+      @if (staffRows.length) { · Staff {{ presentStaffCount }}/{{ staffRows.length }} }
     </span>
     }
   </div>

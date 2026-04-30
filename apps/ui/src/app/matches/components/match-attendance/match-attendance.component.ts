@@ -222,6 +222,10 @@ export class MatchAttendanceComponent implements OnInit {
     return this.playerRows.length + this.injuredRows.length;
   }
 
+  get presentStaffCount(): number {
+    return this.staffRows.filter((r) => r.status === AttendanceStatusEnum.PRESENT).length;
+  }
+
   getTrialClass(days: number): string {
     if (days <= 0) return 'trial-expired';
     if (days <= 3) return 'trial-expiring';

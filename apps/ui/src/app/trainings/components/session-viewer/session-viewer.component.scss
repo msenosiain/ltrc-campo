@@ -89,6 +89,12 @@
   letter-spacing: 0.1em;
   color: var(--mat-app-primary, #1976d2);
   margin: 0 0 8px;
+
+  .attendance-count {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
 }
 
 .notes-text {

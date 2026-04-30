@@ -147,14 +147,20 @@ export class SessionListComponent implements AfterViewInit, OnDestroy {
     this.router.navigate(['/dashboard/trainings/sessions', id, 'attendance']);
   }
 
-  changeStatus(session: TrainingSession, status: TrainingSessionStatusEnum): void {
+  changeStatus(
+    session: TrainingSession,
+    status: TrainingSessionStatusEnum
+  ): void {
     const previous = session.status;
     this.dataSource.patchStatus(session.id!, status);
     this.sessionsService.updateSession(session.id!, { status }).subscribe({
-      next: () => this.snackBar.open('Estado actualizado', '', { duration: 2500 }),
+      next: () =>
+        this.snackBar.open('Estado actualizado', '', { duration: 2500 }),
       error: () => {
         this.dataSource.patchStatus(session.id!, previous);
-        this.snackBar.open('Error al actualizar el estado', 'Cerrar', { duration: 4000 });
+        this.snackBar.open('Error al actualizar el estado', 'Cerrar', {
+          duration: 4000,
+        });
       },
     });
   }
@@ -168,11 +174,10 @@ export class SessionListComponent implements AfterViewInit, OnDestroy {
   }
 
   getAttendanceCount(session: TrainingSession): string {
-    const confirmed =
-      session.attendance?.filter((a) => a.confirmed).length ?? 0;
-    const present =
-      session.attendance?.filter((a) => a.status === 'present').length ?? 0;
-    if (present > 0) return `${present} presentes`;
+    const players = session.attendance?.filter((a) => !a.isStaff && !!a.status) ?? [];
+    const present = players.filter((a) => a.status === 'present').length;
+    const confirmed = session.attendance?.filter((a) => !a.isStaff && a.confirmed).length ?? 0;
+    if (present > 0) return `${present}/${players.length} presentes`;
     if (confirmed > 0) return `${confirmed} confirmados`;
     return '—';
   }

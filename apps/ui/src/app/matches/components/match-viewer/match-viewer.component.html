@@ -126,6 +126,16 @@
             }
           </span>
         </div>
+        } @if (playerAttendance.length > 0) {
+        <div class="info-item">
+          <span class="info-label">Jugadores</span>
+          <span class="info-value">{{ presentPlayerCount }}/{{ playerAttendance.length }}</span>
+        </div>
+        } @if (staffAttendance.length > 0) {
+        <div class="info-item">
+          <span class="info-label">Staff</span>
+          <span class="info-value">{{ presentStaffCount }}/{{ staffAttendance.length }}</span>
+        </div>
         } @if (match.status === MatchStatusEnum.COMPLETED && match.result && isCompetitive) {
         <div class="info-item">
           <span class="info-label">Resultado</span>

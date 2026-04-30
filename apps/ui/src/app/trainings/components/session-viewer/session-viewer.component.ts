@@ -153,8 +153,12 @@ export class SessionViewerComponent implements OnInit {
 
   get presentCount(): number {
     return (this.session?.attendance ?? []).filter(
-      (a) => a.status === 'present'
+      (a) => !a.isStaff && a.status === 'present'
     ).length;
+  }
+
+  get presentStaffCount(): number {
+    return this.staffAttendance.filter((a) => a.status === 'present').length;
   }
 
   getPlayerName(entry: AttendanceEntry): string {

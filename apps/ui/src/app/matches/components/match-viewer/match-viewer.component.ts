@@ -178,6 +178,14 @@ export class MatchViewerComponent implements OnInit {
     return (this.match?.attendance ?? []).filter((a) => a.isStaff);
   }
 
+  get presentPlayerCount(): number {
+    return this.playerAttendance.filter((a) => a.status === AttendanceStatusEnum.PRESENT).length;
+  }
+
+  get presentStaffCount(): number {
+    return this.staffAttendance.filter((a) => a.status === AttendanceStatusEnum.PRESENT).length;
+  }
+
   getAttendanceStatusLabel(status?: AttendanceStatusEnum): string {
     if (status === AttendanceStatusEnum.PRESENT) return 'Presente';
     if (status === AttendanceStatusEnum.ABSENT) return 'Ausente';

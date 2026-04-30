@@ -105,9 +105,15 @@
         </div>
         }
         <div class="info-item">
-          <span class="info-label">Presentes</span>
-          <span class="info-value">{{ presentCount }}</span>
+          <span class="info-label">Jugadores</span>
+          <span class="info-value">{{ presentCount }}/{{ playerAttendance.length }}</span>
         </div>
+        @if (staffAttendance.length > 0) {
+        <div class="info-item">
+          <span class="info-label">Staff</span>
+          <span class="info-value">{{ presentStaffCount }}/{{ staffAttendance.length }}</span>
+        </div>
+        }
       </div>
 
       @if (session.notes) {
