@@ -19,6 +19,7 @@ import { es } from 'date-fns/locale';
 import { authInterceptor } from './auth/auth.interceptor';
 import { environment } from '../environments/environment';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
+import { provideAppIcons } from './common/app-icons.provider';
 
 function getEsArPaginatorIntl(): MatPaginatorIntl {
   const intl = new MatPaginatorIntl();
@@ -70,6 +71,7 @@ export const appConfig: ApplicationConfig = {
       useFactory: (overlay: Overlay) => () => overlay.scrollStrategies.reposition(),
     },
     provideCharts(withDefaultRegisterables()),
+    provideAppIcons(),
     provideDateFnsAdapter({
       parse: {
         dateInput: 'dd/MM/yyyy',

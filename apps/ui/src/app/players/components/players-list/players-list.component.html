@@ -156,10 +156,17 @@
     <ng-container matColumnDef="actions">
       <th mat-header-cell *matHeaderCellDef></th>
       <td mat-cell *matCellDef="let player" class="actions-cell" (click)="$event.stopPropagation()">
-        <div *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.TRAINER]">
-          <button mat-icon-button [matMenuTriggerFor]="actionsMenu" [matMenuTriggerData]="{ player: player }">
-            <mat-icon>more_vert</mat-icon>
-          </button>
+        <div class="actions-cell__buttons">
+          @if (player.address?.phoneNumber) {
+            <a mat-icon-button [href]="whatsappUrl(player.address.phoneNumber)" target="_blank" rel="noopener noreferrer" matTooltip="WhatsApp">
+              <mat-icon svgIcon="whatsapp" />
+            </a>
+          }
+          <div *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.TRAINER]">
+            <button mat-icon-button [matMenuTriggerFor]="actionsMenu" [matMenuTriggerData]="{ player: player }">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+          </div>
         </div>
       </td>
     </ng-container>

@@ -10,6 +10,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { whatsappUrl } from '../../../common/utils/contact.utils';
 import { PlayersService } from '../../services/players.service';
 import { PlayersDataSource } from '../../services/players.datasource';
 import { PlayerFeesAdminService } from '../../../player-fees/services/player-fees-admin.service';
@@ -365,4 +366,6 @@ export class PlayersListComponent implements AfterViewInit, OnDestroy {
       },
     });
   }
+
+  readonly whatsappUrl = whatsappUrl;
 }

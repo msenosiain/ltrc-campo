@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { whatsappUrl } from '../../../common/utils/contact.utils';
 import { PlayersService } from '../../services/players.service';
 import { MatchesService } from '../../../matches/services/matches.service';
 import { AuthService } from '../../../auth/auth.service';
@@ -41,6 +42,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
@@ -62,6 +64,7 @@ import { IPlayerFeeStatusRow } from '@ltrc-campo/shared-api-model';
     MatFormFieldModule,
     DatePipe,
     AllowedRolesDirective,
+    MatTooltipModule,
   ],
   templateUrl: './player-viewer.component.html',
   styleUrl: './player-viewer.component.scss',
@@ -252,6 +255,8 @@ export class PlayerViewerComponent implements OnInit {
   get isInactive(): boolean {
     return this.player?.status === PlayerStatusEnum.INACTIVE;
   }
+
+  readonly whatsappUrl = whatsappUrl;
 
   getTrialInfo(): { endDate: Date; daysLeft: number; expired: boolean } | null {
     const player = this.player;

@@ -46,6 +46,11 @@
 
   .actions-cell {
     padding: 0;
+
+    &__buttons {
+      display: flex;
+      align-items: center;
+    }
   }
 
   // filas clickeables

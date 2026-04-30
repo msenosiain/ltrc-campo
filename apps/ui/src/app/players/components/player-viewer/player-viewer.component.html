@@ -27,6 +27,18 @@
         <mat-icon>health_and_safety</mat-icon>
         Disponibilidad
       </button>
+      @if (player.address?.phoneNumber) {
+      <a
+        mat-stroked-button
+        [href]="whatsappUrl(player.address!.phoneNumber)"
+        target="_blank"
+        rel="noopener noreferrer"
+        matTooltip="Abrir WhatsApp"
+      >
+        <mat-icon svgIcon="whatsapp" />
+        WhatsApp
+      </a>
+      }
       <button
         *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COACH]"
         mat-flat-button
