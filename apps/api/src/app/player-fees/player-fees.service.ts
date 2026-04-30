@@ -1051,9 +1051,15 @@ export class PlayerFeesService {
     let migrated = 0;
     let skipped = 0;
 
+    const validMethods = Object.values(PaymentMethodEnum) as string[];
+
     for (const fee of approvedFees) {
       const feeId = (fee as any)._id.toString();
       if (existingEntityIds.has(feeId)) { skipped++; continue; }
+
+      // Saltar registros BDUAR: sin monto real o método no estándar
+      if (!fee.finalAmount || fee.finalAmount < 0.01) { skipped++; continue; }
+      if (fee.paymentMethod && !validMethods.includes(fee.paymentMethod)) { skipped++; continue; }
 
       const config = fee.configId as any;
       const concept = config?.label ?? `Derecho ${fee.sport} ${fee.season}`;
@@ -1062,7 +1068,7 @@ export class PlayerFeesService {
         entityId:   (fee as any)._id,
         playerId:   fee.playerId,
         amount:     fee.finalAmount,
-        method:     (fee.paymentMethod ?? 'cash') as PaymentMethodEnum,
+        method:     (fee.paymentMethod ?? PaymentMethodEnum.CASH) as PaymentMethodEnum,
         status:     PaymentStatusEnum.APPROVED,
         concept,
         date:       fee.paidAt ?? fee.createdAt,
