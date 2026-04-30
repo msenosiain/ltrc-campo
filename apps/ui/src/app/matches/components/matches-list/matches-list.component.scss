@@ -89,8 +89,11 @@
   vertical-align: middle;
 }
 
-.attendance-taken-icon {
+.attendance-count-badge {
+  font-size: 0.75rem;
   color: #4caf50;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 // Status badges

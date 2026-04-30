@@ -158,6 +158,13 @@ export class MatchesListComponent implements AfterViewInit, OnDestroy {
     return getCategoryLabel(category);
   }
 
+  getAttendanceCount(match: Match): string {
+    const players = (match.attendance ?? []).filter((a) => !a.isStaff && !!a.status);
+    const present = players.filter((a) => a.status === 'present').length;
+    if (present > 0) return `${present}/${players.length}`;
+    return '';
+  }
+
   getResultLabel(match: Match): string {
     if (!match.result) return '—';
     return `${match.result.homeScore} - ${match.result.awayScore}`;
