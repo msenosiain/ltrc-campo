@@ -1,0 +1,19 @@
+info:
+  name: Transports - POST draft assignment
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: '{{baseUrl}}/trips/:tripId/transports/draft'
+  params:
+    - name: tripId
+      value: '{{tripId}}'
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

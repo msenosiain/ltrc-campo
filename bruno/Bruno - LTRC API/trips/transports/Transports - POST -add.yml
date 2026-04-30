@@ -1,0 +1,30 @@
+info:
+  name: Transports - POST add transport
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: '{{baseUrl}}/trips/:tripId/transports'
+  params:
+    - name: tripId
+      value: '{{tripId}}'
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Micro 1",
+        "type": "bus",
+        "capacity": 60,
+        "company": "La Estrella SA",
+        "departureTime": "06:00",
+        "notes": "Salida desde el club"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

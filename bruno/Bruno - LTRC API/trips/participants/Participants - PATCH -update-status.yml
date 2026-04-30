@@ -1,0 +1,28 @@
+info:
+  name: Participants - PATCH update status
+  type: http
+  seq: 3
+
+http:
+  method: PATCH
+  url: '{{baseUrl}}/trips/:tripId/participants/:participantId'
+  params:
+    - name: tripId
+      value: '{{tripId}}'
+      type: path
+    - name: participantId
+      value: '{{participantId}}'
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "status": "confirmed"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

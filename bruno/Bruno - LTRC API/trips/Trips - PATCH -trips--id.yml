@@ -1,0 +1,25 @@
+info:
+  name: Trips - PATCH /trips/:id
+  type: http
+  seq: 4
+
+http:
+  method: PATCH
+  url: '{{baseUrl}}/trips/:id'
+  params:
+    - name: id
+      value: '{{tripId}}'
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "status": "closed"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,30 @@
+info:
+  name: Participants - POST record payment
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: '{{baseUrl}}/trips/:tripId/participants/:participantId/payments'
+  params:
+    - name: tripId
+      value: '{{tripId}}'
+      type: path
+    - name: participantId
+      value: '{{participantId}}'
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "amount": 15000,
+        "date": "2026-06-15",
+        "notes": "Primera cuota — efectivo"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

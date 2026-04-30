@@ -1,0 +1,30 @@
+info:
+  name: Trips - POST /trips
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: '{{baseUrl}}/trips'
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Gira infantil Córdoba 2026",
+        "destination": "Córdoba",
+        "sport": "rugby",
+        "categories": ["m8", "m9", "m10"],
+        "departureDate": "2026-07-10",
+        "returnDate": "2026-07-14",
+        "registrationDeadline": "2026-06-30",
+        "costPerPerson": 45000,
+        "status": "open",
+        "description": "Gira anual de las categorías infantiles"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

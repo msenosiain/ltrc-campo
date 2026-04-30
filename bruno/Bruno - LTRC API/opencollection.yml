@@ -15,6 +15,9 @@ config:
       bypassProxy: ""
 
 request:
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWJjNDU5MmIyYTQyNjFlZDUxYzRiYjQiLCJlbWFpbCI6Im1pZ3VlbC5zZW5vc2lhaW5AbG9zdG9yZG9zLmNvbS5hciIsIm5hbWUiOiJTZW5vc2lhaW4gTWlndWVsIiwicm9sZXMiOlsiYWRtaW4iXSwiaGFzUGFzc3dvcmQiOmZhbHNlLCJzcG9ydHMiOltdLCJjYXRlZ29yaWVzIjpbXSwiYnJhbmNoZXMiOltdLCJpYXQiOjE3Nzc1MjI3MTUsImV4cCI6MTc3NzUyNjMxNX0.8V2awtS7F-Y898JXIoOJyGZLQ6oN1elxk7DoW2KXyDk
   variables:
     - name: baseUrl
       value: http://localhost:3000/api/v1

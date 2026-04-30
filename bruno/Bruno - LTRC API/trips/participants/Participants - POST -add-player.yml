@@ -1,0 +1,28 @@
+info:
+  name: Participants - POST add player
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: '{{baseUrl}}/trips/:tripId/participants'
+  params:
+    - name: tripId
+      value: '{{tripId}}'
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "type": "player",
+        "playerId": "{{playerId}}",
+        "status": "confirmed",
+        "costAssigned": 45000
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

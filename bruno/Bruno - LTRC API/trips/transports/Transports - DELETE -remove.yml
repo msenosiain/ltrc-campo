@@ -1,0 +1,22 @@
+info:
+  name: Transports - DELETE remove
+  type: http
+  seq: 4
+
+http:
+  method: DELETE
+  url: '{{baseUrl}}/trips/:tripId/transports/:transportId'
+  params:
+    - name: tripId
+      value: '{{tripId}}'
+      type: path
+    - name: transportId
+      value: '{{transportId}}'
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
