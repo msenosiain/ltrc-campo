@@ -65,6 +65,11 @@ export class MatchesDataSource implements DataSource<Match> {
     this.matchesSubject.next(items.map(m => (m.id === updated.id ? updated : m)));
   }
 
+  patchItem(id: string, partial: Partial<Match>): void {
+    const items = this.matchesSubject.getValue();
+    this.matchesSubject.next(items.map(m => (m.id === id ? { ...m, ...partial } as Match : m)));
+  }
+
   refresh(): void {
     this.load();
   }

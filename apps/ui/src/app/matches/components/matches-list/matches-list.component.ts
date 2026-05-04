@@ -204,9 +204,9 @@ export class MatchesListComponent implements AfterViewInit, OnDestroy {
   changeStatus(event: Event, match: Match, status: MatchStatusEnum): void {
     event.stopPropagation();
     this.matchesService.patchStatus(match.id!, status).subscribe({
-      next: (updated) => {
+      next: () => {
         this.snackBar.open('Estado actualizado', '', { duration: 2500 });
-        this.dataSource.updateItem(updated);
+        this.dataSource.patchItem(match.id!, { status });
       },
       error: () => this.snackBar.open('Error al actualizar el estado', 'Cerrar', { duration: 3000 }),
     });
