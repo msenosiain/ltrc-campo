@@ -258,11 +258,10 @@ export class MatchAttendanceComponent implements OnInit {
           status: r.status!,
         })),
       ...[...this.playerRows, ...this.injuredRows]
-        .filter((r) => r.status)
         .map((r) => ({
           playerId: r.playerId,
           isStaff: false,
-          status: r.status!,
+          status: r.status ?? AttendanceStatusEnum.ABSENT,
         })),
     ];
 

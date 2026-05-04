@@ -159,7 +159,7 @@ export class MatchesListComponent implements AfterViewInit, OnDestroy {
   }
 
   getAttendanceCount(match: Match): string {
-    const players = (match.attendance ?? []).filter((a) => !a.isStaff && !!a.status);
+    const players = (match.attendance ?? []).filter((a) => !a.isStaff);
     const present = players.filter((a) => a.status === 'present').length;
     if (present > 0) return `${present}/${players.length}`;
     return '';
