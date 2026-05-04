@@ -50,12 +50,9 @@
           <mat-icon class="confirmed-badge" matTooltip="El jugador confirmó su presencia">check_circle</mat-icon>
           }
         </div>
-        <mat-button-toggle-group
-          [value]="row.status"
-          (change)="row.status = $event.value"
-        >
-          <mat-button-toggle [value]="AttendanceStatusEnum.PRESENT">P</mat-button-toggle>
-          <mat-button-toggle [value]="AttendanceStatusEnum.JUSTIFIED">J</mat-button-toggle>
+        <mat-button-toggle-group [value]="row.status">
+          <mat-button-toggle [value]="AttendanceStatusEnum.PRESENT" (click)="setStatus(row, AttendanceStatusEnum.PRESENT)">P</mat-button-toggle>
+          <mat-button-toggle [value]="AttendanceStatusEnum.JUSTIFIED" (click)="setStatus(row, AttendanceStatusEnum.JUSTIFIED)">J</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
       }
@@ -81,12 +78,9 @@
           <mat-icon class="confirmed-badge" matTooltip="El jugador confirmó su presencia">check_circle</mat-icon>
           }
         </div>
-        <mat-button-toggle-group
-          [value]="row.status"
-          (change)="row.status = $event.value"
-        >
-          <mat-button-toggle [value]="AttendanceStatusEnum.PRESENT">P</mat-button-toggle>
-          <mat-button-toggle [value]="AttendanceStatusEnum.JUSTIFIED">J</mat-button-toggle>
+        <mat-button-toggle-group [value]="row.status">
+          <mat-button-toggle [value]="AttendanceStatusEnum.PRESENT" (click)="setStatus(row, AttendanceStatusEnum.PRESENT)">P</mat-button-toggle>
+          <mat-button-toggle [value]="AttendanceStatusEnum.JUSTIFIED" (click)="setStatus(row, AttendanceStatusEnum.JUSTIFIED)">J</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
       }
@@ -112,12 +106,9 @@
           <mat-icon class="confirmed-badge" matTooltip="El jugador confirmó su presencia">check_circle</mat-icon>
           }
         </div>
-        <mat-button-toggle-group
-          [value]="row.status"
-          (change)="row.status = $event.value"
-        >
-          <mat-button-toggle [value]="AttendanceStatusEnum.PRESENT">P</mat-button-toggle>
-          <mat-button-toggle [value]="AttendanceStatusEnum.JUSTIFIED">J</mat-button-toggle>
+        <mat-button-toggle-group [value]="row.status">
+          <mat-button-toggle [value]="AttendanceStatusEnum.PRESENT" (click)="setStatus(row, AttendanceStatusEnum.PRESENT)">P</mat-button-toggle>
+          <mat-button-toggle [value]="AttendanceStatusEnum.JUSTIFIED" (click)="setStatus(row, AttendanceStatusEnum.JUSTIFIED)">J</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
       }
