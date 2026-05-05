@@ -471,50 +471,6 @@ export class PaymentsService {
     await payment.deleteOne();
   }
 
-  async backfillTripManualPayments(): Promise<{ synced: number; skipped: number; notFound: number }> {
-    const manualPayments = await this.paymentModel.find({
-      entityType: PaymentEntityTypeEnum.TRIP,
-      method: { $in: [PaymentMethodEnum.CASH, PaymentMethodEnum.TRANSFER] },
-    }).lean();
-
-    let synced = 0, skipped = 0, notFound = 0;
-
-    for (const payment of manualPayments) {
-      if (!payment.playerId) { skipped++; continue; }
-
-      const trip = await this.tripModel.findById(payment.entityId);
-      if (!trip) { notFound++; continue; }
-
-      const participant: any = trip.participants.find(
-        (p) => p.type === TripParticipantTypeEnum.PLAYER && p.player?.toString() === payment.playerId!.toString(),
-      );
-      if (!participant) { notFound++; continue; }
-
-      const alreadySynced = participant.payments.some(
-        (p: any) => p.sourcePaymentId?.toString() === payment._id.toString(),
-      );
-      if (alreadySynced) { skipped++; continue; }
-
-      participant.payments.push({
-        amount: payment.amount,
-        date: payment.date ?? new Date(),
-        method: payment.method,
-        notes: payment.notes,
-        sourcePaymentId: payment._id,
-      });
-
-      const totalPaid = participant.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
-      if (participant.costAssigned > 0 && totalPaid >= participant.costAssigned) {
-        participant.status = TripParticipantStatusEnum.CONFIRMED;
-      }
-
-      await trip.save();
-      synced++;
-    }
-
-    return { synced, skipped, notFound };
-  }
-
   // ── MP Sync ───────────────────────────────────────────────────────────────
 
   async syncPaymentById(id: string) {

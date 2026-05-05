@@ -167,12 +167,6 @@ export class PaymentsController {
     return this.paymentsService.syncPaymentById(id);
   }
 
-  @Post('admin/backfill-trip-manual-payments')
-  @Roles(RoleEnum.ADMIN)
-  backfillTripManualPayments() {
-    return this.paymentsService.backfillTripManualPayments();
-  }
-
   @Delete(':id')
   deleteManual(@Param('id') id: string) {
     return this.paymentsService.deleteManualPayment(id);
