@@ -423,7 +423,7 @@ export class PaymentsService {
     const player = await this.playerModel.findById(dto.playerId).select('id').lean();
     if (!player) throw new NotFoundException('Jugador no encontrado');
 
-    return this.paymentModel.create({
+    const payment = await this.paymentModel.create({
       entityType: dto.entityType,
       entityId: new Types.ObjectId(dto.entityId),
       playerId: new Types.ObjectId(dto.playerId),
@@ -435,6 +435,12 @@ export class PaymentsService {
       notes: dto.notes,
       recordedBy: (caller as any)._id,
     });
+
+    if (dto.entityType === PaymentEntityTypeEnum.TRIP) {
+      await this.syncManualPaymentToTripParticipant(payment);
+    }
+
+    return payment;
   }
 
   async getPaymentsForEntity(entityType: PaymentEntityTypeEnum, entityId: string) {
@@ -458,6 +464,9 @@ export class PaymentsService {
     if (!payment) throw new NotFoundException('Pago no encontrado');
     if (payment.method === PaymentMethodEnum.MERCADOPAGO) {
       throw new BadRequestException('No se pueden eliminar pagos de Mercado Pago');
+    }
+    if (payment.entityType === PaymentEntityTypeEnum.TRIP) {
+      await this.removeManualPaymentFromTripParticipant(payment);
     }
     await payment.deleteOne();
   }
@@ -527,6 +536,60 @@ export class PaymentsService {
     } catch {
       return { status: payment.status, updated: false };
     }
+  }
+
+  private async syncManualPaymentToTripParticipant(payment: PaymentEntity): Promise<void> {
+    const trip = await this.tripModel.findById(payment.entityId);
+    if (!trip) return;
+
+    const participant: any = trip.participants.find(
+      (p) => p.type === TripParticipantTypeEnum.PLAYER && p.player?.toString() === payment.playerId!.toString(),
+    );
+    if (!participant) return;
+
+    const alreadySynced = participant.payments.some(
+      (p: any) => p.sourcePaymentId?.toString() === (payment as any)._id.toString(),
+    );
+    if (!alreadySynced) {
+      participant.payments.push({
+        amount: payment.amount,
+        date: payment.date ?? new Date(),
+        method: payment.method,
+        notes: payment.notes,
+        sourcePaymentId: (payment as any)._id,
+      });
+    }
+
+    const totalPaid = participant.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
+    if (participant.costAssigned > 0 && totalPaid >= participant.costAssigned) {
+      participant.status = TripParticipantStatusEnum.CONFIRMED;
+    }
+
+    await trip.save();
+  }
+
+  private async removeManualPaymentFromTripParticipant(payment: PaymentEntity): Promise<void> {
+    const trip = await this.tripModel.findById(payment.entityId);
+    if (!trip) return;
+
+    const participant: any = trip.participants.find(
+      (p) => p.type === TripParticipantTypeEnum.PLAYER && p.player?.toString() === payment.playerId!.toString(),
+    );
+    if (!participant) return;
+
+    const entry: any = participant.payments.find(
+      (p: any) => p.sourcePaymentId?.toString() === (payment as any)._id.toString(),
+    );
+    if (entry) entry.deleteOne();
+
+    const totalPaid = participant.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
+    if (participant.status === TripParticipantStatusEnum.CONFIRMED) {
+      if (participant.costAssigned === 0 || totalPaid < participant.costAssigned) {
+        participant.status = TripParticipantStatusEnum.PENDING;
+      }
+    }
+
+    await trip.save();
   }
 
   private async autoConfirmTripParticipantIfNeeded(payment: PaymentEntity): Promise<void> {
