@@ -137,7 +137,7 @@ export class TripsController {
   // ── Pagos ──────────────────────────────────────────────────────────────────
 
   @Post(':id/participants/:participantId/payments')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
   recordPayment(
     @Param('id') id: string,
     @Param('participantId') participantId: string,
@@ -153,7 +153,7 @@ export class TripsController {
   }
 
   @Delete(':id/participants/:participantId/payments/:paymentId')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
   removePayment(
     @Param('id') id: string,
     @Param('participantId') participantId: string,
