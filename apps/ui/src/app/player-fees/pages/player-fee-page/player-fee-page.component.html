@@ -123,23 +123,12 @@
           <mat-divider />
 
           <div class="amounts">
-            <div class="amount-row">
-              <span>Monto base</span>
-              <span>{{ formatMoney(validateResult.originalAmount) }}</span>
-            </div>
             @if (validateResult.discountPct) {
               <div class="amount-row amount-row--discount">
                 <span>Descuento ({{ validateResult.discountPct }}%) — {{ validateResult.discountReason }}</span>
                 <span>-{{ formatMoney(validateResult.originalAmount - validateResult.finalAmount) }}</span>
               </div>
             }
-            @if (validateResult.mpFeeAdded) {
-              <div class="amount-row amount-row--fee">
-                <span>Comisión Mercado Pago</span>
-                <span>{{ formatMoney(validateResult.mpFeeAdded) }}</span>
-              </div>
-            }
-            <mat-divider />
             <div class="amount-row amount-row--total">
               <span>Total a pagar</span>
               <span class="total-amount">{{ formatMoney(validateResult.totalAmount) }}</span>

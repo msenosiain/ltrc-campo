@@ -361,7 +361,7 @@ export class PlayerFeesService {
     if (!resolved) return { originalAmount: null, discountPct: null, discountReason: null, finalAmount: null };
 
     const discount = config.familyDiscount
-      ? await this.resolveFamilyDiscount((config as any)._id.toString(), playerId, sport)
+      ? await this.resolveFamilyDiscount(config as any, playerId, sport)
       : null;
 
     const originalAmount = resolved.amount;
@@ -402,7 +402,7 @@ export class PlayerFeesService {
       if (resolved) {
         originalAmount = resolved.amount;
         const discount = config.familyDiscount
-          ? await this.resolveFamilyDiscount((config as any)._id.toString(), dto.playerId, dto.sport)
+          ? await this.resolveFamilyDiscount(config as any, dto.playerId, dto.sport)
           : null;
         discountPct = discount?.discountPct ?? 0;
         discountReason = discount?.discountReason;
@@ -619,22 +619,14 @@ export class PlayerFeesService {
     }));
 
     const discount = config.familyDiscount
-      ? await this.resolveFamilyDiscount(
-          (config as any)._id.toString(),
-          (player as any)._id.toString(),
-          config.sport,
-        )
+      ? await this.resolveFamilyDiscount(config, (player as any)._id.toString(), config.sport)
       : null;
 
     const originalAmount = resolved.amount;
     const discountPct = discount?.discountPct ?? 0;
-    const discountedAmount = discountPct
+    const totalAmount = discountPct
       ? Math.round(originalAmount * (1 - discountPct / 100))
       : originalAmount;
-    const mpFeeAdded = config.addMpFee
-      ? Math.round(discountedAmount * this.mpFeeRate)
-      : 0;
-    const totalAmount = discountedAmount + mpFeeAdded;
 
     return {
       playerId: (player as any)._id.toString(),
@@ -645,8 +637,7 @@ export class PlayerFeesService {
       originalAmount,
       discountPct: discountPct || undefined,
       discountReason: discount?.discountReason,
-      finalAmount: discountedAmount,
-      mpFeeAdded: mpFeeAdded || undefined,
+      finalAmount: totalAmount,
       totalAmount,
       alreadyPaid,
     };
@@ -672,11 +663,7 @@ export class PlayerFeesService {
     if (!resolved) throw new BadRequestException('Tu categoría no está incluida en este derecho de jugador');
 
     const discount = config.familyDiscount
-      ? await this.resolveFamilyDiscount(
-          (config as any)._id.toString(),
-          (player as any)._id.toString(),
-          config.sport,
-        )
+      ? await this.resolveFamilyDiscount(config, (player as any)._id.toString(), config.sport)
       : null;
 
     const originalAmount = resolved.amount;
@@ -684,8 +671,7 @@ export class PlayerFeesService {
     const finalAmount = discountPct
       ? Math.round(originalAmount * (1 - discountPct / 100))
       : originalAmount;
-    const mpFeeAdded = config.addMpFee ? Math.round(finalAmount * this.mpFeeRate) : 0;
-    const totalAmount = finalAmount + mpFeeAdded;
+    const totalAmount = finalAmount;
 
     const externalReference = uuidv4();
 
@@ -698,7 +684,6 @@ export class PlayerFeesService {
       discountPct: discountPct || undefined,
       discountReason: discount?.discountReason,
       finalAmount,
-      mpFeeAdded: mpFeeAdded || undefined,
       status: PlayerFeeStatusEnum.PENDING,
       paymentMethod: 'mercadopago',
       mpExternalReference: externalReference,
@@ -1005,7 +990,7 @@ export class PlayerFeesService {
   }
 
   async resolveFamilyDiscount(
-    configId: string,
+    config: PlayerFeeConfigEntity,
     playerId: string,
     sport: SportEnum
   ): Promise<{ discountPct: number; discountReason: string } | null> {
@@ -1013,27 +998,37 @@ export class PlayerFeesService {
       sport,
       'members.playerId': new Types.ObjectId(playerId),
     });
-    if (!group) return null;
+    if (!group || group.members.length < 2) return null;
 
-    const member = group.members.find((m) => m.playerId.toString() === playerId);
-    if (!member || member.order === 1) return null;
-
-    // Count how many members of this group already paid for this config
     const memberIds = group.members.map((m) => m.playerId);
-    const paidCount = await this.paymentModel.countDocuments({
-      configId: new Types.ObjectId(configId),
-      playerId: { $in: memberIds },
-      status: PlayerFeeStatusEnum.APPROVED,
-    });
+    const players = await this.playerModel
+      .find({ _id: { $in: memberIds } })
+      .select('_id category')
+      .lean();
 
-    if (member.order === 2 || paidCount >= 1) {
+    // Build members list with their resolved amounts
+    const membersWithAmounts = group.members
+      .map((m) => {
+        const player = players.find((p) => p._id.toString() === m.playerId.toString());
+        if (!player) return null;
+        const resolved = this.resolveAmountForCategory(config, player.category as CategoryEnum);
+        if (!resolved) return null;
+        return { playerId: m.playerId.toString(), order: m.order, amount: resolved.amount };
+      })
+      .filter((m): m is NonNullable<typeof m> => m !== null);
+
+    if (membersWithAmounts.length < 2) return null;
+
+    // Sort by amount DESC; tiebreaker: lower order (registered first) treated as "more expensive"
+    membersWithAmounts.sort((a, b) => b.amount - a.amount || a.order - b.order);
+
+    const rank = membersWithAmounts.findIndex((m) => m.playerId === playerId);
+    if (rank <= 0) return null;
+
+    if (rank === 1) {
       return { discountPct: 25, discountReason: '2do integrante del grupo familiar' };
     }
-    if (member.order >= 3) {
-      return { discountPct: 50, discountReason: '3er integrante del grupo familiar o más' };
-    }
-
-    return null;
+    return { discountPct: 50, discountReason: '3er integrante del grupo familiar o más' };
   }
 
   async migratePaymentRecords(): Promise<{ migrated: number; skipped: number }> {
