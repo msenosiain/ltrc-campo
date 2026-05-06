@@ -267,7 +267,7 @@ export class PlayerFeesSettingsComponent implements OnInit {
         name: b.name,
         categories: b.categories,
         amount: b.amount,
-        expiresAt: b.expiresAt ? format(b.expiresAt, 'yyyy-MM-dd') : undefined,
+        expiresAt: b.expiresAt instanceof Date && !isNaN(b.expiresAt.getTime()) ? b.expiresAt.toISOString() : undefined,
       })),
     };
     const id = this.editingConfigId();
