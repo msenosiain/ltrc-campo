@@ -22,7 +22,6 @@ export interface IPlayerFeeConfig {
   description?: string;
   addMpFee: boolean;
   mpFeeRate: number;
-  expiresAt: Date;
   active: boolean;
   linkToken: string;
   familyDiscount: boolean;
@@ -94,7 +93,6 @@ export interface IPlayerFeePublicInfo {
   description?: string;
   season: string;
   sport: SportEnum;
-  expiresAt: Date;
 }
 
 export interface IPlayerFeeValidateResult {

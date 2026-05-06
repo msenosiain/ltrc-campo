@@ -122,7 +122,6 @@ export class PlayerFeesService {
       description: doc.description,
       addMpFee: doc.addMpFee,
       mpFeeRate: doc.mpFeeRate,
-      expiresAt: doc.expiresAt,
       active: doc.active,
       linkToken: doc.linkToken,
       familyDiscount: doc.familyDiscount,
@@ -158,7 +157,6 @@ export class PlayerFeesService {
         validUntil: new Date(t.validUntil),
         amountOverride: t.amountOverride,
       })),
-      expiresAt: new Date(dto.expiresAt),
       linkToken,
       mpFeeRate: this.mpFeeRate,
       active: false,
@@ -184,7 +182,6 @@ export class PlayerFeesService {
         ...(b.expiresAt ? { expiresAt: new Date(b.expiresAt) } : {}),
       }));
     }
-    if (dto.expiresAt) update['expiresAt'] = new Date(dto.expiresAt);
     if (dto.priceTiers !== undefined) {
       update['priceTiers'] = dto.priceTiers.map((t) => ({
         validUntil: new Date(t.validUntil),
@@ -602,7 +599,6 @@ export class PlayerFeesService {
       description: config.description,
       season: config.season,
       sport: config.sport,
-      expiresAt: config.expiresAt,
     };
   }
 
@@ -624,8 +620,7 @@ export class PlayerFeesService {
       throw new BadRequestException('Tu categoría no está incluida en este derecho de jugador');
     }
 
-    const blockExpiry = resolved.blockExpiresAt ?? config.expiresAt;
-    if (blockExpiry < new Date()) {
+    if (resolved.blockExpiresAt && resolved.blockExpiresAt < new Date()) {
       throw new BadRequestException('El plazo de pago para tu categoría ha vencido');
     }
 
@@ -684,8 +679,9 @@ export class PlayerFeesService {
     const resolved = this.resolveAmountForCategory(config, player.category as CategoryEnum);
     if (!resolved) throw new BadRequestException('Tu categoría no está incluida en este derecho de jugador');
 
-    const blockExpiry = resolved.blockExpiresAt ?? config.expiresAt;
-    if (blockExpiry < new Date()) throw new BadRequestException('El plazo de pago para tu categoría ha vencido');
+    if (resolved.blockExpiresAt && resolved.blockExpiresAt < new Date()) {
+      throw new BadRequestException('El plazo de pago para tu categoría ha vencido');
+    }
 
     const discount = config.familyDiscount
       ? await this.resolveFamilyDiscount(config, (player as any)._id.toString(), config.sport)
@@ -740,7 +736,7 @@ export class PlayerFeesService {
           pending: `${this.appBaseUrl}/player-fee/result`,
         },
         ...(this.appBaseUrl.startsWith('https://') ? { auto_return: 'approved' as const } : {}),
-        expiration_date_to: config.expiresAt.toISOString(),
+        ...(resolved.blockExpiresAt ? { expiration_date_to: resolved.blockExpiresAt.toISOString() } : {}),
       },
     });
 
@@ -808,9 +804,6 @@ export class PlayerFeesService {
   async getConfigByToken(token: string) {
     const config = await this.configModel.findOne({ linkToken: token, active: true });
     if (!config) throw new NotFoundException('Link no encontrado o inactivo');
-    if (new Date() > config.expiresAt) {
-      throw new BadRequestException('Este link ha expirado');
-    }
     return config;
   }
 

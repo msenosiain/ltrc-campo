@@ -32,7 +32,6 @@ export class CreatePlayerFeeConfigDto {
   @IsString() @IsNotEmpty() label!: string;
   @IsOptional() @IsString() description?: string;
   @IsBoolean() addMpFee!: boolean;
-  @IsDateString() expiresAt!: string;
   @IsBoolean() familyDiscount!: boolean;
 
   @IsArray() @ValidateNested({ each: true }) @Type(() => BlockDto)

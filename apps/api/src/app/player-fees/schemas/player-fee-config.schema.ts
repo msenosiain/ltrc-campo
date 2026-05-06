@@ -29,7 +29,6 @@ export const PlayerFeeConfigSchema = new Schema<PlayerFeeConfigEntity>(
     description: { type: String },
     addMpFee: { type: Boolean, default: true },
     mpFeeRate: { type: Number, required: true, default: 0.0599 },
-    expiresAt: { type: Date, required: true },
     active: { type: Boolean, default: false },
     linkToken: { type: String, required: true, unique: true, index: true },
     familyDiscount: { type: Boolean, default: false },

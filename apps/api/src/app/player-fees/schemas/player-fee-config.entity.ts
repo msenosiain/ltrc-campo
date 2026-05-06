@@ -10,7 +10,6 @@ export class PlayerFeeConfigEntity extends Document {
   description?: string;
   addMpFee: boolean;
   mpFeeRate: number;
-  expiresAt: Date;
   active: boolean;
   linkToken: string;
   familyDiscount: boolean;

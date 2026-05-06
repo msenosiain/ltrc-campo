@@ -113,7 +113,6 @@ export class PlayerFeesSettingsComponent implements OnInit {
     label: ['', Validators.required],
     description: [''],
     addMpFee: [false],
-    expiresAt: [null as Date | null, Validators.required],
     familyDiscount: [false],
     blocks: this.fb.array([]),
   });
@@ -209,7 +208,6 @@ export class PlayerFeesSettingsComponent implements OnInit {
       label: config.label,
       description: config.description ?? '',
       addMpFee: config.addMpFee,
-      expiresAt: new Date((config.expiresAt as unknown as string).slice(0, 10) + 'T12:00:00Z'),
       familyDiscount: config.familyDiscount,
     });
     while (this.blocks.length) this.blocks.removeAt(0);
@@ -264,7 +262,6 @@ export class PlayerFeesSettingsComponent implements OnInit {
       label: v.label,
       description: v.description || undefined,
       addMpFee: v.addMpFee,
-      expiresAt: format(v.expiresAt as Date, 'yyyy-MM-dd'),
       familyDiscount: v.familyDiscount,
       blocks: (v.blocks as { name: string; categories: CategoryEnum[]; amount: number; expiresAt?: Date | null }[]).map(b => ({
         name: b.name,
