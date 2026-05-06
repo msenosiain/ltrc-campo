@@ -148,7 +148,12 @@ export class PlayerFeesService {
       description: dto.description,
       addMpFee: dto.addMpFee,
       familyDiscount: dto.familyDiscount,
-      blocks: dto.blocks,
+      blocks: dto.blocks.map((b) => ({
+        name: b.name,
+        categories: b.categories,
+        amount: b.amount,
+        ...(b.expiresAt ? { expiresAt: new Date(b.expiresAt) } : {}),
+      })),
       priceTiers: dto.priceTiers?.map((t) => ({
         validUntil: new Date(t.validUntil),
         amountOverride: t.amountOverride,
@@ -171,7 +176,14 @@ export class PlayerFeesService {
     if (dto.description !== undefined) update['description'] = dto.description;
     if (dto.addMpFee !== undefined) update['addMpFee'] = dto.addMpFee;
     if (dto.familyDiscount !== undefined) update['familyDiscount'] = dto.familyDiscount;
-    if (dto.blocks !== undefined) update['blocks'] = dto.blocks;
+    if (dto.blocks !== undefined) {
+      update['blocks'] = dto.blocks.map((b) => ({
+        name: b.name,
+        categories: b.categories,
+        amount: b.amount,
+        ...(b.expiresAt ? { expiresAt: new Date(b.expiresAt) } : {}),
+      }));
+    }
     if (dto.expiresAt) update['expiresAt'] = new Date(dto.expiresAt);
     if (dto.priceTiers !== undefined) {
       update['priceTiers'] = dto.priceTiers.map((t) => ({
@@ -612,6 +624,11 @@ export class PlayerFeesService {
       throw new BadRequestException('Tu categoría no está incluida en este derecho de jugador');
     }
 
+    const blockExpiry = resolved.blockExpiresAt ?? config.expiresAt;
+    if (blockExpiry < new Date()) {
+      throw new BadRequestException('El plazo de pago para tu categoría ha vencido');
+    }
+
     const alreadyPaid = !!(await this.paymentModel.exists({
       playerId: (player as any)._id,
       configId: (config as any)._id,
@@ -624,9 +641,13 @@ export class PlayerFeesService {
 
     const originalAmount = resolved.amount;
     const discountPct = discount?.discountPct ?? 0;
-    const totalAmount = discountPct
+    const discountedAmount = discountPct
       ? Math.round(originalAmount * (1 - discountPct / 100))
       : originalAmount;
+    const mpFeeAdded = config.addMpFee
+      ? Math.round(discountedAmount * this.mpFeeRate)
+      : 0;
+    const totalAmount = discountedAmount + mpFeeAdded;
 
     return {
       playerId: (player as any)._id.toString(),
@@ -637,7 +658,8 @@ export class PlayerFeesService {
       originalAmount,
       discountPct: discountPct || undefined,
       discountReason: discount?.discountReason,
-      finalAmount: totalAmount,
+      finalAmount: discountedAmount,
+      mpFeeAdded: mpFeeAdded || undefined,
       totalAmount,
       alreadyPaid,
     };
@@ -662,6 +684,9 @@ export class PlayerFeesService {
     const resolved = this.resolveAmountForCategory(config, player.category as CategoryEnum);
     if (!resolved) throw new BadRequestException('Tu categoría no está incluida en este derecho de jugador');
 
+    const blockExpiry = resolved.blockExpiresAt ?? config.expiresAt;
+    if (blockExpiry < new Date()) throw new BadRequestException('El plazo de pago para tu categoría ha vencido');
+
     const discount = config.familyDiscount
       ? await this.resolveFamilyDiscount(config, (player as any)._id.toString(), config.sport)
       : null;
@@ -671,7 +696,8 @@ export class PlayerFeesService {
     const finalAmount = discountPct
       ? Math.round(originalAmount * (1 - discountPct / 100))
       : originalAmount;
-    const totalAmount = finalAmount;
+    const mpFeeAdded = config.addMpFee ? Math.round(finalAmount * this.mpFeeRate) : 0;
+    const totalAmount = finalAmount + mpFeeAdded;
 
     const externalReference = uuidv4();
 
@@ -684,6 +710,7 @@ export class PlayerFeesService {
       discountPct: discountPct || undefined,
       discountReason: discount?.discountReason,
       finalAmount,
+      mpFeeAdded: mpFeeAdded || undefined,
       status: PlayerFeeStatusEnum.PENDING,
       paymentMethod: 'mercadopago',
       mpExternalReference: externalReference,
@@ -790,15 +817,16 @@ export class PlayerFeesService {
   resolveAmountForCategory(
     config: PlayerFeeConfigEntity,
     category: CategoryEnum
-  ): { blockName: string; amount: number } | null {
-    // Check price tiers first
+  ): { blockName: string; amount: number; blockExpiresAt?: Date } | null {
     let baseAmount: number | null = null;
     let blockName = '';
+    let blockExpiresAt: Date | undefined;
 
     for (const block of config.blocks) {
       if (block.categories.includes(category)) {
         baseAmount = block.amount;
         blockName = block.name;
+        blockExpiresAt = block.expiresAt;
         break;
       }
     }
@@ -810,12 +838,12 @@ export class PlayerFeesService {
       const now = new Date();
       for (const tier of config.priceTiers) {
         if (now <= new Date(tier.validUntil)) {
-          return { blockName, amount: tier.amountOverride };
+          return { blockName, amount: tier.amountOverride, blockExpiresAt };
         }
       }
     }
 
-    return { blockName, amount: baseAmount };
+    return { blockName, amount: baseAmount, blockExpiresAt };
   }
 
   // ── BDUAR bulk import ─────────────────────────────────────────────────────

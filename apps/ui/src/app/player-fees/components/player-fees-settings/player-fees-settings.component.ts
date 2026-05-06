@@ -241,11 +241,15 @@ export class PlayerFeesSettingsComponent implements OnInit {
     this.blocks.removeAt(i);
   }
 
-  private newBlock(data?: { name: string; categories: CategoryEnum[]; amount: number }): FormGroup {
+  private newBlock(data?: { name: string; categories: CategoryEnum[]; amount: number; expiresAt?: Date | string }): FormGroup {
+    const expiresAt = data?.expiresAt
+      ? new Date((data.expiresAt as string).slice(0, 10) + 'T12:00:00Z')
+      : null;
     return this.fb.group({
       name: [data?.name ?? '', Validators.required],
       categories: [data?.categories ?? [], Validators.required],
       amount: [data?.amount ?? 0, [Validators.required, Validators.min(0)]],
+      expiresAt: [expiresAt],
     });
   }
 
@@ -262,7 +266,12 @@ export class PlayerFeesSettingsComponent implements OnInit {
       addMpFee: v.addMpFee,
       expiresAt: format(v.expiresAt as Date, 'yyyy-MM-dd'),
       familyDiscount: v.familyDiscount,
-      blocks: v.blocks,
+      blocks: (v.blocks as { name: string; categories: CategoryEnum[]; amount: number; expiresAt?: Date | null }[]).map(b => ({
+        name: b.name,
+        categories: b.categories,
+        amount: b.amount,
+        expiresAt: b.expiresAt ? format(b.expiresAt, 'yyyy-MM-dd') : undefined,
+      })),
     };
     const id = this.editingConfigId();
     const req = id

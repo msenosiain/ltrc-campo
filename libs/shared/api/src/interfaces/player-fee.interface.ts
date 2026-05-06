@@ -5,6 +5,7 @@ export interface PlayerFeeBlock {
   name: string;
   categories: CategoryEnum[];
   amount: number;
+  expiresAt?: Date;
 }
 
 export interface PlayerFeePriceTier {

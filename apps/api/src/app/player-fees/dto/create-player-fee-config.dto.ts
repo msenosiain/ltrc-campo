@@ -17,6 +17,7 @@ class BlockDto {
   @IsString() @IsNotEmpty() name!: string;
   @IsArray() @IsEnum(CategoryEnum, { each: true }) categories!: CategoryEnum[];
   @IsNumber() @Min(0) amount!: number;
+  @IsOptional() @IsDateString() expiresAt?: string;
 }
 
 class PriceTierDto {

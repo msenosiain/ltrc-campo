@@ -7,6 +7,7 @@ const BlockSchema = new Schema(
     name: { type: String, required: true },
     categories: [{ type: String, enum: Object.values(CategoryEnum) }],
     amount: { type: Number, required: true, min: 0 },
+    expiresAt: { type: Date },
   },
   { _id: false }
 );

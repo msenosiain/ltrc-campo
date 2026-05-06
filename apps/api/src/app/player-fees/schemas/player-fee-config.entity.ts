@@ -14,7 +14,7 @@ export class PlayerFeeConfigEntity extends Document {
   active: boolean;
   linkToken: string;
   familyDiscount: boolean;
-  blocks: { name: string; categories: CategoryEnum[]; amount: number }[];
+  blocks: { name: string; categories: CategoryEnum[]; amount: number; expiresAt?: Date }[];
   priceTiers?: { validUntil: Date; amountOverride: number }[];
   createdBy?: import('mongoose').Types.ObjectId;
   createdAt: Date;

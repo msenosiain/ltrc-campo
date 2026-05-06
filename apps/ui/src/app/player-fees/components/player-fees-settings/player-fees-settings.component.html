@@ -89,6 +89,13 @@
                       (focus)="onAmountFocus($event)" />
                   </mat-form-field>
 
+                  <mat-form-field appearance="outline" class="field-sm">
+                    <mat-label>Vencimiento bloque</mat-label>
+                    <input matInput [matDatepicker]="blockExpPicker" formControlName="expiresAt" />
+                    <mat-datepicker-toggle matIconSuffix [for]="blockExpPicker" />
+                    <mat-datepicker #blockExpPicker />
+                  </mat-form-field>
+
                   @if (blocks.length > 1) {
                     <button mat-icon-button type="button" (click)="removeBlock($index)" matTooltip="Eliminar bloque">
                       <mat-icon>delete</mat-icon>
