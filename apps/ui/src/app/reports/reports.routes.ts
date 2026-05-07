@@ -25,13 +25,6 @@ export const REPORTS_ROUTES: Routes = [
             (m) => m.PlayerFeesReportComponent
           ),
       },
-      {
-        path: 'eligibility',
-        loadComponent: () =>
-          import('./pages/eligibility-report/eligibility-report.component').then(
-            (m) => m.EligibilityReportComponent
-          ),
-      },
     ],
   },
 ];

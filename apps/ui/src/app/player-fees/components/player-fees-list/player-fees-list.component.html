@@ -18,6 +18,19 @@
           <mat-icon>payments</mat-icon>
           Pago manual
         </button>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="!filteredRows().length || generatingPdf()"
+          (click)="downloadPdf()"
+        >
+          @if (generatingPdf()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>picture_as_pdf</mat-icon>
+          }
+          Descargar PDF
+        </button>
       }
     </div>
   </div>

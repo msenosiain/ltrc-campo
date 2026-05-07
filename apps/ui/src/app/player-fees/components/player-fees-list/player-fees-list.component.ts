@@ -27,6 +27,7 @@ import { ManualFeePaymentDialogComponent } from '../manual-fee-payment-dialog/ma
 import { AuthService } from '../../../auth/auth.service';
 import { ViewAsRoleService } from '../../../auth/services/view-as-role.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { EligibilityReportPdfService } from '../../../reports/services/eligibility-report-pdf.service';
 
 @Component({
   selector: 'ltrc-player-fees-list',
@@ -64,6 +65,7 @@ export class PlayerFeesListComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly authService = inject(AuthService);
   private readonly viewAsService = inject(ViewAsRoleService);
+  private readonly pdfService = inject(EligibilityReportPdfService);
 
   readonly RoleEnum = RoleEnum;
 
@@ -102,6 +104,7 @@ export class PlayerFeesListComponent implements OnInit {
   solidarityFilter = signal<boolean | null>(null);
   eligibleFilter = signal<boolean | null>(null);
   loading = signal(false);
+  generatingPdf = signal(false);
   savingKey = signal<string | null>(null);
   configs = signal<IPlayerFeeConfig[]>([]);
 
@@ -284,6 +287,28 @@ export class PlayerFeesListComponent implements OnInit {
     const url = `${window.location.origin}/player-fee/${config.linkToken}`;
     this.clipboard.copy(url);
     this.snackBar.open('Link copiado al portapapeles', 'Cerrar', { duration: 3000 });
+  }
+
+  async downloadPdf(): Promise<void> {
+    const rows = this.filteredRows();
+    if (!rows.length) return;
+    this.generatingPdf.set(true);
+    const { season, sport } = this.filterForm.getRawValue();
+    const cats = this.categoryFilter();
+    const category = cats.length === 1 ? cats[0] : null;
+    try {
+      await this.pdfService.generate(rows, {
+        season,
+        sport,
+        category,
+        hasCursos: this.hasCursos(),
+        hasFondo: this.hasFondoSolidario(),
+      });
+    } catch {
+      this.snackBar.open('Error al generar el PDF', 'Cerrar', { duration: 3000 });
+    } finally {
+      this.generatingPdf.set(false);
+    }
   }
 
   private currentSeason(): string {

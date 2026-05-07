@@ -16,10 +16,6 @@ import { MatTabsModule } from '@angular/material/tabs';
          [active]="rlaFees.isActive">
         Derechos
       </a>
-      <a mat-tab-link routerLink="eligibility" routerLinkActive #rlaEligibility="routerLinkActive"
-         [active]="rlaEligibility.isActive">
-        Habilitación
-      </a>
     </nav>
     <mat-tab-nav-panel #tabPanel>
       <router-outlet />
