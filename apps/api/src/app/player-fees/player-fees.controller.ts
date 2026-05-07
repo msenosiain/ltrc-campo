@@ -32,7 +32,7 @@ export class PlayerFeesController {
   // ── Config (Admin) ────────────────────────────────────────────────────────
 
   @Get('config')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
   listConfigs() {
     return this.service.listConfigs();
   }
@@ -171,7 +171,7 @@ export class PlayerFeesController {
   }
 
   @Get('stats')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
   getStats(
     @Query('season') season: string,
     @Query('sport') sport: SportEnum,
