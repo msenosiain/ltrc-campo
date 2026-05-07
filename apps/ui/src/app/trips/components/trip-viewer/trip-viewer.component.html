@@ -132,6 +132,18 @@
             <mat-icon>{{ showAddParticipant ? 'close' : 'person_add' }}</mat-icon>
             {{ showAddParticipant ? 'Cancelar' : 'Agregar participante' }}
           </button>
+          @if (trip.categories?.length) {
+            <button
+              *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR]"
+              mat-stroked-button
+              type="button"
+              [disabled]="addingAllPlayers"
+              (click)="openAddAllPlayersDialog()"
+            >
+              <mat-icon>group_add</mat-icon>
+              {{ addingAllPlayers ? 'Agregando…' : 'Agregar todos de...' }}
+            </button>
+          }
           @if (trip.participants.length > 0) {
             <button
               *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR]"
@@ -257,27 +269,6 @@
           </mat-card-content>
           <mat-card-actions align="end">
             <button mat-stroked-button type="button" (click)="toggleAddParticipant()">Cancelar</button>
-            @if (addParticipantForm.get('type')?.value === TripParticipantTypeEnum.PLAYER && trip.categories?.length) {
-              <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR]">
-                <button
-                  mat-stroked-button
-                  type="button"
-                  [disabled]="addingAllPlayers"
-                  [matMenuTriggerFor]="categoryMenu"
-                >
-                  <mat-icon>group_add</mat-icon>
-                  {{ addingAllPlayers ? 'Agregando…' : 'Agregar todos de' }}
-                  <mat-icon>arrow_drop_down</mat-icon>
-                </button>
-                <mat-menu #categoryMenu="matMenu">
-                  @for (cat of trip.categories; track cat) {
-                    <button mat-menu-item (click)="addAllPlayersFromCategory(cat); toggleAddParticipant()">
-                      {{ getCategoryLabel(cat) }}
-                    </button>
-                  }
-                </mat-menu>
-              </ng-container>
-            }
             <button mat-flat-button color="primary" type="button" (click)="submitAddParticipant()">
               Agregar
             </button>

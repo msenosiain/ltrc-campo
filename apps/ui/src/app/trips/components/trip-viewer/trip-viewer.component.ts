@@ -68,6 +68,7 @@ import {
   transportTypeOptions,
 } from '../../trip-options';
 import { getErrorMessage } from '../../../common/utils/error-message';
+import { AddAllPlayersDialogComponent, AddAllPlayersDialogData, AddAllPlayersDialogResult } from '../add-all-players-dialog/add-all-players-dialog.component';
 
 @Component({
   selector: 'ltrc-trip-viewer',
@@ -556,6 +557,38 @@ export class TripViewerComponent implements OnInit {
       return;
     }
 
+    // Duplicate check
+    const participants = this.trip.participants;
+    if (v.type === TripParticipantTypeEnum.PLAYER) {
+      const already = participants.some(
+        (p) => p.type === TripParticipantTypeEnum.PLAYER &&
+          ((p.player as any)?.id ?? (p.player as any)?._id) === this.selectedPlayer!.id
+      );
+      if (already) {
+        this.snackBar.open('Este jugador ya está en el viaje', 'Cerrar', { duration: 3000 });
+        return;
+      }
+    }
+    if (v.type === TripParticipantTypeEnum.STAFF) {
+      const already = participants.some(
+        (p) => p.type === TripParticipantTypeEnum.STAFF &&
+          ((p as any).user?.id ?? (p as any).user?._id) === this.selectedUser!.id
+      );
+      if (already) {
+        this.snackBar.open('Este usuario ya está en el viaje', 'Cerrar', { duration: 3000 });
+        return;
+      }
+    }
+    if (v.type === TripParticipantTypeEnum.EXTERNAL && v.externalDni) {
+      const already = participants.some(
+        (p) => p.type === TripParticipantTypeEnum.EXTERNAL && p.externalDni === v.externalDni
+      );
+      if (already) {
+        this.snackBar.open('Ya existe un participante con ese DNI en el viaje', 'Cerrar', { duration: 3000 });
+        return;
+      }
+    }
+
     const defaultCost = v.type === TripParticipantTypeEnum.STAFF ? 0 : this.trip.costPerPerson;
     const payload: AddParticipantPayload = {
       type: v.type!,
@@ -616,8 +649,19 @@ export class TripViewerComponent implements OnInit {
       });
   }
 
-  addAllPlayersFromCategory(category: CategoryEnum): void {
-    if (!this.trip?.id) return;
+  openAddAllPlayersDialog(): void {
+    if (!this.trip?.categories?.length) return;
+    const ref = this.dialog.open<AddAllPlayersDialogComponent, AddAllPlayersDialogData, AddAllPlayersDialogResult>(
+      AddAllPlayersDialogComponent,
+      { data: { categories: this.trip.categories } }
+    );
+    ref.afterClosed().subscribe((categories) => {
+      if (categories?.length) this.addAllPlayersFromCategories(categories);
+    });
+  }
+
+  addAllPlayersFromCategories(categories: CategoryEnum[]): void {
+    if (!this.trip?.id || !categories.length) return;
     this.addingAllPlayers = true;
 
     this.playersService
@@ -626,7 +670,7 @@ export class TripViewerComponent implements OnInit {
         size: 200,
         filters: {
           ...(this.trip.sport && { sport: this.trip.sport }),
-          categories: [category],
+          categories,
         },
       })
       .pipe(
