@@ -1,13 +1,11 @@
-import { getGreeting } from '../support/app.po';
+describe('App', () => {
+  it('redirige a /login cuando no hay sesión', () => {
+    cy.visit('/dashboard');
+    cy.url().should('include', '/login');
+  });
 
-describe('ui-e2e', () => {
-  beforeEach(() => cy.visit('/'));
-
-  it('should display welcome message', () => {
-    // Custom command example, see `../support/commands.ts` file
-    cy.login('my-email@something.com', 'myPassword');
-
-    // Function helper example, see `../support/app.po.ts` file
-    getGreeting().contains(/Welcome/);
+  it('muestra la página de login', () => {
+    cy.visit('/login');
+    cy.get('input[type="email"], input[formcontrolname="email"]').should('be.visible');
   });
 });

@@ -15,6 +15,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { map, Observable, startWith } from 'rxjs';
 import { PaymentsService } from '../../services/payments.service';
 import { PaymentEntityTypeEnum, PaymentTypeEnum } from '@ltrc-campo/shared-api-model';
@@ -42,6 +43,7 @@ interface DialogData {
     MatProgressSpinnerModule,
     MatDividerModule,
     MatAutocompleteModule,
+    MatCheckboxModule,
   ],
   templateUrl: './create-payment-link-dialog.component.html',
   styleUrl: './create-payment-link-dialog.component.scss',
@@ -67,6 +69,7 @@ export class CreatePaymentLinkDialogComponent implements OnInit {
   form = new FormGroup({
     concept: new FormControl('Tercer tiempo', [Validators.required]),
     description: new FormControl(''),
+    addMpFee: new FormControl(false),
     amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
     paymentType: new FormControl(PaymentTypeEnum.FULL, [Validators.required]),
     installmentNumber: new FormControl<number | null>(null),
@@ -104,6 +107,10 @@ export class CreatePaymentLinkDialogComponent implements OnInit {
     );
   }
 
+  get addMpFee(): boolean {
+    return this.form.get('addMpFee')!.value ?? false;
+  }
+
   get netTarget(): number {
     return this.form.get('amount')!.value ?? 0;
   }
@@ -129,7 +136,7 @@ export class CreatePaymentLinkDialogComponent implements OnInit {
   }
 
   get showFeePreview(): boolean {
-    return this.netTarget > 0;
+    return this.addMpFee && this.netTarget > 0;
   }
 
   get isInstallment(): boolean {
@@ -147,6 +154,7 @@ export class CreatePaymentLinkDialogComponent implements OnInit {
         entityId: this.data.entityId,
         concept: value.concept!,
         description: value.description || undefined,
+        addMpFee: value.addMpFee ?? false,
         amount: value.amount!,
         paymentType: value.paymentType!,
         installmentNumber: this.isInstallment ? value.installmentNumber ?? undefined : undefined,

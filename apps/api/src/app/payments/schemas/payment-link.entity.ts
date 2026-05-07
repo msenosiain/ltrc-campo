@@ -14,6 +14,7 @@ export class PaymentLinkEntity extends Document {
   concept: string;
   description?: string;
   amount: number;
+  addMpFee: boolean;
   mpFeeRate: number;
   mpFeeAmount: number;
   netAmount: number;

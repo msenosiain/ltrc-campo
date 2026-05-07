@@ -22,6 +22,7 @@ export interface CreatePaymentLinkPayload {
   concept: string;
   description?: string;
   amount: number;
+  addMpFee?: boolean;
   paymentType: string;
   installmentNumber?: number;
   installmentTotal?: number;

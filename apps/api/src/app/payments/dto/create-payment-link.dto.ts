@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -52,6 +53,10 @@ export class CreatePaymentLinkDto {
   @IsInt()
   @Min(1)
   readonly installmentTotal?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  readonly addMpFee?: boolean;
 
   @IsDateString()
   readonly expiresAt!: string;

@@ -115,7 +115,16 @@ export class PaymentsService {
       ? dto.entityIds.map((id) => new Types.ObjectId(id))
       : undefined;
 
-    const { mpFeeRate, grossAmount, mpFeeAmount, netAmount } = this.calculateFee(dto.amount);
+    const addMpFee = dto.addMpFee ?? false;
+    let grossAmount: number, mpFeeRate: number, mpFeeAmount: number, netAmount: number;
+    if (addMpFee) {
+      ({ mpFeeRate, grossAmount, mpFeeAmount, netAmount } = this.calculateFee(dto.amount));
+    } else {
+      grossAmount = dto.amount;
+      mpFeeRate = 0;
+      mpFeeAmount = 0;
+      netAmount = dto.amount;
+    }
 
     return this.paymentLinkModel.create({
       linkToken: uuidv4(),
@@ -125,6 +134,7 @@ export class PaymentsService {
       concept: dto.concept,
       description: dto.description,
       amount: grossAmount,
+      addMpFee,
       mpFeeRate,
       mpFeeAmount,
       netAmount,
@@ -620,8 +630,10 @@ export class PaymentsService {
       (p: any) => p.sourcePaymentId?.toString() === (payment as any)._id.toString(),
     );
     if (!alreadySynced) {
-      // Record net amount (gross minus MP fee) — gross is tracked in PaymentEntity
-      const netAmount = Math.round(payment.amount * (1 - this.mpFeeRate));
+      const link = payment.paymentLinkId
+        ? await this.paymentLinkModel.findById(payment.paymentLinkId).select('netAmount').lean()
+        : null;
+      const netAmount = link ? link.netAmount : Math.round(payment.amount * (1 - this.mpFeeRate));
       participant.payments.push({
         amount: netAmount,
         date: payment.date ?? new Date(),

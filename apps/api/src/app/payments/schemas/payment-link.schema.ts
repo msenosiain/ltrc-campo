@@ -19,6 +19,7 @@ export const PaymentLinkSchema = new Schema<PaymentLinkEntity>(
     concept: { type: String, required: true },
     description: { type: String },
     amount: { type: Number, required: true, min: 0.01 },
+    addMpFee: { type: Boolean, default: false },
     mpFeeRate: { type: Number, required: true },
     mpFeeAmount: { type: Number, required: true },
     netAmount: { type: Number, required: true },
