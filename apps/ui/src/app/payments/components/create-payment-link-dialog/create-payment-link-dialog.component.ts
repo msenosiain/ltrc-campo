@@ -67,7 +67,7 @@ export class CreatePaymentLinkDialogComponent implements OnInit {
   readonly PaymentTypeEnum = PaymentTypeEnum;
 
   form = new FormGroup({
-    concept: new FormControl('Tercer tiempo', [Validators.required]),
+    concept: new FormControl('', [Validators.required]),
     description: new FormControl(''),
     addMpFee: new FormControl(false),
     amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),

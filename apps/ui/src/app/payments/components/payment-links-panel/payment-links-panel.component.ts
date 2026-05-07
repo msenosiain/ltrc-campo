@@ -19,8 +19,15 @@ import {
   PaymentLinkStatusEnum,
   PaymentMethodEnum,
   PaymentStatusEnum,
+  PaymentTypeEnum,
   RoleEnum,
 } from '@ltrc-campo/shared-api-model';
+
+const PAYMENT_TYPE_LABELS: Record<string, string> = {
+  [PaymentTypeEnum.FULL]: 'Pago total',
+  [PaymentTypeEnum.PARTIAL]: 'Pago parcial',
+  [PaymentTypeEnum.INSTALLMENT]: 'Cuota',
+};
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
 
 @Component({
@@ -43,6 +50,7 @@ import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.di
   styleUrl: './payment-links-panel.component.scss',
 })
 export class PaymentLinksPanelComponent implements OnInit {
+  readonly paymentTypeLabel = (type: string) => PAYMENT_TYPE_LABELS[type] ?? type;
   @Input({ required: true }) entityId!: string;
   @Input() entityType: PaymentEntityTypeEnum = PaymentEntityTypeEnum.MATCH;
   @Input() entityDate?: Date;
