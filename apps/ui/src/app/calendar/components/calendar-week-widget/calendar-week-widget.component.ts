@@ -192,13 +192,16 @@ export class CalendarWeekWidgetComponent implements OnInit {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
 
-  getCategoryLabel(category: CategoryEnum): string {
-    return getCategoryLabel(category);
+  getCategoryLabel(category?: CategoryEnum): string {
+    return category ? getCategoryLabel(category) : '';
   }
 
   getEventTitle(event: CalendarEvent): string {
+    if (event.type === 'trip') {
+      return event.destination ? `${event.title} — ${event.destination}` : event.title;
+    }
     if (event.type === 'training') {
-      const parts = ['Entrenamiento', getCategoryLabel(event.category)];
+      const parts = ['Entrenamiento', event.category ? getCategoryLabel(event.category) : ''].filter(Boolean);
       if (event.branch) parts.push(getBranchLabel(event.branch));
       return parts.join(' ');
     }
@@ -206,9 +209,9 @@ export class CalendarWeekWidgetComponent implements OnInit {
     // match
     let descriptor: string;
     if (event.sport === SportEnum.RUGBY) {
-      descriptor = event.division || getCategoryLabel(event.category);
+      descriptor = event.division || (event.category ? getCategoryLabel(event.category) : '');
     } else {
-      const parts = [getCategoryLabel(event.category)];
+      const parts = event.category ? [getCategoryLabel(event.category)] : [];
       if (event.branch) parts.push(getBranchLabel(event.branch));
       descriptor = parts.join(' ');
     }

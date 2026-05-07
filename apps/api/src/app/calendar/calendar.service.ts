@@ -4,7 +4,8 @@ import { Model } from 'mongoose';
 import { MatchEntity } from '../matches/schemas/match.entity';
 import { TrainingSessionEntity } from '../trainings/sessions/schemas/training-session.entity';
 import { PlayerEntity } from '../players/schemas/player.entity';
-import { CalendarEvent, RoleEnum } from '@ltrc-campo/shared-api-model';
+import { TripEntity } from '../trips/schemas/trip.entity';
+import { CalendarEvent, RoleEnum, TripStatusEnum } from '@ltrc-campo/shared-api-model';
 import { User } from '../users/schemas/user.schema';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class CalendarService {
     @InjectModel(MatchEntity.name) private readonly matchModel: Model<MatchEntity>,
     @InjectModel(TrainingSessionEntity.name) private readonly sessionModel: Model<TrainingSessionEntity>,
     @InjectModel(PlayerEntity.name) private readonly playerModel: Model<PlayerEntity>,
+    @InjectModel(TripEntity.name) private readonly tripModel: Model<TripEntity>,
   ) {}
 
   async getEvents(fromDate: string, toDate: string, caller?: User, sport?: string, category?: string): Promise<CalendarEvent[]> {
@@ -43,9 +45,23 @@ export class CalendarService {
     const fromDateObj = new Date(fromDate + 'T00:00:00.000Z');
     const toDateObj = new Date(toDate + 'T23:59:59.999Z');
 
-    const [matches, sessions] = await Promise.all([
+    const tripScopeFilter: Record<string, unknown> = {};
+    if (caller && !isAdmin) {
+      const effectiveSports = caller.sports?.length
+        ? caller.sports
+        : callerPlayer?.sport ? [(callerPlayer as any).sport] : [];
+      if (effectiveSports.length) tripScopeFilter['sport'] = { $in: effectiveSports };
+    }
+    if (sport) tripScopeFilter['sport'] = sport;
+
+    const [matches, sessions, trips] = await Promise.all([
       this.matchModel.find({ date: { $gte: fromDateObj, $lte: toDateObj }, status: { $nin: ['cancelled', 'completed'] }, ...scopeFilter }).populate('tournament').lean(),
       this.sessionModel.find({ date: { $gte: fromDate, $lte: toDate }, status: { $nin: ['cancelled', 'completed'] }, ...scopeFilter }).lean(),
+      this.tripModel.find({
+        departureDate: { $gte: fromDateObj, $lte: toDateObj },
+        status: { $nin: [TripStatusEnum.DRAFT] },
+        ...tripScopeFilter,
+      }).lean(),
     ]);
 
     const matchEvents: CalendarEvent[] = (matches as any[]).map((m) => ({
@@ -89,7 +105,18 @@ export class CalendarService {
       };
     });
 
-    return [...matchEvents, ...trainingEvents].sort((a, b) => {
+    const tripEvents: CalendarEvent[] = (trips as any[]).map((t) => ({
+      type: 'trip' as const,
+      id: t._id.toString(),
+      date: (t.departureDate as Date).toISOString(),
+      title: t.name,
+      sport: t.sport,
+      status: t.status,
+      destination: t.destination,
+      returnDate: t.returnDate ? (t.returnDate as Date).toISOString() : undefined,
+    }));
+
+    return [...matchEvents, ...trainingEvents, ...tripEvents].sort((a, b) => {
       const dateCmp = a.date.slice(0, 10).localeCompare(b.date.slice(0, 10));
       if (dateCmp !== 0) return dateCmp;
       const timeA = a.startTime ?? a.date.slice(11, 16);

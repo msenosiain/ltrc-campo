@@ -169,13 +169,15 @@ export class CalendarComponent implements OnInit {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
 
-  getCategoryLabel(category: CategoryEnum): string {
-    return getCategoryLabel(category);
+  getCategoryLabel(category?: CategoryEnum): string {
+    return category ? getCategoryLabel(category) : '';
   }
 
   navigate(event: CalendarEvent): void {
     if (event.type === 'match') {
       this.router.navigate(['/dashboard/matches', event.id]);
+    } else if (event.type === 'trip') {
+      this.router.navigate(['/dashboard/trips', event.id]);
     } else {
       this.router.navigate(['/dashboard/trainings/sessions', event.id]);
     }

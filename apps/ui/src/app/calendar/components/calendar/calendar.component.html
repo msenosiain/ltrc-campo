@@ -29,7 +29,9 @@
 
       @for (event of day.events; track event.id) {
       <div class="event-row" (click)="navigate(event)" tabindex="0" (keydown.enter)="navigate(event)">
-        @if (event.type === 'training' && event.sport === SportEnum.RUGBY) {
+        @if (event.type === 'trip') {
+          <mat-icon class="event-type-icon trip">luggage</mat-icon>
+        } @else if (event.type === 'training' && event.sport === SportEnum.RUGBY) {
           <mat-icon class="event-type-icon training-rugby">sports_rugby</mat-icon>
         } @else if (event.type === 'training' && event.sport === SportEnum.HOCKEY) {
           <mat-icon class="event-type-icon training-hockey">sports_hockey</mat-icon>
@@ -52,7 +54,8 @@
             }
           </div>
           <div class="event-meta">
-            <span>{{ getCategoryLabel(event.category) }}</span>
+            @if (event.destination) {<span>{{ event.destination }}</span>}
+            @if (event.category) {<span>{{ getCategoryLabel(event.category) }}</span>}
             @if (event.branch) {<span>· Rama {{ event.branch }}</span>}
             @if (event.division) {<span>· {{ event.division }}</span>}
             @if (event.location) {<span>· {{ event.location }}</span>}
