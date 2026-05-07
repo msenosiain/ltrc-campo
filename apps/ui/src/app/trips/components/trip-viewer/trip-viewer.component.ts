@@ -54,7 +54,7 @@ import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.di
 import { AuthService } from '../../../auth/auth.service';
 import { ViewAsRoleService } from '../../../auth/services/view-as-role.service';
 import { sportOptions } from '../../../common/sport-options';
-import { getCategoryLabel } from '../../../common/category-options';
+import { categoryOptions, getCategoryLabel } from '../../../common/category-options';
 import { PlayersService } from '../../../players/services/players.service';
 import { UsersService } from '../../../users/services/users.service';
 import { User } from '../../../users/User.interface';
@@ -155,20 +155,37 @@ export class TripViewerComponent implements OnInit {
   participantPage = 0;
   readonly PARTICIPANT_PAGE_SIZE = 50;
 
+  private readonly categoryOrder = new Map(
+    categoryOptions.map((c, i) => [c.id as string, i])
+  );
+
+  private categoryIndex(p: TripParticipant): number {
+    const cat = (p.player as any)?.category ?? p.externalRole ?? (p as any).user?.categories?.[0];
+    return this.categoryOrder.get(cat) ?? 999;
+  }
+
   get filteredParticipants(): TripParticipant[] {
     const term = this.participantSearch.toLowerCase().trim();
-    return (this.trip?.participants ?? []).filter((p) => {
-      if (term &&
-        !this.getParticipantName(p).toLowerCase().includes(term) &&
-        !(this.getParticipantDni(p) ?? '').includes(term)) return false;
-      if (this.participantTypeFilter && p.type !== this.participantTypeFilter) return false;
-      if (this.participantStatusFilter && p.status !== this.participantStatusFilter) return false;
-      if (this.participantCategoryFilter) {
-        const cat = (p.player as any)?.category ?? p.externalRole ?? (p as any).user?.categories?.[0];
-        if (cat !== this.participantCategoryFilter) return false;
-      }
-      return true;
-    });
+    return (this.trip?.participants ?? [])
+      .filter((p) => {
+        if (term &&
+          !this.getParticipantName(p).toLowerCase().includes(term) &&
+          !(this.getParticipantDni(p) ?? '').includes(term)) return false;
+        if (this.participantTypeFilter && p.type !== this.participantTypeFilter) return false;
+        if (this.participantStatusFilter && p.status !== this.participantStatusFilter) return false;
+        if (this.participantCategoryFilter) {
+          const cat = (p.player as any)?.category ?? p.externalRole ?? (p as any).user?.categories?.[0];
+          if (cat !== this.participantCategoryFilter) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const catDiff = this.categoryIndex(a) - this.categoryIndex(b);
+        if (catDiff !== 0) return catDiff;
+        const nameDiff = this.getParticipantName(a).localeCompare(this.getParticipantName(b), 'es');
+        if (nameDiff !== 0) return nameDiff;
+        return (this.getParticipantDni(a) ?? '').localeCompare(this.getParticipantDni(b) ?? '', 'es');
+      });
   }
 
   resetParticipantFilters(): void {
