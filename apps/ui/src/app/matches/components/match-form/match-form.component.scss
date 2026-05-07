@@ -97,6 +97,11 @@ $gap: 12px;
   .span-3 {
     grid-column: span 4;
   }
+
+  .fee-checkbox {
+    grid-column: 1 / -1;
+    align-self: center;
+  }
 }
 
 .fee-preview {

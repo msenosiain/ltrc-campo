@@ -36,6 +36,7 @@ export interface MatchFormValue {
   payment: {
     enabled: boolean;
     concept: string;
+    addMpFee: boolean;
     amount: number | null;
     expiresAt: Date | null;
     expiresAtTime: string;

@@ -30,6 +30,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import {
   BlockEnum,
@@ -86,6 +87,7 @@ function filterOptions(options: string[], value: string): string[] {
     MatSlideToggleModule,
     MatAutocompleteModule,
     MatChipsModule,
+    MatCheckboxModule,
     AllowedRolesDirective,
   ],
   templateUrl: './match-form.component.html',
@@ -312,6 +314,10 @@ export class MatchFormComponent implements OnInit, OnChanges {
     return this.matchForm.get('payment.enabled')?.value === true;
   }
 
+  get paymentAddMpFee(): boolean {
+    return this.matchForm.get('payment.addMpFee')?.value === true;
+  }
+
   get paymentNetTarget(): number {
     return this.matchForm.get('payment.amount')?.value ?? 0;
   }
@@ -330,6 +336,10 @@ export class MatchFormComponent implements OnInit, OnChanges {
 
   get paymentNetAmount(): number {
     return Math.round((this.paymentGrossAmount - this.paymentMpFeeAmount) * 100) / 100;
+  }
+
+  get showPaymentFeePreview(): boolean {
+    return this.paymentAddMpFee && this.paymentNetTarget > 0;
   }
 
   get formInvalid(): boolean {

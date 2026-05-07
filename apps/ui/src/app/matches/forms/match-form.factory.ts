@@ -33,6 +33,7 @@ export function buildCreateMatchForm(fb: FormBuilder): FormGroup {
     payment: fb.group({
       enabled: [false],
       concept: ['Tercer tiempo'],
+      addMpFee: [false],
       amount: [null as number | null],
       expiresAt: [null as Date | null],
       expiresAtTime: ['23:59'],

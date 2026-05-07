@@ -96,6 +96,7 @@ export class MatchEditorComponent implements OnInit {
         entityType: PaymentEntityTypeEnum.MATCH,
         ...(matchIds.length === 1 ? { entityId: matchIds[0] } : { entityIds: matchIds }),
         concept: p.concept || 'Tercer tiempo',
+        addMpFee: p.addMpFee ?? false,
         amount: p.amount,
         paymentType: PaymentTypeEnum.FULL,
         expiresAt,
