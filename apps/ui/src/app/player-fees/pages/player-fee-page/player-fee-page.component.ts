@@ -11,6 +11,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { PlayerFeesPublicService } from '../../services/player-fees.service';
 import { IPlayerFeePublicInfo, IPlayerFeeValidateResult } from '@ltrc-campo/shared-api-model';
+import { getCategoryLabel } from '../../../common/category-options';
 
 type PageState = 'loading' | 'ready' | 'validating' | 'validated' | 'paid' | 'redirecting' | 'expired' | 'error';
 
@@ -103,6 +104,8 @@ export class PlayerFeePageComponent implements OnInit {
       },
     });
   }
+
+  getCategoryLabel(cat: string): string { return getCategoryLabel(cat as any); }
 
   formatMoney(amount: number): string {
     return '$\u00a0' + amount.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });

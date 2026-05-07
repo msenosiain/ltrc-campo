@@ -7,15 +7,7 @@ const BlockSchema = new Schema(
     name: { type: String, required: true },
     categories: [{ type: String, enum: Object.values(CategoryEnum) }],
     amount: { type: Number, required: true, min: 0 },
-    expiresAt: { type: Date },
-  },
-  { _id: false }
-);
-
-const PriceTierSchema = new Schema(
-  {
-    validUntil: { type: Date, required: true },
-    amountOverride: { type: Number, required: true, min: 0 },
+    expiresAt: { type: Date, required: true },
   },
   { _id: false }
 );
@@ -33,7 +25,6 @@ export const PlayerFeeConfigSchema = new Schema<PlayerFeeConfigEntity>(
     linkToken: { type: String, required: true, unique: true, index: true },
     familyDiscount: { type: Boolean, default: false },
     blocks: [BlockSchema],
-    priceTiers: [PriceTierSchema],
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true, collection: 'player_fee_configs' }

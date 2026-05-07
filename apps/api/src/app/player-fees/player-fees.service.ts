@@ -126,7 +126,6 @@ export class PlayerFeesService {
       linkToken: doc.linkToken,
       familyDiscount: doc.familyDiscount,
       blocks: doc.blocks ?? [],
-      priceTiers: doc.priceTiers,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     };
@@ -153,10 +152,6 @@ export class PlayerFeesService {
         amount: b.amount,
         ...(b.expiresAt ? { expiresAt: new Date(b.expiresAt) } : {}),
       })),
-      priceTiers: dto.priceTiers?.map((t) => ({
-        validUntil: new Date(t.validUntil),
-        amountOverride: t.amountOverride,
-      })),
       linkToken,
       mpFeeRate: this.mpFeeRate,
       active: false,
@@ -180,12 +175,6 @@ export class PlayerFeesService {
         categories: b.categories,
         amount: b.amount,
         ...(b.expiresAt ? { expiresAt: new Date(b.expiresAt) } : {}),
-      }));
-    }
-    if (dto.priceTiers !== undefined) {
-      update['priceTiers'] = dto.priceTiers.map((t) => ({
-        validUntil: new Date(t.validUntil),
-        amountOverride: t.amountOverride,
       }));
     }
     const config = await this.configModel.findByIdAndUpdate(id, update, { new: true });
@@ -810,7 +799,7 @@ export class PlayerFeesService {
   resolveAmountForCategory(
     config: PlayerFeeConfigEntity,
     category: CategoryEnum
-  ): { blockName: string; amount: number; blockExpiresAt?: Date } | null {
+  ): { blockName: string; amount: number; blockExpiresAt: Date | undefined } | null {
     let baseAmount: number | null = null;
     let blockName = '';
     let blockExpiresAt: Date | undefined;
@@ -825,16 +814,6 @@ export class PlayerFeesService {
     }
 
     if (baseAmount === null) return null;
-
-    // Apply price tier if applicable
-    if (config.priceTiers?.length) {
-      const now = new Date();
-      for (const tier of config.priceTiers) {
-        if (now <= new Date(tier.validUntil)) {
-          return { blockName, amount: tier.amountOverride, blockExpiresAt };
-        }
-      }
-    }
 
     return { blockName, amount: baseAmount, blockExpiresAt };
   }

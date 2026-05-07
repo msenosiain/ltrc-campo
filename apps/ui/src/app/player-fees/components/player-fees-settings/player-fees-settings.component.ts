@@ -28,7 +28,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { DecimalPipe, DatePipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CategoryEnum, IFamilyGroup, IPlayerFeeConfig, Player, SportEnum, toTitleCase } from '@ltrc-campo/shared-api-model';
 import { categoryOptions, getCategoryLabel, getCategoryOptionsBySport } from '../../../common/category-options';
@@ -59,7 +59,6 @@ import { PlayersService } from '../../../players/services/players.service';
     MatTableModule,
     MatPaginatorModule,
     DecimalPipe,
-    DatePipe,
     RouterLink,
   ],
   templateUrl: './player-fees-settings.component.html',
@@ -247,7 +246,7 @@ export class PlayerFeesSettingsComponent implements OnInit {
       name: [data?.name ?? '', Validators.required],
       categories: [data?.categories ?? [], Validators.required],
       amount: [data?.amount ?? 0, [Validators.required, Validators.min(0)]],
-      expiresAt: [expiresAt],
+      expiresAt: [expiresAt, Validators.required],
     });
   }
 
@@ -263,11 +262,11 @@ export class PlayerFeesSettingsComponent implements OnInit {
       description: v.description || undefined,
       addMpFee: v.addMpFee,
       familyDiscount: v.familyDiscount,
-      blocks: (v.blocks as { name: string; categories: CategoryEnum[]; amount: number; expiresAt?: Date | null }[]).map(b => ({
+      blocks: (v.blocks as { name: string; categories: CategoryEnum[]; amount: number; expiresAt: Date }[]).map(b => ({
         name: b.name,
         categories: b.categories,
         amount: b.amount,
-        expiresAt: b.expiresAt instanceof Date && !isNaN(b.expiresAt.getTime()) ? b.expiresAt.toISOString() : undefined,
+        expiresAt: b.expiresAt.toISOString(),
       })),
     };
     const id = this.editingConfigId();

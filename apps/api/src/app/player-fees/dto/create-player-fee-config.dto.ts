@@ -1,7 +1,6 @@
 import {
   IsArray,
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -17,12 +16,7 @@ class BlockDto {
   @IsString() @IsNotEmpty() name!: string;
   @IsArray() @IsEnum(CategoryEnum, { each: true }) categories!: CategoryEnum[];
   @IsNumber() @Min(0) amount!: number;
-  @IsOptional() @IsString() expiresAt?: string;
-}
-
-class PriceTierDto {
-  @IsDateString() validUntil!: string;
-  @IsNumber() @Min(0) amountOverride!: number;
+  @IsString() @IsNotEmpty() expiresAt!: string;
 }
 
 export class CreatePlayerFeeConfigDto {
@@ -36,7 +30,4 @@ export class CreatePlayerFeeConfigDto {
 
   @IsArray() @ValidateNested({ each: true }) @Type(() => BlockDto)
   blocks!: BlockDto[];
-
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => PriceTierDto)
-  priceTiers?: PriceTierDto[];
 }

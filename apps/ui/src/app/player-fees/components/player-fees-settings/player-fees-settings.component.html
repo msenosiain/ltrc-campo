@@ -171,12 +171,7 @@
             <td mat-cell *matCellDef="let c" class="blocks-inline-cell">{{ blocksInline(c.blocks) }}</td>
           </ng-container>
 
-          <ng-container matColumnDef="expires">
-            <th mat-header-cell *matHeaderCellDef>Vence</th>
-            <td mat-cell *matCellDef="let c">{{ c.expiresAt | date:'dd/MM/yy':'UTC' }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="actions">
+<ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let c" class="actions-cell">
               <button mat-icon-button type="button" matTooltip="Editar"
@@ -216,8 +211,8 @@
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="['status','label','sport','season','blocks','expires','actions']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['status','label','sport','season','blocks','expires','actions'];"
+          <tr mat-header-row *matHeaderRowDef="['status','label','sport','season','blocks','actions']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['status','label','sport','season','blocks','actions'];"
               class="config-row"
               [class.config-row--expanded]="expandedConfig()?.id === row.id"
               (click)="toggleExpand(row)">

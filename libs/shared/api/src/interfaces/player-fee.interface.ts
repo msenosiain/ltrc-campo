@@ -5,13 +5,9 @@ export interface PlayerFeeBlock {
   name: string;
   categories: CategoryEnum[];
   amount: number;
-  expiresAt?: Date;
+  expiresAt: Date;
 }
 
-export interface PlayerFeePriceTier {
-  validUntil: Date;
-  amountOverride: number;
-}
 
 export interface IPlayerFeeConfig {
   id: string;
@@ -26,7 +22,6 @@ export interface IPlayerFeeConfig {
   linkToken: string;
   familyDiscount: boolean;
   blocks: PlayerFeeBlock[];
-  priceTiers?: PlayerFeePriceTier[];
   createdAt: Date;
   updatedAt: Date;
 }

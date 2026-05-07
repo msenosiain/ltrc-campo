@@ -28,7 +28,7 @@ export interface PlayerFeeConfigPayload {
   description?: string;
   addMpFee: boolean;
   familyDiscount: boolean;
-  blocks: { name: string; categories: CategoryEnum[]; amount: number; expiresAt?: string }[];
+  blocks: { name: string; categories: CategoryEnum[]; amount: number; expiresAt: string }[];
 }
 
 export interface BduarRow {

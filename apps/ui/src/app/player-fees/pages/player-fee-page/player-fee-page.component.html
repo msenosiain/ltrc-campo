@@ -101,7 +101,7 @@
           <div class="player-confirmed">
             <div class="player-confirmed__header">
               <mat-icon class="player-confirmed__icon">check_circle</mat-icon>
-              <p class="player-confirmed__title">Jugador verificado</p>
+              <p class="player-confirmed__title">{{ linkInfo.sport === 'hockey' ? 'Jugadora verificada' : 'Jugador verificado' }}</p>
             </div>
             <div class="player-confirmed__details">
               <div class="detail-row">
@@ -114,7 +114,7 @@
               </div>
               <div class="detail-row">
                 <span class="detail-label">Categoría</span>
-                <span class="detail-value">{{ validateResult.blockName }}</span>
+                <span class="detail-value">{{ getCategoryLabel(validateResult.category) }}</span>
               </div>
             </div>
           </div>
