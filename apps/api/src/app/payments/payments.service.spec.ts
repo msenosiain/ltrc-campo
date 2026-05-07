@@ -31,6 +31,7 @@ import {
   PaymentMethodEnum,
   PaymentStatusEnum,
   PaymentTypeEnum,
+  TripParticipantTypeEnum,
 } from '@ltrc-campo/shared-api-model';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -474,6 +475,365 @@ describe('PaymentsService', () => {
       mockPaymentModel.findOne.mockResolvedValue(payment);
       await service.confirmPayment({ externalReference: 'ref-1', status: mpStatus } as any);
       expect(payment.status).toBe(expected);
+    });
+  });
+
+  // ── updatePaymentConfig ──────────────────────────────────────────────────────
+
+  describe('updatePaymentConfig()', () => {
+    it('should upsert and return excludedPaymentTypes', async () => {
+      mockPaymentConfigModel.findOneAndUpdate.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({ excludedPaymentTypes: ['debit_card'] }),
+      });
+      const result = await service.updatePaymentConfig(['debit_card']);
+      expect(result).toEqual({ excludedPaymentTypes: ['debit_card'] });
+    });
+
+    it('should return empty array when upsert returns null', async () => {
+      mockPaymentConfigModel.findOneAndUpdate.mockReturnValue({
+        lean: jest.fn().mockResolvedValue(null),
+      });
+      const result = await service.updatePaymentConfig([]);
+      expect(result).toEqual({ excludedPaymentTypes: [] });
+    });
+  });
+
+  // ── createLink with addMpFee ─────────────────────────────────────────────────
+
+  describe('createLink() with addMpFee', () => {
+    it('should calculate gross when addMpFee=true', async () => {
+      const created = makeLink();
+      mockLinkModel.create.mockResolvedValue(created);
+
+      await service.createLink({
+        entityId: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+        entityType: PaymentEntityTypeEnum.MATCH,
+        concept: 'Cuota',
+        amount: 1000,
+        paymentType: PaymentTypeEnum.FULL,
+        expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+        addMpFee: true,
+      } as any, mockUser as any);
+
+      const createCall = mockLinkModel.create.mock.calls[0][0];
+      expect(createCall.amount).toBeGreaterThan(1000);
+      expect(createCall.mpFeeRate).toBeCloseTo(0.0483);
+      expect(createCall.addMpFee).toBe(true);
+    });
+
+    it('should use amount as-is when addMpFee=false', async () => {
+      const created = makeLink();
+      mockLinkModel.create.mockResolvedValue(created);
+
+      await service.createLink({
+        entityId: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+        entityType: PaymentEntityTypeEnum.MATCH,
+        concept: 'Cuota',
+        amount: 1500,
+        paymentType: PaymentTypeEnum.FULL,
+        expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+        addMpFee: false,
+      } as any, mockUser as any);
+
+      const createCall = mockLinkModel.create.mock.calls[0][0];
+      expect(createCall.amount).toBe(1500);
+      expect(createCall.mpFeeAmount).toBe(0);
+      expect(createCall.netAmount).toBe(1500);
+    });
+  });
+
+  // ── validateDni — TRIP path ──────────────────────────────────────────────────
+
+  describe('validateDni() — TRIP path', () => {
+    const tripId = 'aaaabbbbccccddddeeee0000';
+    const playerOid = new Types.ObjectId('dddddddddddddddddddddddd');
+    const tripLink = makeLink({ entityType: PaymentEntityTypeEnum.TRIP, entityId: new Types.ObjectId(tripId) });
+    const participant = {
+      type: TripParticipantTypeEnum.PLAYER,
+      player: playerOid,  // stored as plain ObjectId reference
+      costAssigned: 500,
+    };
+    const trip = { participants: [participant] };
+
+    const makeTripFindById = (parts: any) =>
+      ({ select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(parts) }) });
+
+    beforeEach(() => {
+      mockLinkModel.findOne.mockResolvedValue(tripLink);
+      mockPlayerModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue({ _id: playerOid, name: 'Carlos López', idNumber: '22222222' }) }),
+      });
+      mockTripModel.findById.mockReturnValue(makeTripFindById(trip));
+    });
+
+    it('should return playerName when player is a trip participant', async () => {
+      const result = await service.validateDni('tok-1', '22222222');
+      expect(result).toMatchObject({ playerName: 'Carlos López' });
+    });
+
+    it('should throw 400 NOT_A_PARTICIPANT when player is not in the trip', async () => {
+      mockTripModel.findById.mockReturnValue(makeTripFindById({ participants: [] }));
+      await expect(service.validateDni('tok-1', '22222222')).rejects.toMatchObject({
+        response: expect.objectContaining({ code: 'NOT_A_PARTICIPANT' }),
+      });
+    });
+
+    it('should throw 400 NO_PAYMENT_REQUIRED when costAssigned is 0', async () => {
+      mockTripModel.findById.mockReturnValue(makeTripFindById({
+        participants: [{ ...participant, costAssigned: 0 }],
+      }));
+      await expect(service.validateDni('tok-1', '22222222')).rejects.toMatchObject({
+        response: expect.objectContaining({ code: 'NO_PAYMENT_REQUIRED' }),
+      });
+    });
+  });
+
+  // ── initiateCheckout ─────────────────────────────────────────────────────────
+
+  describe('initiateCheckout()', () => {
+    const mockPlayer = { _id: new Types.ObjectId('dddddddddddddddddddddddd'), name: 'Ana García', idNumber: '12345678', category: 'cuarta' };
+
+    beforeEach(() => {
+      mockLinkModel.findOne.mockResolvedValue(makeLink());
+      mockPlayerModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(mockPlayer) }),
+      });
+      mockMatchModel.findById.mockReturnValue({
+        select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue({ category: 'cuarta' }) }),
+      });
+      mockPaymentModel.create.mockResolvedValue(makePayment({ id: 'pay-1', entityType: PaymentEntityTypeEnum.MATCH }));
+      mockPaymentModel.findByIdAndUpdate.mockResolvedValue(null);
+      mpPreferenceCreate.mockResolvedValue({
+        id: 'pref-123',
+        init_point: 'https://mp.com/checkout/123',
+        sandbox_init_point: 'https://sandbox.mp.com/checkout/123',
+      });
+    });
+
+    it('should create a payment and call Preference.create', async () => {
+      await service.initiateCheckout('tok-1', '12345678');
+      expect(mockPaymentModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({ status: PaymentStatusEnum.PENDING, method: PaymentMethodEnum.MERCADOPAGO })
+      );
+      expect(mpPreferenceCreate).toHaveBeenCalled();
+    });
+
+    it('should return sandbox checkoutUrl when APP_BASE_URL is HTTP', async () => {
+      const result = await service.initiateCheckout('tok-1', '12345678');
+      expect(result.checkoutUrl).toContain('sandbox');
+    });
+
+    it('should throw NotFoundException when link not found', async () => {
+      mockLinkModel.findOne.mockResolvedValue(null);
+      await expect(service.initiateCheckout('bad', '12345678')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw GoneException when link is cancelled', async () => {
+      mockLinkModel.findOne.mockResolvedValue(makeLink({ status: PaymentLinkStatusEnum.CANCELLED }));
+      await expect(service.initiateCheckout('tok-1', '12345678')).rejects.toThrow(GoneException);
+    });
+
+    it('should throw NotFoundException when player not found', async () => {
+      mockPlayerModel.findOne.mockReturnValue({
+        select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(null) }),
+      });
+      await expect(service.initiateCheckout('tok-1', '99999999')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── confirmPayment — trip side effect ────────────────────────────────────────
+
+  describe('confirmPayment() — trip auto-confirm', () => {
+    it('should call tripModel.findById when APPROVED on a TRIP payment via MP API', async () => {
+      const payment = makePayment({
+        status: PaymentStatusEnum.PENDING,
+        entityType: PaymentEntityTypeEnum.TRIP,
+        entityId: new Types.ObjectId('aaaabbbbccccddddeeee0000'),
+        paymentLinkId: new Types.ObjectId(),
+      });
+      mockPaymentModel.findOne.mockResolvedValue(payment);
+      // paymentLinkModel.findById for netAmount lookup
+      mockLinkModel.findById.mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockResolvedValue({ netAmount: 500 }) });
+      mockTripModel.findById.mockResolvedValue(null); // trip not found → no-op, no throw
+      mpPaymentGet.mockResolvedValue({ id: 'mp-123', status: 'approved', status_detail: 'accredited', date_approved: new Date().toISOString() });
+
+      await service.confirmPayment({ externalReference: 'ref-1', paymentId: 'mp-123', status: 'approved' } as any);
+
+      expect(payment.status).toBe(PaymentStatusEnum.APPROVED);
+      expect(mockTripModel.findById).toHaveBeenCalled();
+    });
+  });
+
+  // ── recordManualPayment — TRIP side effect ───────────────────────────────────
+
+  describe('recordManualPayment() — TRIP path', () => {
+    it('should sync payment to trip participant when entityType is TRIP', async () => {
+      const playerId = new Types.ObjectId('dddddddddddddddddddddddd');
+      const tripId = new Types.ObjectId('aaaabbbbccccddddeeee0000');
+      const participant: any = {
+        type: 'player',
+        player: playerId,
+        costAssigned: 500,
+        status: 'pending',
+        payments: [],
+      };
+      const trip = {
+        participants: [participant],
+        save: jest.fn().mockResolvedValue(undefined),
+      };
+
+      mockPlayerModel.findById.mockReturnValue({
+        select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue({ _id: playerId }) }),
+      });
+      const payment = makePayment({
+        entityType: PaymentEntityTypeEnum.TRIP,
+        entityId: tripId,
+        playerId,
+        amount: 500,
+        method: PaymentMethodEnum.CASH,
+        _id: new Types.ObjectId('cccccccccccccccccccccccc'),
+      });
+      mockPaymentModel.create.mockResolvedValue(payment);
+      mockTripModel.findById.mockResolvedValue(trip);
+
+      await service.recordManualPayment({
+        entityType: PaymentEntityTypeEnum.TRIP,
+        entityId: tripId.toString(),
+        playerId: playerId.toString(),
+        amount: 500,
+        method: PaymentMethodEnum.CASH,
+        concept: 'Cuota',
+        date: new Date().toISOString(),
+      } as any, mockUser as any);
+
+      expect(mockTripModel.findById).toHaveBeenCalled();
+    });
+  });
+
+  // ── deleteManualPayment — TRIP side effect ───────────────────────────────────
+
+  describe('deleteManualPayment() — TRIP path', () => {
+    it('should remove payment from trip participant when entityType is TRIP', async () => {
+      const playerId = new Types.ObjectId('dddddddddddddddddddddddd');
+      const paymentId = new Types.ObjectId('cccccccccccccccccccccccc');
+      const mockEntry = { deleteOne: jest.fn() };
+      const participant: any = {
+        type: 'player',
+        player: playerId,
+        costAssigned: 500,
+        status: 'confirmed',
+        payments: [{ sourcePaymentId: paymentId, amount: 500, ...mockEntry }],
+      };
+      const trip = { participants: [participant], save: jest.fn().mockResolvedValue(undefined) };
+
+      const payment = makePayment({
+        method: PaymentMethodEnum.CASH,
+        entityType: PaymentEntityTypeEnum.TRIP,
+        entityId: new Types.ObjectId('aaaabbbbccccddddeeee0000'),
+        playerId,
+        _id: paymentId,
+      });
+      mockPaymentModel.findById.mockResolvedValue(payment);
+      mockTripModel.findById.mockResolvedValue(trip);
+
+      await service.deleteManualPayment(paymentId.toString());
+
+      expect(mockTripModel.findById).toHaveBeenCalled();
+      expect(payment.deleteOne).toHaveBeenCalled();
+    });
+  });
+
+  // ── syncPaymentById ──────────────────────────────────────────────────────────
+
+  describe('syncPaymentById()', () => {
+    it('should throw NotFoundException when payment not found', async () => {
+      mockPaymentModel.findById.mockResolvedValue(null);
+      await expect(service.syncPaymentById('pay-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when method is not MERCADOPAGO', async () => {
+      mockPaymentModel.findById.mockResolvedValue(makePayment({ method: PaymentMethodEnum.CASH }));
+      await expect(service.syncPaymentById('pay-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should call MP API when method is MERCADOPAGO', async () => {
+      const payment = makePayment({ method: PaymentMethodEnum.MERCADOPAGO, mpExternalReference: 'ref-1', mpPaymentId: 'mp-123', status: PaymentStatusEnum.PENDING });
+      mockPaymentModel.findById.mockResolvedValue(payment);
+      mpPaymentGet.mockResolvedValue({ id: 'mp-123', status: 'approved', status_detail: 'accredited' });
+
+      await service.syncPaymentById('pay-1');
+      expect(mpPaymentGet).toHaveBeenCalled();
+    });
+  });
+
+  // ── syncAllPending ───────────────────────────────────────────────────────────
+
+  describe('syncAllPending()', () => {
+    it('should return synced=0 and updated=0 when no pending payments', async () => {
+      mockPaymentModel.find.mockResolvedValue([]);
+      const result = await service.syncAllPending();
+      expect(result).toEqual({ synced: 0, updated: 0 });
+    });
+
+    it('should sync each pending payment and count updates', async () => {
+      const p1 = makePayment({ method: PaymentMethodEnum.MERCADOPAGO, status: PaymentStatusEnum.PENDING, mpPaymentId: 'mp-1' });
+      const p2 = makePayment({ method: PaymentMethodEnum.MERCADOPAGO, status: PaymentStatusEnum.PENDING, mpPaymentId: 'mp-2', _id: new Types.ObjectId('dddddddddddddddddddddddd') });
+      mockPaymentModel.find.mockResolvedValue([p1, p2]);
+
+      mpPaymentGet
+        .mockResolvedValueOnce({ id: 'mp-1', status: 'approved', status_detail: 'accredited' })
+        .mockResolvedValueOnce({ id: 'mp-2', status: 'pending' });
+
+      const result = await service.syncAllPending();
+      expect(result.synced).toBe(2);
+      expect(result.updated).toBe(1); // only p1 changed status
+    });
+  });
+
+  // ── validateMpWebhookSignature ───────────────────────────────────────────────
+
+  describe('validateMpWebhookSignature()', () => {
+    it('should return true when mpWebhookSecret is not configured', () => {
+      // Service is initialized with empty MP_WEBHOOK_SECRET → always returns true
+      expect(service.validateMpWebhookSignature('any', 'any', 'any', '123')).toBe(true);
+      expect(service.validateMpWebhookSignature('', '', '', '')).toBe(true);
+    });
+  });
+
+  // ── getGlobalReport ──────────────────────────────────────────────────────────
+
+  describe('getGlobalReport()', () => {
+    beforeEach(() => {
+      mockPlayerModel.find.mockReturnValue({ distinct: jest.fn().mockResolvedValue([]) });
+      mockMatchModel.find.mockReturnValue({ distinct: jest.fn().mockResolvedValue([]) });
+      mockTripModel.find.mockReturnValue({ distinct: jest.fn().mockResolvedValue([]) });
+      mockPaymentModel.countDocuments.mockResolvedValue(5);
+      mockPaymentModel.find.mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([]),
+      });
+      mockPaymentModel.aggregate.mockResolvedValue([{ _id: null, total: 2500 }]);
+      mockMatchModel.findById.mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockResolvedValue(null) });
+      mockTripModel.findById.mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockResolvedValue(null) });
+    });
+
+    it('should return paginated result with defaults', async () => {
+      const result = await service.getGlobalReport({});
+      expect(result).toMatchObject({ data: [], total: 5, page: 1, limit: 50, totalApproved: 2500 });
+    });
+
+    it('should cap limit at 1000', async () => {
+      const result = await service.getGlobalReport({ limit: 9999 });
+      expect(result.limit).toBe(1000);
+    });
+
+    it('should return totalApproved=0 when aggregate returns no results', async () => {
+      mockPaymentModel.aggregate.mockResolvedValue([]);
+      const result = await service.getGlobalReport({});
+      expect(result.totalApproved).toBe(0);
     });
   });
 

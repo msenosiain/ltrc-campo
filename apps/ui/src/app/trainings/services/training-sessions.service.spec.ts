@@ -81,4 +81,74 @@ describe('TrainingSessionsService', () => {
       req.flush(mockStats);
     });
   });
+
+  it('getSessions() makes GET with pagination params', () => {
+    service.getSessions({ page: 1, size: 10 }).subscribe();
+    const req = httpMock.expectOne(r => r.url === `${API_BASE}/training-sessions` && r.params.get('page') === '1');
+    expect(req.request.method).toBe('GET');
+    req.flush({ items: [], total: 0, page: 1, size: 10 });
+  });
+
+  it('getSessionById() makes GET to /:id', () => {
+    service.getSessionById('s1').subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1`);
+    expect(req.request.method).toBe('GET');
+    req.flush({});
+  });
+
+  it('getUpcomingForCurrentUser() makes GET to /upcoming', () => {
+    service.getUpcomingForCurrentUser(7).subscribe();
+    const req = httpMock.expectOne(r => r.url === `${API_BASE}/training-sessions/upcoming`);
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
+
+  it('confirmAttendance() makes POST to /:id/confirm', () => {
+    service.confirmAttendance('s1').subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/confirm`);
+    expect(req.request.method).toBe('POST');
+    req.flush({});
+  });
+
+  it('cancelConfirmation() makes DELETE to /:id/confirm', () => {
+    service.cancelConfirmation('s1').subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/confirm`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush({});
+  });
+
+  it('updateSession() makes PATCH to /:id', () => {
+    service.updateSession('s1', { location: 'Campo 1' }).subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({});
+  });
+
+  it('deleteSession() makes DELETE to /:id', () => {
+    service.deleteSession('s1').subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+  });
+
+  it('getCheckinToken() makes GET to /:id/checkin-token', () => {
+    service.getCheckinToken('s1').subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/checkin-token`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ token: 'tok', validFrom: '', validUntil: '' });
+  });
+
+  it('checkin() makes POST to /:id/checkin', () => {
+    service.checkin('s1', 'tok-123').subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/checkin`);
+    expect(req.request.method).toBe('POST');
+    req.flush({ message: 'ok' });
+  });
+
+  it('recordAttendance() makes PATCH to /:id/attendance', () => {
+    service.recordAttendance('s1', [{ isStaff: false }]).subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/attendance`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({});
+  });
 });

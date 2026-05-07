@@ -68,4 +68,59 @@ describe('MatchesService', () => {
     req.flush({});
   });
 
+  it('getFieldOptions() makes GET to /field-options', () => {
+    service.getFieldOptions().subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/matches/field-options`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ opponents: [], venues: [], divisions: [] });
+  });
+
+  it('getMySquadMatches() makes GET to /my-squad', () => {
+    service.getMySquadMatches({ page: 1, size: 5 }).subscribe();
+    const req = httpMock.expectOne(r => r.url === `${API_BASE}/matches/my-squad`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ items: [], total: 0, page: 1, size: 5 });
+  });
+
+  it('createMatchesBulk() makes POST to /bulk', () => {
+    service.createMatchesBulk({ categories: [], date: '2025-06-01', venue: 'Cancha A' } as any).subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/matches/bulk`);
+    expect(req.request.method).toBe('POST');
+    req.flush([]);
+  });
+
+  it('updateSquad() makes PATCH to /:id/squad', () => {
+    service.updateSquad('m1', []).subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/matches/m1/squad`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({});
+  });
+
+  it('recordAttendance() makes PATCH to /:id/attendance', () => {
+    service.recordAttendance('m1', { records: [] }).subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/matches/m1/attendance`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({});
+  });
+
+  it('addVideo() makes POST to /:id/videos', () => {
+    service.addVideo('m1', { url: 'https://yt.com', visibility: 'all' } as any).subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/matches/m1/videos`);
+    expect(req.request.method).toBe('POST');
+    req.flush({});
+  });
+
+  it('deleteVideo() makes DELETE to /:id/videos/:vid', () => {
+    service.deleteVideo('m1', 'vid-1').subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/matches/m1/videos/vid-1`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+  });
+
+  it('getAttendanceStats() makes GET to /stats/attendance', () => {
+    service.getAttendanceStats().subscribe();
+    const req = httpMock.expectOne(`${API_BASE}/matches/stats/attendance`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ byCategory: {} });
+  });
 });

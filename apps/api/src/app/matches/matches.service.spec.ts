@@ -477,4 +477,126 @@ describe('MatchesService', () => {
       expect(result.byCategory['m12'].pct).toBe(0);
     });
   });
+
+  // ── createBulk ────────────────────────────────────────────────────────────
+
+  describe('createBulk()', () => {
+    it('should create one match per category', async () => {
+      const created = [mockMatch, { ...mockMatch, category: 'm14' }];
+      (mockModel as any).insertMany = jest.fn().mockResolvedValue(created);
+
+      const result = await service.createBulk({
+        opponent: 'Rival',
+        date: new Date(),
+        categories: ['plantel_superior', 'm14'],
+      } as any);
+
+      expect((mockModel as any).insertMany).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ category: 'plantel_superior' }),
+          expect.objectContaining({ category: 'm14' }),
+        ])
+      );
+      expect(result).toEqual(created);
+    });
+  });
+
+  // ── findOne ───────────────────────────────────────────────────────────────
+
+  describe('findOne()', () => {
+    it('should return populated match', async () => {
+      const match = { ...mockMatch, squad: [], videos: [], attachments: [], set: jest.fn() };
+      mockModel.findById.mockReturnValue({ populate: jest.fn().mockResolvedValue(match) });
+      const result = await service.findOne('match-1');
+      expect(result).toBeDefined();
+    });
+
+    it('should throw NotFoundException when not found', async () => {
+      mockModel.findById.mockReturnValue({ populate: jest.fn().mockResolvedValue(null) });
+      await expect(service.findOne('bad-id')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── getFieldOptions ───────────────────────────────────────────────────────
+
+  describe('getFieldOptions()', () => {
+    it('should return opponents, venues and divisions', async () => {
+      mockModel.distinct
+        .mockResolvedValueOnce(['Rival 1', 'Rival 2'])
+        .mockResolvedValueOnce(['Cancha A'])
+        .mockResolvedValueOnce(['División 1', null]);
+
+      const result = await service.getFieldOptions();
+      expect(result.opponents).toEqual(['Rival 1', 'Rival 2']);
+      expect(result.venues).toEqual(['Cancha A']);
+      expect(result.divisions).toEqual(['División 1']); // null filtered out
+    });
+  });
+
+  // ── addAttachment ─────────────────────────────────────────────────────────
+
+  describe('addAttachment()', () => {
+    it('should upload file and push attachment', async () => {
+      const match = { ...mockMatch, attachments: [], save: jest.fn().mockResolvedValue(undefined) };
+      mockModel.findById.mockResolvedValueOnce(match);
+      mockGridFsService.uploadFile.mockResolvedValue('file-id-1');
+
+      const result = await service.addAttachment('match-1', {
+        originalname: 'doc.pdf',
+        mimetype: 'application/pdf',
+        buffer: Buffer.from(''),
+        size: 512,
+      } as any, 'Mi doc', 'all');
+
+      expect(mockGridFsService.uploadFile).toHaveBeenCalled();
+      expect(match.save).toHaveBeenCalled();
+      expect(result).toHaveProperty('fileId', 'file-id-1');
+    });
+
+    it('should throw NotFoundException when match not found', async () => {
+      mockModel.findById.mockResolvedValueOnce(null);
+      await expect(
+        service.addAttachment('bad-id', { originalname: 'x', mimetype: 'application/pdf', buffer: Buffer.from(''), size: 0 } as any)
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── deleteAttachment ──────────────────────────────────────────────────────
+
+  describe('deleteAttachment()', () => {
+    it('should delete file from GridFS and remove from array', async () => {
+      const attachment = { fileId: 'file-id-1' };
+      const match = {
+        ...mockMatch,
+        attachments: [attachment],
+        save: jest.fn().mockResolvedValue(undefined),
+      };
+      mockModel.findById.mockResolvedValueOnce(match);
+      mockGridFsService.deleteFile.mockResolvedValue(undefined);
+
+      await service.deleteAttachment('match-1', 'file-id-1');
+
+      expect(mockGridFsService.deleteFile).toHaveBeenCalled();
+      expect(match.save).toHaveBeenCalled();
+      expect(match.attachments).toHaveLength(0);
+    });
+
+    it('should throw NotFoundException when attachment not found', async () => {
+      const match = { ...mockMatch, attachments: [] };
+      mockModel.findById.mockResolvedValueOnce(match);
+      await expect(service.deleteAttachment('match-1', 'missing')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── findPlayerByUserId ────────────────────────────────────────────────────
+
+  describe('findPlayerByUserId()', () => {
+    it('should return player with _id selected', async () => {
+      const player = { _id: 'player-id' };
+      const validUserId = 'aaaaaaaaaaaaaaaaaaaaaaaa'; // valid 24-char hex
+      (mockPlayerModel as any).findOne = jest.fn().mockReturnValue({ select: jest.fn().mockResolvedValue(player) });
+      const result = await service.findPlayerByUserId(validUserId);
+      expect(result).toBe(player);
+    });
+  });
 });
