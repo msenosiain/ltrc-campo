@@ -11,7 +11,7 @@ import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { concat, of, Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, filter, last, map, switchMap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, expand, filter, last, map, reduce, switchMap, takeWhile } from 'rxjs/operators';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -664,36 +664,42 @@ export class TripViewerComponent implements OnInit {
     if (!this.trip?.id || !categories.length) return;
     this.addingAllPlayers = true;
 
-    this.playersService
-      .getPlayers({
-        page: 1,
-        size: 200,
-        filters: {
-          ...(this.trip.sport && { sport: this.trip.sport }),
-          categories,
-        },
-      })
-      .pipe(
-        switchMap((result) => {
-          const existingPlayerIds = new Set(
-            this.trip!.participants
-              .filter((p) => p.type === TripParticipantTypeEnum.PLAYER)
-              .map((p) => (p.player as any)?.id ?? (p.player as any)?._id)
-          );
-          const toAdd = result.items.filter((p) => p.id && !existingPlayerIds.has(p.id));
-          if (toAdd.length === 0) return of({ added: 0, trip: this.trip! });
+    const PAGE_SIZE = 100;
+    const filters = {
+      ...(this.trip.sport && { sport: this.trip.sport }),
+      categories,
+    };
 
-          return this.tripsService
-            .bulkAddParticipants(this.trip!.id!, toAdd.map((p) => ({
-              type: TripParticipantTypeEnum.PLAYER,
-              playerId: p.id!,
-              status: TripParticipantStatusEnum.PENDING,
-              costAssigned: this.trip!.costPerPerson,
-            })))
-            .pipe(map((trip) => ({ added: toAdd.length, trip })));
-        }),
-        takeUntilDestroyed(this.destroyRef)
-      )
+    // Fetch all pages then bulk-add the ones not already in the trip
+    this.playersService.getPlayers({ page: 1, size: PAGE_SIZE, filters }).pipe(
+      expand((res) =>
+        res.items.length === PAGE_SIZE && (res.page * PAGE_SIZE) < res.total
+          ? this.playersService.getPlayers({ page: res.page + 1, size: PAGE_SIZE, filters })
+          : of(null)
+      ),
+      takeWhile((res) => res !== null),
+      reduce((all: Player[], res) => [...all, ...(res as any).items], [] as Player[]),
+      switchMap((allPlayers) => {
+        const existingPlayerIds = new Set(
+          this.trip!.participants
+            .filter((p) => p.type === TripParticipantTypeEnum.PLAYER)
+            .map((p) => String((p.player as any)?.id ?? (p.player as any)?._id ?? ''))
+            .filter(Boolean)
+        );
+        const toAdd = allPlayers.filter((p) => p.id && !existingPlayerIds.has(String(p.id)));
+        if (toAdd.length === 0) return of({ added: 0, trip: this.trip! });
+
+        return this.tripsService
+          .bulkAddParticipants(this.trip!.id!, toAdd.map((p) => ({
+            type: TripParticipantTypeEnum.PLAYER,
+            playerId: p.id!,
+            status: TripParticipantStatusEnum.PENDING,
+            costAssigned: this.trip!.costPerPerson,
+          })))
+          .pipe(map((trip) => ({ added: toAdd.length, trip })));
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    )
       .subscribe({
         next: ({ added, trip }) => {
           this.addingAllPlayers = false;
