@@ -859,7 +859,11 @@ export class PlayerFeesService {
           ...(birthDate && { birthDate }),
           ...(row.email?.trim() && { email: row.email.trim() }),
           ...(position && { positions: [position] }),
-          ...(medicalData && { medicalData }),
+          ...(medicalData?.height !== undefined && { 'medicalData.height': medicalData.height }),
+          ...(medicalData?.weight !== undefined && { 'medicalData.weight': medicalData.weight }),
+          ...(medicalData?.healthInsurance && { 'medicalData.healthInsurance': medicalData.healthInsurance }),
+          ...(medicalData?.bloodType && { 'medicalData.bloodType': medicalData.bloodType }),
+          ...(medicalData?.torgIndex !== undefined && { 'medicalData.torgIndex': medicalData.torgIndex }),
         };
         if (Object.keys(updateData).length > 0) {
           await this.playerModel.findByIdAndUpdate(player._id, { $set: updateData });
