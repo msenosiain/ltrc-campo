@@ -15,6 +15,7 @@ export class BduarRowDto {
   @IsOptional() @IsString() grupoSanguineo?: string;
   @IsOptional() @IsString() fechaFichaje?: string;
   @IsOptional() @IsString() estado?: string;
+  @IsOptional() @IsString() torgIndex?: string;
 }
 
 export class BduarImportDto {

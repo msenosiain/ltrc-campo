@@ -45,6 +45,7 @@ export interface BduarRow {
   grupoSanguineo?: string;
   fechaFichaje?: string;
   estado?: string;
+  torgIndex?: string;
 }
 
 export interface FamilyGroupPayload {

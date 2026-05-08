@@ -490,6 +490,7 @@ export class PlayerFeesSettingsComponent implements OnInit {
     'g.sang.': 'grupoSanguineo', 'g. sang.': 'grupoSanguineo', 'grupo sanguineo': 'grupoSanguineo', 'grupo sanguíneo': 'grupoSanguineo', gsang: 'grupoSanguineo',
     'f.fichaje': 'fechaFichaje', 'f. fichaje': 'fechaFichaje', 'fecha fichaje': 'fechaFichaje', fechafichaje: 'fechaFichaje',
     estado: 'estado', habilitacion: 'estado', habilitación: 'estado',
+    'ind.torg': 'torgIndex', 'ind. torg': 'torgIndex', 'indice torg': 'torgIndex', 'índice torg': 'torgIndex', torg: 'torgIndex',
   };
 
   onBduarFileChange(event: Event): void {
