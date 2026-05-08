@@ -114,6 +114,7 @@ export class CalendarService {
       status: t.status,
       destination: t.destination,
       returnDate: t.returnDate ? (t.returnDate as Date).toISOString() : undefined,
+      costPerPerson: t.costPerPerson ?? undefined,
     }));
 
     return [...matchEvents, ...trainingEvents, ...tripEvents].sort((a, b) => {

@@ -19,4 +19,5 @@ export interface CalendarEvent {
   userConfirmed?: boolean;
   destination?: string;   // trips only
   returnDate?: string;    // trips only
+  costPerPerson?: number; // trips only
 }

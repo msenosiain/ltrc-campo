@@ -9,7 +9,8 @@ export const TRIPS_ROUTES: Routes = [
   {
     path: '',
     component: TripListComponent,
-    data: { title: 'Viajes - Los Tordos' },
+    canActivate: [hasRoleGuard],
+    data: { title: 'Viajes - Los Tordos', allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH] },
   },
   {
     path: 'create',
@@ -20,7 +21,8 @@ export const TRIPS_ROUTES: Routes = [
   {
     path: ':id',
     component: TripViewerComponent,
-    data: { title: 'Detalle del viaje' },
+    canActivate: [hasRoleGuard],
+    data: { title: 'Detalle del viaje', allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH] },
   },
   {
     path: ':id/edit',

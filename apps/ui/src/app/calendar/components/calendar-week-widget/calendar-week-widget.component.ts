@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
+import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -49,7 +50,7 @@ function getWeekBounds(): { weekStart: Date; weekEnd: Date } {
 @Component({
   selector: 'ltrc-calendar-week-widget',
   standalone: true,
-  imports: [MatIconModule, MatButtonModule, MatExpansionModule, MatSnackBarModule, WidgetShellComponent, AllowedRolesDirective],
+  imports: [DecimalPipe, MatIconModule, MatButtonModule, MatExpansionModule, MatSnackBarModule, WidgetShellComponent, AllowedRolesDirective],
   templateUrl: './calendar-week-widget.component.html',
   styleUrl: './calendar-week-widget.component.scss',
 })

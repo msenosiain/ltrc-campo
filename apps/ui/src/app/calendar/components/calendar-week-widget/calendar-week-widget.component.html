@@ -53,6 +53,8 @@
                     <span>{{ getCategoryLabel(event.category) }}</span>
                     @if (event.branch) { <span>· Rama {{ event.branch }}</span> }
                     @if (event.location) { <span>· {{ event.location }}</span> }
+                    @if (event.destination) { <span>{{ event.destination }}</span> }
+                    @if (event.costPerPerson) { <span>· ${{ event.costPerPerson | number:'1.0-0' }}</span> }
                   </div>
                 </div>
 
