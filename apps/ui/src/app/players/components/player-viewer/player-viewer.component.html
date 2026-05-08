@@ -328,7 +328,7 @@
             <mat-icon>{{ eligibilityStatus()!.feePaid ? 'check_circle' : 'cancel' }}</mat-icon>
           </span>
           <span class="fichaje-item" [class.fichaje-item--ok]="eligibilityStatus()!.bduarRegistered">
-            Ficha Médica
+            Ficha BD UAR
             <mat-icon>{{ eligibilityStatus()!.bduarRegistered ? 'check_circle' : 'cancel' }}</mat-icon>
           </span>
           @if (eligibilityStatus()!.coursesApproved !== undefined) {

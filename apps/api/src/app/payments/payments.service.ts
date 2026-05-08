@@ -430,13 +430,15 @@ export class PaymentsService {
   // ── Pagos manuales ────────────────────────────────────────────────────────
 
   async recordManualPayment(dto: RecordManualPaymentDto, caller: User) {
-    const player = await this.playerModel.findById(dto.playerId).select('id').lean();
+    const player = await this.playerModel.findById(dto.playerId).select('id name idNumber').lean();
     if (!player) throw new NotFoundException('Jugador no encontrado');
 
     const payment = await this.paymentModel.create({
       entityType: dto.entityType,
       entityId: new Types.ObjectId(dto.entityId),
       playerId: new Types.ObjectId(dto.playerId),
+      payerName: (player as any).name,
+      payerDni: (player as any).idNumber,
       amount: dto.amount,
       method: dto.method,
       status: PaymentStatusEnum.APPROVED,
@@ -1042,10 +1044,20 @@ export class PaymentsService {
         .lean(),
       this.paymentModel
         .find({ entityType: PaymentEntityTypeEnum.MATCH, entityId: { $in: objectIds }, status: PaymentStatusEnum.APPROVED })
-        .populate({ path: 'playerId', select: 'name idNumber' })
         .sort({ entityId: 1, date: 1 })
         .lean(),
     ]);
+
+    const playerIdStrings = [...new Set(
+      payments.map((p) => p.playerId?.toString()).filter(Boolean) as string[]
+    )];
+    const playerDocs = playerIdStrings.length
+      ? await this.playerModel
+          .find({ _id: { $in: playerIdStrings.map((id) => new Types.ObjectId(id)) } })
+          .select('name idNumber')
+          .lean()
+      : [];
+    const playerMap = new Map(playerDocs.map((pl) => [(pl as any)._id.toString(), pl]));
 
     const first = matches[0] as any;
     const encounterLabel = first?.name || (first?.tournament as any)?.name
@@ -1068,12 +1080,12 @@ export class PaymentsService {
       const match = matches.find((m) => (m as any)._id.equals(p.entityId));
       const cat = match?.category || 'sin_categoria';
       const entry = categoryMap.get(cat) ?? { matchId: (match as any)?._id?.toString() ?? '', count: 0, total: 0, payments: [] };
-      const player = p.playerId as any;
+      const player = p.playerId ? playerMap.get(p.playerId.toString()) : null;
       entry.count++;
       entry.total += p.amount;
       entry.payments.push({
-        playerName: player?.name ?? '-',
-        playerDni: player?.idNumber ?? '-',
+        playerName: (player as any)?.name ?? p.payerName ?? '-',
+        playerDni: (player as any)?.idNumber ?? p.payerDni ?? '-',
         concept: p.concept,
         method: p.method,
         amount: p.amount,
@@ -1113,10 +1125,20 @@ export class PaymentsService {
         .lean(),
       this.paymentModel
         .find({ entityType: PaymentEntityTypeEnum.MATCH, entityId: { $in: objectIds }, status: PaymentStatusEnum.APPROVED })
-        .populate({ path: 'playerId', select: 'name idNumber' })
         .sort({ entityId: 1, date: 1 })
         .lean(),
     ]);
+
+    const pdfPlayerIdStrings = [...new Set(
+      payments.map((p) => p.playerId?.toString()).filter(Boolean) as string[]
+    )];
+    const pdfPlayerDocs = pdfPlayerIdStrings.length
+      ? await this.playerModel
+          .find({ _id: { $in: pdfPlayerIdStrings.map((id) => new Types.ObjectId(id)) } })
+          .select('name idNumber')
+          .lean()
+      : [];
+    const pdfPlayerMap = new Map(pdfPlayerDocs.map((pl) => [(pl as any)._id.toString(), pl]));
 
     const first = matches[0] as any;
     const encounterLabel = first?.name || (first?.tournament as any)?.name
@@ -1200,10 +1222,10 @@ export class PaymentsService {
         doc.font('Helvetica');
         group.forEach((p) => {
           if (y > 750) { doc.addPage(); y = 40; }
-          const player = p.playerId as any;
+          const pPlayer = p.playerId ? pdfPlayerMap.get(p.playerId.toString()) as any : null;
           const row = [
-            player?.name ?? '-',
-            player?.idNumber ?? '-',
+            pPlayer?.name ?? p.payerName ?? '-',
+            pPlayer?.idNumber ?? p.payerDni ?? '-',
             p.concept,
             p.method,
             this.formatMoney(p.amount),

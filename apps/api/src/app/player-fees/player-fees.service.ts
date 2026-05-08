@@ -665,6 +665,11 @@ export class PlayerFeesService {
     });
     if (alreadyPaid) throw new BadRequestException('Este jugador ya registró su pago');
 
+    await this.paymentModel.updateMany(
+      { playerId: (player as any)._id, configId: (config as any)._id, status: PlayerFeeStatusEnum.PENDING },
+      { status: PlayerFeeStatusEnum.CANCELLED },
+    );
+
     const resolved = this.resolveAmountForCategory(config, player.category as CategoryEnum);
     if (!resolved) throw new BadRequestException('Tu categoría no está incluida en este derecho de jugador');
 

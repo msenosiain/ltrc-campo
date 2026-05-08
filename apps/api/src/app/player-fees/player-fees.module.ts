@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PlayerFeesController } from './player-fees.controller';
 import { PlayerFeesPublicController } from './player-fees-public.controller';
 import { PlayerFeesService } from './player-fees.service';
+import { PlayerFeesCleanupService } from './player-fees-cleanup.service';
 import { PlayerFeeConfigEntity } from './schemas/player-fee-config.entity';
 import { PlayerFeeConfigSchema } from './schemas/player-fee-config.schema';
 import { FamilyGroupEntity } from './schemas/family-group.entity';
@@ -18,6 +20,7 @@ import { PaymentSchema } from '../payments/schemas/payment.schema';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     MongooseModule.forFeature([
       { name: PlayerFeeConfigEntity.name, schema: PlayerFeeConfigSchema },
       { name: FamilyGroupEntity.name, schema: FamilyGroupSchema },
@@ -28,7 +31,7 @@ import { PaymentSchema } from '../payments/schemas/payment.schema';
     ]),
   ],
   controllers: [PlayerFeesController, PlayerFeesPublicController],
-  providers: [PlayerFeesService],
+  providers: [PlayerFeesService, PlayerFeesCleanupService],
   exports: [PlayerFeesService],
 })
 export class PlayerFeesModule {}

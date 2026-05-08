@@ -176,8 +176,8 @@ export class PaymentsReportPdfService {
       head: [['#', 'Jugador', 'DNI', 'Concepto', 'Método', 'Monto', 'Fecha', 'Estado']],
       body: payments.map((p, i) => [
         String(i + 1),
-        p.playerName ?? '-',
-        p.playerDni ?? '-',
+        (p as any).playerId?.name ?? p.playerName ?? '-',
+        (p as any).playerId?.idNumber ?? p.playerDni ?? '-',
         p.concept,
         this.methodLabel(p.method),
         this.formatMoney(p.amount),
