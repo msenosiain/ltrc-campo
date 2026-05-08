@@ -486,7 +486,7 @@ export class PlayerFeesSettingsComponent implements OnInit {
     peso: 'peso',
     estatura: 'estatura', altura: 'estatura',
     email: 'email', 'e-mail': 'email', correo: 'email',
-    'o. social': 'oSocial', osocial: 'oSocial', 'obra social': 'oSocial',
+    'o.social': 'oSocial', 'o. social': 'oSocial', osocial: 'oSocial', 'obra social': 'oSocial',
     'g.sang.': 'grupoSanguineo', 'g. sang.': 'grupoSanguineo', 'grupo sanguineo': 'grupoSanguineo', 'grupo sanguíneo': 'grupoSanguineo', gsang: 'grupoSanguineo',
     'f.fichaje': 'fechaFichaje', 'f. fichaje': 'fechaFichaje', 'fecha fichaje': 'fechaFichaje', fechafichaje: 'fechaFichaje',
     estado: 'estado', habilitacion: 'estado', habilitación: 'estado',
