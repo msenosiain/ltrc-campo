@@ -92,7 +92,7 @@ export class PaymentsService {
     const config = await this.paymentConfigModel.findOneAndUpdate(
       {},
       { excludedPaymentTypes },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     ).lean();
     return { excludedPaymentTypes: config?.excludedPaymentTypes ?? [] };
   }
@@ -954,6 +954,9 @@ export class PaymentsService {
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
+      const startX = 40;
+      const pageWidth = 515;
+
       // Encabezado
       doc.fontSize(16).text('Los Tordos RC — Reporte de Cobros', { align: 'center' });
       doc.fontSize(12).text(entityLabel, { align: 'center' });
@@ -967,28 +970,24 @@ export class PaymentsService {
 
       doc
         .fontSize(10)
-        .text(`Total aprobado: ${this.formatMoney(totalApproved)}   |   Pendiente: ${this.formatMoney(totalPending)}   |   Total pagos: ${payments.length}`)
+        .text(`Total aprobado: ${this.formatMoney(totalApproved)}   |   Pendiente: ${this.formatMoney(totalPending)}   |   Total pagos: ${payments.length}`, { align: 'center' })
         .moveDown();
 
-      // Tabla
-      const cols = [30, 160, 60, 80, 80, 70, 90, 100];
-      const headers = ['#', 'Jugador', 'DNI', 'Concepto', 'Método', 'Monto', 'Fecha', 'Estado'];
-      const startX = 40;
+      // Tabla — columnas que suman exactamente pageWidth (515)
+      const cols = [25, 130, 60, 100, 80, 65, 55];
+      const headers = ['#', 'Jugador', 'DNI', 'Concepto', 'Método', 'Monto', 'Fecha'];
       let y = doc.y;
 
       // Cabecera de tabla
       doc.fontSize(8).font('Helvetica-Bold');
       headers.forEach((h, i) => {
-        doc.text(h, startX + cols.slice(0, i).reduce((a, b) => a + b, 0), y, {
-          width: cols[i],
-          align: 'left',
-        });
+        doc.text(h, startX + cols.slice(0, i).reduce((a, b) => a + b, 0), y, { width: cols[i], align: 'left' });
       });
-      y += 14;
-      doc.moveTo(startX, y).lineTo(startX + cols.reduce((a, b) => a + b, 0), y).stroke();
-      y += 4;
+      y += 12;
+      doc.moveTo(startX, y).lineTo(startX + pageWidth, y).stroke();
+      y += 3;
 
-      // Filas
+      // Filas con altura dinámica para evitar solapamiento
       doc.font('Helvetica');
       payments.forEach((p, idx) => {
         const player = p.playerId as any;
@@ -1000,21 +999,18 @@ export class PaymentsService {
           p.method,
           this.formatMoney(p.amount),
           this.formatDate(p.date),
-          p.status,
         ];
 
-        if (y > 750) {
-          doc.addPage();
-          y = 40;
-        }
+        const rowHeight = Math.max(...row.map((cell, i) =>
+          doc.fontSize(8).heightOfString(cell, { width: cols[i] })
+        )) + 4;
+
+        if (y + rowHeight > 750) { doc.addPage(); y = 40; }
 
         row.forEach((cell, i) => {
-          doc.fontSize(8).text(cell, startX + cols.slice(0, i).reduce((a, b) => a + b, 0), y, {
-            width: cols[i],
-            align: 'left',
-          });
+          doc.fontSize(8).text(cell, startX + cols.slice(0, i).reduce((a, b) => a + b, 0), y, { width: cols[i], align: 'left' });
         });
-        y += 14;
+        y += rowHeight;
       });
 
       doc.end();

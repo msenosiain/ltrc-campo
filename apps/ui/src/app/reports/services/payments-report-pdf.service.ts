@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { CategoryEnum, PaymentMethodEnum, SportEnum } from '@ltrc-campo/shared-api-model';
+import { CategoryEnum, IPayment, PaymentMethodEnum, PaymentStatusEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../common/category-options';
 import { GlobalPaymentRow, GlobalPaymentsReport } from '../../payments/services/payments.service';
 
@@ -126,6 +126,92 @@ export class PaymentsReportPdfService {
 
     const today = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
     doc.save(`informe-pagos-${today}.pdf`);
+  }
+
+  async generateForEntity(payments: IPayment[], entityLabel: string, entityDate?: Date): Promise<void> {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const marginL = 14;
+    const logoSize = 18;
+
+    try {
+      const logoBase64 = await this.loadImageAsBase64(this.LOGO_PATH);
+      doc.addImage(logoBase64, 'PNG', marginL, 10, logoSize, logoSize);
+    } catch { /* sin logo */ }
+
+    doc.setFontSize(16).setFont('helvetica', 'bold').setTextColor(...this.PRIMARY);
+    doc.text('LOS TORDOS RUGBY CLUB', marginL + logoSize + 5, 17);
+    doc.setFontSize(11).setFont('helvetica', 'normal').setTextColor(80, 80, 80);
+    doc.text('REPORTE DE COBROS', marginL + logoSize + 5, 24);
+    doc.setDrawColor(200, 200, 200).setLineWidth(0.4).line(marginL, 32, pageW - marginL, 32);
+
+    const approved = payments.filter((p) => p.status === PaymentStatusEnum.APPROVED);
+    const totalApproved = approved.reduce((s, p) => s + p.amount, 0);
+    const totalPending = payments
+      .filter((p) => p.status === PaymentStatusEnum.PENDING)
+      .reduce((s, p) => s + p.amount, 0);
+
+    const col2x = pageW / 2;
+    let y = 39;
+    const addRow = (label: string, value: string, x: number) => {
+      doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(...this.PRIMARY);
+      const labelW = doc.getTextWidth(`${label}: `);
+      doc.text(`${label}: `, x, y);
+      doc.setFont('helvetica', 'normal').text(value, x + labelW, y);
+    };
+
+    addRow('Evento', entityLabel, marginL);
+    if (entityDate) addRow('Fecha', this.formatDate(entityDate), col2x);
+    y += 6;
+    addRow('Total pagos', String(payments.length), marginL);
+    addRow('Total aprobado', this.formatMoney(totalApproved), col2x);
+    y += 6;
+    if (totalPending > 0) { addRow('Pendiente', this.formatMoney(totalPending), marginL); y += 6; }
+
+    doc.setDrawColor(200, 200, 200).line(marginL, y, pageW - marginL, y);
+    y += 6;
+
+    autoTable(doc, {
+      startY: y,
+      head: [['#', 'Jugador', 'DNI', 'Concepto', 'Método', 'Monto', 'Fecha', 'Estado']],
+      body: payments.map((p, i) => [
+        String(i + 1),
+        p.playerName ?? '-',
+        p.playerDni ?? '-',
+        p.concept,
+        this.methodLabel(p.method),
+        this.formatMoney(p.amount),
+        this.formatDate(p.date),
+        this.statusLabel(p.status),
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: this.HEADER_BG, textColor: 255, fontStyle: 'bold', fontSize: 8, halign: 'center' },
+      bodyStyles: { fontSize: 7.5, textColor: this.PRIMARY, lineColor: [200, 200, 200], lineWidth: 0.3 },
+      alternateRowStyles: { fillColor: this.SECTION_BG },
+      columnStyles: {
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 30 },
+        4: { cellWidth: 22, halign: 'center' },
+        5: { cellWidth: 20, halign: 'right' },
+        6: { cellWidth: 16, halign: 'center' },
+        7: { cellWidth: 18, halign: 'center' },
+      },
+      margin: { left: marginL, right: marginL },
+      didDrawPage: () => {
+        doc.setFontSize(7).setTextColor(150, 150, 150);
+        doc.text(`Página ${doc.getNumberOfPages()}`, pageW - marginL, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
+      },
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 4;
+    doc.setFillColor(46, 125, 50).rect(marginL, finalY, pageW - marginL * 2, 8, 'F');
+    doc.setFontSize(9).setFont('helvetica', 'bold').setTextColor(255, 255, 255);
+    doc.text(`TOTAL APROBADO — ${approved.length} pago(s)`, marginL + 3, finalY + 5.5);
+    doc.text(this.formatMoney(totalApproved), pageW - marginL - 3, finalY + 5.5, { align: 'right' });
+
+    doc.save(`cobros-${entityLabel.replace(/[^a-zA-Z0-9]/g, '-')}.pdf`);
   }
 
   private async drawHeader(

@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { PaymentsService } from '../../services/payments.service';
+import { PaymentsReportPdfService } from '../../../reports/services/payments-report-pdf.service';
 import { CreatePaymentLinkDialogComponent } from '../create-payment-link-dialog/create-payment-link-dialog.component';
 import { RecordManualPaymentDialogComponent } from '../record-manual-payment-dialog/record-manual-payment-dialog.component';
 import {
@@ -57,6 +58,7 @@ export class PaymentLinksPanelComponent implements OnInit {
   @Input() entityLabel?: string;
 
   private readonly paymentsService = inject(PaymentsService);
+  private readonly pdfService = inject(PaymentsReportPdfService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
 
@@ -156,17 +158,9 @@ export class PaymentLinksPanelComponent implements OnInit {
   }
 
   downloadPdf() {
-    this.paymentsService.downloadPdfReport(this.entityType, this.entityId).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `cobros-${this.entityType}-${this.entityId}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-      },
-      error: () => this.snackBar.open('Error al generar el reporte', '', { duration: 3000 }),
-    });
+    this.pdfService
+      .generateForEntity(this.payments, this.entityLabel ?? this.entityId, this.entityDate)
+      .catch(() => this.snackBar.open('Error al generar el reporte', '', { duration: 3000 }));
   }
 
   get totalApproved(): number {

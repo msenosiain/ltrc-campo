@@ -41,7 +41,7 @@ export class EvaluationsService {
         evaluationsEnabled: dto.evaluationsEnabled,
         updatedBy: new Types.ObjectId(userId),
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     ).exec();
   }
 
@@ -63,7 +63,7 @@ export class EvaluationsService {
         overallLevel: computed.overallLevel,
         notes: dto.notes,
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     ).populate('player', 'name nickName').exec();
   }
 

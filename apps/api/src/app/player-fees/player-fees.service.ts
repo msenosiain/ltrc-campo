@@ -177,7 +177,7 @@ export class PlayerFeesService {
         ...(b.expiresAt ? { expiresAt: new Date(b.expiresAt) } : {}),
       }));
     }
-    const config = await this.configModel.findByIdAndUpdate(id, update, { new: true });
+    const config = await this.configModel.findByIdAndUpdate(id, update, { returnDocument: 'after' });
     if (!config) throw new NotFoundException('Configuración no encontrada');
     return this.mapConfig(config.toObject());
   }
@@ -257,7 +257,7 @@ export class PlayerFeesService {
     const group = await this.familyGroupModel.findByIdAndUpdate(
       id,
       { name: dto.name, sport: dto.sport, members },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!group) throw new NotFoundException('Grupo familiar no encontrado');
     return this.mapFamilyGroup(group.toObject());
@@ -334,7 +334,7 @@ export class PlayerFeesService {
     return this.seasonRecordModel.findOneAndUpdate(
       { playerId: new Types.ObjectId(playerId), season: dto.season, sport: dto.sport },
       { $set: update },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
   }
 
@@ -905,7 +905,7 @@ export class PlayerFeesService {
               updatedBy: new Types.ObjectId(userId),
             },
           },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
 
         const existingPayment = await this.paymentModel.findOne({
