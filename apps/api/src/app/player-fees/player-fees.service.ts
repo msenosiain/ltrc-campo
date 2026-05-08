@@ -838,15 +838,16 @@ export class PlayerFeesService {
       const _bduarRawDate = row.fechaFichaje ? new Date(row.fechaFichaje) : undefined;
       const bduarRegistrationDate = _bduarRawDate && !isNaN(_bduarRawDate.getTime()) ? _bduarRawDate : undefined;
 
-      const torgIndex = row.torgIndex ? parseFloat(row.torgIndex.replace(',', '.')) : NaN;
-      const torgIndexValue = !isNaN(torgIndex) ? torgIndex : undefined;
+      const _torgRaw = row.torgIndex ? parseFloat(row.torgIndex.replace(',', '.')) : NaN;
+      const torgIndex = !isNaN(_torgRaw) ? _torgRaw : undefined;
 
-      const medicalData = (height !== null || weight !== null || row.oSocial || bloodType)
+      const medicalData = (height !== null || weight !== null || row.oSocial || bloodType || torgIndex !== undefined)
         ? {
             ...(height !== null && { height }),
             ...(weight !== null && { weight }),
             ...(row.oSocial?.trim() && { healthInsurance: row.oSocial.trim() }),
             ...(bloodType && { bloodType }),
+            ...(torgIndex !== undefined && { torgIndex }),
           }
         : undefined;
 
@@ -859,7 +860,6 @@ export class PlayerFeesService {
           ...(row.email?.trim() && { email: row.email.trim() }),
           ...(position && { positions: [position] }),
           ...(medicalData && { medicalData }),
-          ...(torgIndexValue !== undefined && { torgIndex: torgIndexValue }),
         };
         if (Object.keys(updateData).length > 0) {
           await this.playerModel.findByIdAndUpdate(player._id, { $set: updateData });
@@ -877,7 +877,6 @@ export class PlayerFeesService {
           ...(row.email?.trim() && { email: row.email.trim() }),
           ...(position && { positions: [position] }),
           ...(medicalData && { medicalData }),
-          ...(torgIndexValue !== undefined && { torgIndex: torgIndexValue }),
           createdBy: new Types.ObjectId(userId),
         });
         created++;
