@@ -255,6 +255,11 @@
           <span class="info-label">Índice de Torg</span>
           <span class="info-value">{{ player.medicalData.torgIndex }}</span>
         </div>
+        } @if (player.medicalData.bloodType) {
+        <div class="info-item">
+          <span class="info-label">Grupo sanguíneo</span>
+          <span class="info-value">{{ player.medicalData.bloodType }}</span>
+        </div>
         } @if (player.medicalData.healthInsurance) {
         <div class="info-item">
           <span class="info-label">Obra social</span>

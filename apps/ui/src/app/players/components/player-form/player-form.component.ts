@@ -33,6 +33,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import {
+  BloodTypeEnum,
   ClothingSizesEnum,
   HockeyBranchEnum,
   Player,
@@ -124,6 +125,7 @@ export class PlayerFormComponent implements OnInit, OnChanges {
   availableSportOptions = sportOptions;
   readonly branchOptions = Object.values(HockeyBranchEnum);
   readonly clothingSizesOptions = Object.values(ClothingSizesEnum);
+  readonly bloodTypeOptions = Object.values(BloodTypeEnum);
 
   readonly PlayerStatusEnum = PlayerStatusEnum;
   readonly statusOptions = computed(() =>

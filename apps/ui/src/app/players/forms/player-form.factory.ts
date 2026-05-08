@@ -1,5 +1,6 @@
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import {
+  BloodTypeEnum,
   CategoryEnum,
   ClothingSizesEnum,
   HockeyBranchEnum,
@@ -68,6 +69,7 @@ export function buildCreatePlayerForm(fb: FormBuilder) {
       weight: fb.control<number | null>(null),
       torgIndex: fb.control<number | null>(null),
       healthInsurance: fb.nonNullable.control(''),
+      bloodType: fb.control<BloodTypeEnum | null>(null),
     }),
 
     status: fb.nonNullable.control<PlayerStatusEnum>(PlayerStatusEnum.ACTIVE),

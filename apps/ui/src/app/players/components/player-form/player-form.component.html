@@ -360,6 +360,16 @@
       }
 
       <mat-form-field appearance="outline">
+        <mat-label>Grupo sanguíneo</mat-label>
+        <mat-select formControlName="bloodType">
+          <mat-option [value]="null">—</mat-option>
+          @for (opt of bloodTypeOptions; track opt) {
+          <mat-option [value]="opt">{{ opt }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
         <mat-label>Obra social</mat-label>
         <input
           matInput

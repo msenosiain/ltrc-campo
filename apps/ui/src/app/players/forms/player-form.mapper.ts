@@ -1,4 +1,5 @@
 import {
+  BloodTypeEnum,
   Player,
   DATE_FORMAT,
   PlayerAvailabilityEnum,
@@ -79,6 +80,7 @@ export function mapPlayerToForm(player: Player): PlayerFormValue {
       weight: player.medicalData?.weight ?? null,
       torgIndex: player.medicalData?.torgIndex ?? null,
       healthInsurance: player.medicalData?.healthInsurance ?? '',
+      bloodType: (player.medicalData?.bloodType as BloodTypeEnum) ?? null,
     },
 
     parentContacts: (player.parentContacts ?? []).map((pc) => ({
@@ -112,6 +114,7 @@ function mapMedicalData(value: PlayerFormValue) {
     weight: value.medicalData.weight ?? undefined,
     torgIndex: value.medicalData.torgIndex ?? undefined,
     healthInsurance: value.medicalData.healthInsurance || undefined,
+    bloodType: value.medicalData.bloodType ?? undefined,
   };
   return Object.values(m).some((v) => v !== undefined) ? m : undefined;
 }

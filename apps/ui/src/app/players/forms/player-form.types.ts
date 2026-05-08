@@ -1,4 +1,5 @@
 import {
+  BloodTypeEnum,
   CategoryEnum,
   ClothingSizesEnum,
   HockeyBranchEnum,
@@ -47,6 +48,7 @@ export type PlayerFormValue = {
     weight: number | null;
     torgIndex: number | null;
     healthInsurance: string;
+    bloodType: BloodTypeEnum | null;
   };
 
   status: PlayerStatusEnum;
