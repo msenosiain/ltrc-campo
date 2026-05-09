@@ -501,16 +501,27 @@ export class PaymentsService {
   }
 
   async syncAllPending(): Promise<{ synced: number; updated: number }> {
+    const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const cancelled = await this.paymentModel.updateMany(
+      {
+        method: PaymentMethodEnum.MERCADOPAGO,
+        status: PaymentStatusEnum.PENDING,
+        mpPaymentId: { $exists: false },
+        createdAt: { $lt: cutoff },
+      },
+      { status: PaymentStatusEnum.CANCELLED },
+    );
+
     const pending = await this.paymentModel.find({
       method: PaymentMethodEnum.MERCADOPAGO,
       status: PaymentStatusEnum.PENDING,
     });
-    let updated = 0;
+    let updated = cancelled.modifiedCount;
     for (const payment of pending) {
       const result = await this.syncWithMp(payment);
       if (result.updated) updated++;
     }
-    return { synced: pending.length, updated };
+    return { synced: pending.length + cancelled.modifiedCount, updated };
   }
 
   private async syncWithMp(payment: PaymentEntity): Promise<{ status: string; updated: boolean }> {
