@@ -308,12 +308,12 @@
             </mat-select>
           </mat-form-field>
 
-          @if (trip.categories?.length) {
+          @if (availableCategoryFilters.length) {
             <mat-form-field appearance="outline" class="pfilter-select">
               <mat-label>Categoría</mat-label>
               <mat-select [(value)]="participantCategoryFilter" (selectionChange)="onParticipantFilterChange()">
                 <mat-option [value]="null">Todas</mat-option>
-                @for (cat of trip.categories; track cat) {
+                @for (cat of availableCategoryFilters; track cat) {
                   <mat-option [value]="cat">{{ getCategoryLabel(cat) }}</mat-option>
                 }
               </mat-select>
@@ -374,11 +374,13 @@
               />
             </th>
             <td mat-cell *matCellDef="let p">
-              <mat-checkbox
-                *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]"
-                [checked]="isSelected(p)"
-                (change)="toggleSelection(p)"
-              />
+              @if (isParticipantInScope(p)) {
+                <mat-checkbox
+                  *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]"
+                  [checked]="isSelected(p)"
+                  (change)="toggleSelection(p)"
+                />
+              }
             </td>
           </ng-container>
 
@@ -414,6 +416,7 @@
             <td mat-cell *matCellDef="let p">
               <mat-select
                 [value]="p.status"
+                [disabled]="!isParticipantInScope(p)"
                 (selectionChange)="updateParticipantStatus(p, $event.value)"
                 class="status-select status-select--{{ p.status }}"
               >
@@ -463,15 +466,17 @@
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let p">
               <div class="row-actions">
-                <button
-                  *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR]"
-                  mat-icon-button
-                  color="warn"
-                  (click)="removeParticipant(p)"
-                  matTooltip="Quitar del viaje"
-                >
-                  <mat-icon>person_remove</mat-icon>
-                </button>
+                @if (isParticipantInScope(p)) {
+                  <button
+                    *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR]"
+                    mat-icon-button
+                    color="warn"
+                    (click)="removeParticipant(p)"
+                    matTooltip="Quitar del viaje"
+                  >
+                    <mat-icon>person_remove</mat-icon>
+                  </button>
+                }
               </div>
             </td>
           </ng-container>

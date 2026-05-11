@@ -125,6 +125,31 @@ export class TripViewerComponent implements OnInit {
     if (viewAs) return allowed.includes(viewAs as RoleEnum);
     return (this.currentUser()?.roles ?? []).some((r) => allowed.includes(r));
   });
+
+  readonly hasFullAccess = computed(() => {
+    const roles = this.currentUser()?.roles ?? [];
+    return roles.includes(RoleEnum.ADMIN) || roles.includes(RoleEnum.COORDINATOR);
+  });
+
+  private readonly scopedCategories = computed((): Set<string> | null => {
+    if (this.hasFullAccess()) return null;
+    const cats = this.currentUser()?.categories ?? [];
+    return cats.length ? new Set(cats) : null;
+  });
+
+  isParticipantInScope(p: TripParticipant): boolean {
+    const scope = this.scopedCategories();
+    if (!scope) return true;
+    if (p.type !== TripParticipantTypeEnum.PLAYER) return true;
+    const cat = (p.player as any)?.category;
+    return !cat || scope.has(cat);
+  }
+
+  get availableCategoryFilters(): CategoryEnum[] {
+    const scope = this.scopedCategories();
+    const cats = this.trip?.categories ?? [];
+    return scope ? cats.filter((c) => scope.has(c)) : cats;
+  }
   readonly PaymentEntityTypeEnum = PaymentEntityTypeEnum;
   readonly TripParticipantTypeEnum = TripParticipantTypeEnum;
 
@@ -168,6 +193,7 @@ export class TripViewerComponent implements OnInit {
     const term = this.participantSearch.toLowerCase().trim();
     return (this.trip?.participants ?? [])
       .filter((p) => {
+        if (!this.isParticipantInScope(p)) return false;
         if (term &&
           !this.getParticipantName(p).toLowerCase().includes(term) &&
           !(this.getParticipantDni(p) ?? '').includes(term)) return false;
@@ -668,12 +694,20 @@ export class TripViewerComponent implements OnInit {
 
   openAddAllPlayersDialog(): void {
     if (!this.trip?.categories?.length) return;
+    const scope = this.scopedCategories();
+    const categories = scope
+      ? this.trip.categories.filter((c) => scope.has(c))
+      : this.trip.categories;
+    if (!categories.length) {
+      this.snackBar.open('No tenés categorías asignadas en este viaje', 'Cerrar', { duration: 3000 });
+      return;
+    }
     const ref = this.dialog.open<AddAllPlayersDialogComponent, AddAllPlayersDialogData, AddAllPlayersDialogResult>(
       AddAllPlayersDialogComponent,
-      { data: { categories: this.trip.categories } }
+      { data: { categories } }
     );
-    ref.afterClosed().subscribe((categories) => {
-      if (categories?.length) this.addAllPlayersFromCategories(categories);
+    ref.afterClosed().subscribe((cats) => {
+      if (cats?.length) this.addAllPlayersFromCategories(cats);
     });
   }
 

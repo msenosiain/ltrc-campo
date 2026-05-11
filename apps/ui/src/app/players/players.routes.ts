@@ -4,6 +4,7 @@ import { PlayerViewerComponent } from './components/player-viewer/player-viewer.
 import { PlayerEditorComponent } from './components/player-editor/player-editor.component';
 import { MyProfileEditorComponent } from './components/my-profile-editor/my-profile-editor.component';
 import { hasRoleGuard } from '../auth/guards/has-role.guard';
+import { canEditPlayerGuard } from '../auth/guards/can-edit-player.guard';
 import { RoleEnum } from '@ltrc-campo/shared-api-model';
 
 export const PLAYERS_ROUTES: Routes = [
@@ -21,7 +22,7 @@ export const PLAYERS_ROUTES: Routes = [
     path: 'create',
     component: PlayerEditorComponent,
     canActivate: [hasRoleGuard],
-    data: { title: 'Crear jugador', allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN, RoleEnum.COACH] },
+    data: { title: 'Crear jugador', allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN, RoleEnum.COACH, RoleEnum.COORDINATOR] },
   },
   {
     path: ':id',
@@ -31,7 +32,7 @@ export const PLAYERS_ROUTES: Routes = [
   {
     path: ':id/edit',
     component: PlayerEditorComponent,
-    canActivate: [hasRoleGuard],
-    data: { title: 'Editar jugador', allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN, RoleEnum.COACH] },
+    canActivate: [canEditPlayerGuard],
+    data: { title: 'Editar jugador' },
   },
 ];

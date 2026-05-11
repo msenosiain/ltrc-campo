@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -100,6 +101,20 @@ export class PlayersService {
   async update(id: string, dto: UpdatePlayerDto, photo?: MulterFile, caller?: User) {
     const player = await this.playerModel.findById(id);
     if (!player) throw new NotFoundException('Player not found');
+
+    if (caller) {
+      const callerRoles: string[] = (caller as any).roles ?? [];
+      const isAdmin = callerRoles.includes(RoleEnum.ADMIN);
+      if (!isAdmin) {
+        const callerSports: string[] = (caller as any).sports ?? [];
+        const callerCategories: string[] = (caller as any).categories ?? [];
+        const sportOk = !callerSports.length || (player.sport && callerSports.includes(player.sport));
+        const categoryOk = !callerCategories.length || (player.category && callerCategories.includes(player.category));
+        if (!sportOk || !categoryOk) {
+          throw new ForbiddenException('No tenés permisos para editar jugadores de esta categoría');
+        }
+      }
+    }
 
     if (photo) {
       if (player.photoId) {
