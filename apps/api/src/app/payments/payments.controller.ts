@@ -174,6 +174,11 @@ export class PaymentsController {
     return this.paymentsService.searchPlayers(q, tripId);
   }
 
+  @Get('internal/trips/:tripId/participants')
+  getTripParticipantsForPayment(@Param('tripId') tripId: string) {
+    return this.paymentsService.getTripParticipantsForPayment(tripId);
+  }
+
   @Get()
   getPayments(
     @Query('entityType') entityType: PaymentEntityTypeEnum,

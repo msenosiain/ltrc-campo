@@ -32,12 +32,26 @@ export interface CreatePaymentLinkPayload {
 export interface RecordManualPaymentPayload {
   entityType: PaymentEntityTypeEnum;
   entityId: string;
-  playerId: string;
+  playerId?: string;
+  userId?: string;
+  payerName?: string;
+  payerDni?: string;
   amount: number;
   method: string;
   concept: string;
   date: string;
   notes?: string;
+}
+
+export interface TripParticipantForPayment {
+  participantType: string;
+  playerId?: string;
+  userId?: string;
+  payerName: string;
+  payerDni?: string;
+  costAssigned: number;
+  totalPaid: number;
+  remaining: number;
 }
 
 export interface ValidateResult {
@@ -297,6 +311,12 @@ export class PaymentsService {
 
   findPlayerByDni(dni: string) {
     return this.http.get<ValidateResult>(`${this.apiUrl}/internal/players/by-dni/${dni}`);
+  }
+
+  getTripParticipantsForPayment(tripId: string) {
+    return this.http.get<TripParticipantForPayment[]>(
+      `${this.apiUrl}/internal/trips/${tripId}/participants`
+    );
   }
 
   searchPlayers(q: string, tripId?: string) {

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -9,10 +9,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { PaymentsService } from '../../services/payments.service';
-import { PaymentEntityTypeEnum, PaymentMethodEnum } from '@ltrc-campo/shared-api-model';
+import { PaymentsService, TripParticipantForPayment } from '../../services/payments.service';
+import { PaymentEntityTypeEnum, PaymentMethodEnum, TripParticipantTypeEnum } from '@ltrc-campo/shared-api-model';
 import { format } from 'date-fns';
-import { debounceTime, distinctUntilChanged, Subject, switchMap, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, Observable, of, Subject, switchMap } from 'rxjs';
 
 interface DialogData {
   entityType: PaymentEntityTypeEnum;
@@ -37,7 +37,7 @@ interface DialogData {
   templateUrl: './record-manual-payment-dialog.component.html',
   styleUrl: './record-manual-payment-dialog.component.scss',
 })
-export class RecordManualPaymentDialogComponent {
+export class RecordManualPaymentDialogComponent implements OnInit {
   private readonly dialogRef = inject(MatDialogRef<RecordManualPaymentDialogComponent>);
   private readonly data = inject<DialogData>(MAT_DIALOG_DATA);
   private readonly paymentsService = inject(PaymentsService);
@@ -45,74 +45,134 @@ export class RecordManualPaymentDialogComponent {
   saving = false;
   saveError: string | null = null;
 
+  readonly isTrip = this.data.entityType === PaymentEntityTypeEnum.TRIP;
+
   readonly methods = [
     { value: PaymentMethodEnum.CASH, label: 'Efectivo' },
     { value: PaymentMethodEnum.TRANSFER, label: 'Transferencia' },
   ];
 
-  readonly searchInput = new FormControl('');
-  searchResults: { playerId: string; playerName: string; idNumber: string }[] = [];
+  // Trip: lista de pasajeros con saldo pendiente
+  tripParticipants: TripParticipantForPayment[] = [];
+  filteredParticipants: TripParticipantForPayment[] = [];
 
+  // No-trip: búsqueda libre de jugadores
   private readonly search$ = new Subject<string>();
-  private readonly tripId = this.data.entityType === PaymentEntityTypeEnum.TRIP
-    ? this.data.entityId
-    : undefined;
+  readonly playerSearchResults$: Observable<{ playerId: string; playerName: string; idNumber: string }[]> =
+    this.search$.pipe(
+      debounceTime(250),
+      distinctUntilChanged(),
+      switchMap((q) => q.trim().length >= 2 ? this.paymentsService.searchPlayers(q) : of([]))
+    );
 
-  readonly searchResults$ = this.search$.pipe(
-    debounceTime(250),
-    distinctUntilChanged(),
-    switchMap((q) => q.trim().length >= 2
-      ? this.paymentsService.searchPlayers(q, this.tripId)
-      : of([]))
-  );
+  readonly searchInput = new FormControl('');
 
   form = new FormGroup({
-    playerId: new FormControl(''),
-    playerName: new FormControl(''),
-    concept: new FormControl(
-      this.data.entityType === PaymentEntityTypeEnum.TRIP ? '' : 'Tercer tiempo',
-      [Validators.required]
-    ),
-    amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
-    method: new FormControl(PaymentMethodEnum.CASH, [Validators.required]),
-    date: new FormControl<Date | null>(new Date(), [Validators.required]),
-    notes: new FormControl(''),
+    // identificadores — solo uno se usa según el tipo de participante
+    playerId:        new FormControl(''),
+    userId:          new FormControl(''),
+    extPayerName:    new FormControl(''),
+    extPayerDni:     new FormControl(''),
+    displayName:     new FormControl(''), // solo para mostrar en pantalla
+    concept: new FormControl(this.isTrip ? '' : 'Tercer tiempo', [Validators.required]),
+    amount:  new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
+    method:  new FormControl(PaymentMethodEnum.CASH, [Validators.required]),
+    date:    new FormControl<Date | null>(new Date(), [Validators.required]),
+    notes:   new FormControl(''),
   });
 
-  onSearchInput(value: string) {
-    this.form.patchValue({ playerId: '', playerName: '' });
+  ngOnInit() {
+    if (this.isTrip) {
+      this.paymentsService.getTripParticipantsForPayment(this.data.entityId).subscribe({
+        next: (list) => {
+          this.tripParticipants = list;
+          this.filteredParticipants = list;
+        },
+      });
+    }
+  }
+
+  // ── Trip: filtrar lista de pasajeros ───────────────────────────────────────
+
+  onTripSearchInput(value: string) {
+    this.clearSelection();
+    const q = value.toLowerCase().trim();
+    this.filteredParticipants = q
+      ? this.tripParticipants.filter(
+          (p) => p.payerName.toLowerCase().includes(q) || (p.payerDni ?? '').startsWith(q)
+        )
+      : this.tripParticipants;
+  }
+
+  selectParticipant(p: TripParticipantForPayment) {
+    this.searchInput.setValue(p.payerName, { emitEvent: false });
+    this.form.patchValue({
+      playerId:     p.playerId  ?? '',
+      userId:       p.userId    ?? '',
+      extPayerName: (!p.playerId && !p.userId) ? p.payerName : '',
+      extPayerDni:  (!p.playerId && !p.userId) ? (p.payerDni ?? '') : '',
+      displayName:  p.payerName,
+    });
+    this.saveError = null;
+  }
+
+  participantTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      [TripParticipantTypeEnum.PLAYER]:   'Jugador',
+      [TripParticipantTypeEnum.STAFF]:    'Staff',
+      [TripParticipantTypeEnum.EXTERNAL]: 'Externo',
+    };
+    return labels[type] ?? type;
+  }
+
+  // ── No-trip: búsqueda libre ────────────────────────────────────────────────
+
+  onPlayerSearchInput(value: string) {
+    this.clearSelection();
     this.search$.next(value);
   }
 
-  selectPlayer(player: { playerId: string; playerName: string; idNumber: string }) {
-    this.searchInput.setValue(`${player.playerName} (${player.idNumber})`, { emitEvent: false });
-    this.form.patchValue({ playerId: player.playerId, playerName: player.playerName });
+  selectPlayer(p: { playerId: string; playerName: string; idNumber: string }) {
+    this.searchInput.setValue(`${p.playerName} (${p.idNumber})`, { emitEvent: false });
+    this.form.patchValue({ playerId: p.playerId, displayName: p.playerName });
     this.saveError = null;
   }
 
-  displayFn(value: string): string {
-    return value;
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  private clearSelection() {
+    this.form.patchValue({ playerId: '', userId: '', extPayerName: '', extPayerDni: '', displayName: '' });
   }
+
+  get isParticipantSelected(): boolean {
+    const v = this.form.value;
+    return !!(v.playerId || v.userId || v.extPayerName);
+  }
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
 
   submit() {
-    if (this.form.invalid || !this.form.get('playerId')!.value) return;
+    if (this.form.invalid || !this.isParticipantSelected) return;
     this.saving = true;
     this.saveError = null;
-    const value = this.form.value;
+    const v = this.form.value;
 
     this.paymentsService
       .recordManual({
         entityType: this.data.entityType,
-        entityId: this.data.entityId,
-        playerId: value.playerId!,
-        amount: value.amount!,
-        method: value.method!,
-        concept: value.concept!,
-        date: format(value.date!, 'yyyy-MM-dd'),
-        notes: value.notes || undefined,
+        entityId:   this.data.entityId,
+        playerId:   v.playerId  || undefined,
+        userId:     v.userId    || undefined,
+        payerName:  v.extPayerName || undefined,
+        payerDni:   v.extPayerDni  || undefined,
+        amount:     v.amount!,
+        method:     v.method!,
+        concept:    v.concept!,
+        date:       format(v.date!, 'yyyy-MM-dd'),
+        notes:      v.notes || undefined,
       })
       .subscribe({
-        next: (payment) => this.dialogRef.close(payment),
+        next:  (payment) => this.dialogRef.close(payment),
         error: (err) => {
           this.saving = false;
           this.saveError = err?.error?.message ?? 'Error al registrar el pago';

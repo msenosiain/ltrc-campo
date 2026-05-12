@@ -19,8 +19,21 @@ export class RecordManualPaymentDto {
   @IsString()
   readonly entityId!: string;
 
+  @IsOptional()
   @IsString()
-  readonly playerId!: string;
+  readonly playerId?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly userId?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly payerName?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly payerDni?: string;
 
   @Type(() => Number)
   @IsNumber()

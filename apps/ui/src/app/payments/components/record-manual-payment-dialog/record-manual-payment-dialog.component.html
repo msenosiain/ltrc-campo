@@ -3,24 +3,49 @@
 <mat-dialog-content>
   <form [formGroup]="form" class="dialog-form">
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Buscar jugador por apellido o DNI</mat-label>
-      <input matInput
-             [formControl]="searchInput"
-             [matAutocomplete]="autoPlayer"
-             (input)="onSearchInput(searchInput.value!)" />
-      <mat-autocomplete #autoPlayer="matAutocomplete">
-        @for (p of (searchResults$ | async) ?? []; track p.playerId) {
-          <mat-option [value]="p.playerName" (click)="selectPlayer(p)">
-            <span class="option-name">{{ p.playerName }}</span>
-            <span class="option-dni">{{ p.idNumber }}</span>
-          </mat-option>
-        }
-      </mat-autocomplete>
-    </mat-form-field>
+    <!-- Pasajeros del viaje -->
+    @if (isTrip) {
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Buscar pasajero</mat-label>
+        <input matInput [formControl]="searchInput" [matAutocomplete]="tripAuto"
+               (input)="onTripSearchInput(searchInput.value!)" />
+        <mat-autocomplete #tripAuto="matAutocomplete">
+          @for (p of filteredParticipants; track (p.playerId ?? p.userId ?? p.payerDni)) {
+            <mat-option [value]="p.payerName" (click)="selectParticipant(p)">
+              <span class="option-name">{{ p.payerName }}</span>
+              <span class="option-meta">
+                {{ participantTypeLabel(p.participantType) }}
+                @if (p.payerDni) { · {{ p.payerDni }} }
+                · Saldo: ${{ p.remaining | number:'1.0-0' }}
+              </span>
+            </mat-option>
+          }
+          @if (filteredParticipants.length === 0) {
+            <mat-option disabled>Sin resultados</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+    }
 
-    @if (form.get('playerName')!.value) {
-      <p class="player-found">Jugador: <strong>{{ form.get('playerName')!.value }}</strong></p>
+    <!-- Búsqueda libre de jugadores (no-trip) -->
+    @if (!isTrip) {
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Buscar jugador por apellido o DNI</mat-label>
+        <input matInput [formControl]="searchInput" [matAutocomplete]="playerAuto"
+               (input)="onPlayerSearchInput(searchInput.value!)" />
+        <mat-autocomplete #playerAuto="matAutocomplete">
+          @for (p of (playerSearchResults$ | async) ?? []; track p.playerId) {
+            <mat-option [value]="p.playerName" (click)="selectPlayer(p)">
+              <span class="option-name">{{ p.playerName }}</span>
+              <span class="option-meta">{{ p.idNumber }}</span>
+            </mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+    }
+
+    @if (form.get('displayName')!.value) {
+      <p class="player-found">Pasajero: <strong>{{ form.get('displayName')!.value }}</strong></p>
     }
 
     <mat-form-field appearance="outline" class="full-width">
@@ -72,7 +97,7 @@
   <button
     mat-raised-button
     color="primary"
-    [disabled]="form.invalid || !form.get('playerId')!.value || saving"
+    [disabled]="form.invalid || !isParticipantSelected || saving"
     (click)="submit()"
   >
     @if (saving) {

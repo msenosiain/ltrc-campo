@@ -515,25 +515,59 @@ export class PaymentsService {
   // ── Pagos manuales ────────────────────────────────────────────────────────
 
   async recordManualPayment(dto: RecordManualPaymentDto, caller: User) {
-    const player = await this.playerModel.findById(dto.playerId).select('id name idNumber').lean();
-    if (!player) throw new NotFoundException('Jugador no encontrado');
+    if (!dto.playerId && !dto.userId && !dto.payerName) {
+      throw new BadRequestException('Se requiere playerId, userId o payerName');
+    }
+
+    let payerName: string;
+    let payerDni: string | undefined;
+    const payerId: { playerId?: Types.ObjectId; userId?: Types.ObjectId } = {};
+
+    if (dto.playerId) {
+      const player = await this.playerModel.findById(dto.playerId).select('name idNumber').lean();
+      if (!player) throw new NotFoundException('Jugador no encontrado');
+      payerName = (player as any).name;
+      payerDni = (player as any).idNumber;
+      payerId.playerId = new Types.ObjectId(dto.playerId);
+    } else if (dto.userId) {
+      const user = await this.userModel.findById(dto.userId).select('name idNumber').lean();
+      if (!user) throw new NotFoundException('Usuario no encontrado');
+      payerName = (user as any).name;
+      payerDni = (user as any).idNumber;
+      payerId.userId = new Types.ObjectId(dto.userId);
+    } else {
+      payerName = dto.payerName!;
+      payerDni = dto.payerDni;
+    }
 
     if (dto.entityType === PaymentEntityTypeEnum.TRIP) {
       const trip = await this.tripModel.findById(dto.entityId).select('participants').lean();
-      const participant = (trip?.participants ?? []).find(
-        (p: any) => p.type === TripParticipantTypeEnum.PLAYER &&
-                    p.player?.toString() === dto.playerId
-      ) as any;
+      let participant: any;
+      if (payerId.playerId) {
+        participant = (trip?.participants ?? []).find(
+          (p: any) => p.type === TripParticipantTypeEnum.PLAYER && p.player?.toString() === dto.playerId
+        );
+      } else if (payerId.userId) {
+        participant = (trip?.participants ?? []).find(
+          (p: any) => p.type === TripParticipantTypeEnum.STAFF && p.user?.toString() === dto.userId
+        );
+      } else {
+        participant = (trip?.participants ?? []).find(
+          (p: any) => p.type === TripParticipantTypeEnum.EXTERNAL && p.externalDni === dto.payerDni
+        );
+      }
+
       if (participant && participant.costAssigned > 0) {
-        const approved = await this.paymentModel
-          .find({
-            entityType: PaymentEntityTypeEnum.TRIP,
-            entityId: new Types.ObjectId(dto.entityId),
-            status: PaymentStatusEnum.APPROVED,
-            playerId: new Types.ObjectId(dto.playerId),
-          })
-          .select('amount')
-          .lean();
+        const approvedQuery: Record<string, unknown> = {
+          entityType: PaymentEntityTypeEnum.TRIP,
+          entityId: new Types.ObjectId(dto.entityId),
+          status: PaymentStatusEnum.APPROVED,
+          ...payerId,
+        };
+        if (!payerId.playerId && !payerId.userId && payerDni) {
+          approvedQuery['payerDni'] = payerDni;
+        }
+        const approved = await this.paymentModel.find(approvedQuery).select('amount').lean();
         const totalPaid = approved.reduce((sum, p) => sum + p.amount, 0);
         const remaining = participant.costAssigned - totalPaid;
         if (dto.amount > remaining) {
@@ -549,9 +583,9 @@ export class PaymentsService {
     const payment = await this.paymentModel.create({
       entityType: dto.entityType,
       entityId: new Types.ObjectId(dto.entityId),
-      playerId: new Types.ObjectId(dto.playerId),
-      payerName: (player as any).name,
-      payerDni: (player as any).idNumber,
+      ...payerId,
+      payerName,
+      payerDni,
       amount: dto.amount,
       method: dto.method,
       status: PaymentStatusEnum.APPROVED,
@@ -582,6 +616,56 @@ export class PaymentsService {
       .lean();
     if (!player) throw new NotFoundException('No se encontró un jugador con ese DNI');
     return { playerId: player._id.toString(), playerName: player.name };
+  }
+
+  async getTripParticipantsForPayment(tripId: string) {
+    const trip = await this.tripModel.findById(tripId)
+      .populate('participants.player', 'name idNumber')
+      .lean();
+    if (!trip) return [];
+
+    const staffUserIds = (trip.participants as any[])
+      .filter((p) => p.type === TripParticipantTypeEnum.STAFF && p.user)
+      .map((p) => p.user);
+    const staffUsers = staffUserIds.length
+      ? await this.userModel.find({ _id: { $in: staffUserIds } }).select('name idNumber').lean()
+      : [];
+    const staffMap = new Map(staffUsers.map((u) => [(u as any)._id.toString(), u]));
+
+    return (trip.participants as any[]).map((p) => {
+      let payerName = '';
+      let payerDni: string | undefined;
+      let playerId: string | undefined;
+      let userId: string | undefined;
+
+      if (p.type === TripParticipantTypeEnum.PLAYER) {
+        payerName = p.player?.name ?? '-';
+        payerDni = p.player?.idNumber;
+        playerId = p.player?._id?.toString();
+      } else if (p.type === TripParticipantTypeEnum.STAFF) {
+        const user = staffMap.get(p.user?.toString()) as any;
+        payerName = user?.name ?? p.userName ?? '-';
+        payerDni = user?.idNumber;
+        userId = p.user?.toString();
+      } else if (p.type === TripParticipantTypeEnum.EXTERNAL) {
+        payerName = p.externalName ?? '-';
+        payerDni = p.externalDni;
+      }
+
+      const totalPaid = (p.payments ?? []).reduce((sum: number, pay: any) => sum + pay.amount, 0);
+      const remaining = p.costAssigned - totalPaid;
+
+      return {
+        participantType: p.type as string,
+        playerId,
+        userId,
+        payerName,
+        payerDni,
+        costAssigned: p.costAssigned as number,
+        totalPaid,
+        remaining,
+      };
+    }).filter((p) => p.remaining > 0 && p.payerName !== '-');
   }
 
   async searchPlayers(q: string, tripId?: string) {
@@ -714,9 +798,20 @@ export class PaymentsService {
     const trip = await this.tripModel.findById(payment.entityId);
     if (!trip) return;
 
-    const participant: any = trip.participants.find(
-      (p) => p.type === TripParticipantTypeEnum.PLAYER && p.player?.toString() === payment.playerId!.toString(),
-    );
+    let participant: any;
+    if (payment.playerId) {
+      participant = trip.participants.find(
+        (p) => p.type === TripParticipantTypeEnum.PLAYER && p.player?.toString() === payment.playerId!.toString(),
+      );
+    } else if (payment.userId) {
+      participant = trip.participants.find(
+        (p) => p.type === TripParticipantTypeEnum.STAFF && (p as any).user?.toString() === payment.userId!.toString(),
+      );
+    } else if (payment.payerDni) {
+      participant = trip.participants.find(
+        (p) => p.type === TripParticipantTypeEnum.EXTERNAL && (p as any).externalDni === payment.payerDni,
+      );
+    }
     if (!participant) return;
 
     const alreadySynced = participant.payments.some(
@@ -744,9 +839,20 @@ export class PaymentsService {
     const trip = await this.tripModel.findById(payment.entityId);
     if (!trip) return;
 
-    const participant: any = trip.participants.find(
-      (p) => p.type === TripParticipantTypeEnum.PLAYER && p.player?.toString() === payment.playerId!.toString(),
-    );
+    let participant: any;
+    if (payment.playerId) {
+      participant = trip.participants.find(
+        (p) => p.type === TripParticipantTypeEnum.PLAYER && p.player?.toString() === payment.playerId!.toString(),
+      );
+    } else if (payment.userId) {
+      participant = trip.participants.find(
+        (p) => p.type === TripParticipantTypeEnum.STAFF && (p as any).user?.toString() === payment.userId!.toString(),
+      );
+    } else if (payment.payerDni) {
+      participant = trip.participants.find(
+        (p) => p.type === TripParticipantTypeEnum.EXTERNAL && (p as any).externalDni === payment.payerDni,
+      );
+    }
     if (!participant) return;
 
     const entry: any = participant.payments.find(
