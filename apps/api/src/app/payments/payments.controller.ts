@@ -170,8 +170,8 @@ export class PaymentsController {
   }
 
   @Get('internal/players/search')
-  searchPlayers(@Query('q') q: string) {
-    return this.paymentsService.searchPlayers(q);
+  searchPlayers(@Query('q') q: string, @Query('tripId') tripId?: string) {
+    return this.paymentsService.searchPlayers(q, tripId);
   }
 
   @Get()

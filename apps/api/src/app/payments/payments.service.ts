@@ -584,16 +584,24 @@ export class PaymentsService {
     return { playerId: player._id.toString(), playerName: player.name };
   }
 
-  async searchPlayers(q: string) {
+  async searchPlayers(q: string, tripId?: string) {
     if (!q || q.trim().length < 2) return [];
     const escaped = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const query: Record<string, unknown> = {
+      $or: [
+        { name: { $regex: escaped, $options: 'i' } },
+        { idNumber: { $regex: `^${escaped}` } },
+      ],
+    };
+    if (tripId) {
+      const trip = await this.tripModel.findById(tripId).select('participants').lean();
+      const playerIds = (trip?.participants ?? [])
+        .filter((p: any) => p.type === TripParticipantTypeEnum.PLAYER && p.player)
+        .map((p: any) => p.player);
+      query['_id'] = { $in: playerIds };
+    }
     const players = await this.playerModel
-      .find({
-        $or: [
-          { name: { $regex: escaped, $options: 'i' } },
-          { idNumber: { $regex: `^${escaped}` } },
-        ],
-      })
+      .find(query)
       .select('id name idNumber')
       .limit(10)
       .lean();

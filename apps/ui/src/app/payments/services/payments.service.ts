@@ -299,8 +299,9 @@ export class PaymentsService {
     return this.http.get<ValidateResult>(`${this.apiUrl}/internal/players/by-dni/${dni}`);
   }
 
-  searchPlayers(q: string) {
-    const params = new HttpParams().set('q', q);
+  searchPlayers(q: string, tripId?: string) {
+    let params = new HttpParams().set('q', q);
+    if (tripId) params = params.set('tripId', tripId);
     return this.http.get<{ playerId: string; playerName: string; idNumber: string }[]>(
       `${this.apiUrl}/internal/players/search`, { params }
     );

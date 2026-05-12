@@ -54,10 +54,16 @@ export class RecordManualPaymentDialogComponent {
   searchResults: { playerId: string; playerName: string; idNumber: string }[] = [];
 
   private readonly search$ = new Subject<string>();
+  private readonly tripId = this.data.entityType === PaymentEntityTypeEnum.TRIP
+    ? this.data.entityId
+    : undefined;
+
   readonly searchResults$ = this.search$.pipe(
     debounceTime(250),
     distinctUntilChanged(),
-    switchMap((q) => q.trim().length >= 2 ? this.paymentsService.searchPlayers(q) : of([]))
+    switchMap((q) => q.trim().length >= 2
+      ? this.paymentsService.searchPlayers(q, this.tripId)
+      : of([]))
   );
 
   form = new FormGroup({
