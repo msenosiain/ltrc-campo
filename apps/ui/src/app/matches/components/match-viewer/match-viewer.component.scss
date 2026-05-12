@@ -231,6 +231,19 @@
   flex-shrink: 0;
 }
 
+.gps-badge {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #1b2a4a;
+  background: #e8ecf5;
+  border: 1px solid #c5cfe8;
+  border-radius: 4px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+  cursor: default;
+}
+
 .group-divider {
   margin: 10px 0;
 }

@@ -118,7 +118,7 @@ export class SquadEditorComponent implements OnInit {
   selectedPlayer: Player | null = null;
   private readonly searchSubject = new Subject<string>();
 
-  readonly displayedColumns = ['shirtNumber', 'dorsalNumber', 'player', 'posterLabel', 'captain', 'actions'];
+  readonly displayedColumns = ['shirtNumber', 'dorsalNumber', 'gpsNumber', 'player', 'posterLabel', 'captain', 'actions'];
 
   readonly displayPlayerFn = (player: Player | null): string =>
     player ? player.name : '';
@@ -349,6 +349,18 @@ export class SquadEditorComponent implements OnInit {
     this.persistSquad();
   }
 
+  updateGpsNumber(entry: SquadEntry, event: Event): void {
+    const raw = (event.target as HTMLInputElement).value;
+    const num = parseInt(raw, 10);
+    const gpsNumber = isNaN(num) || raw === '' ? undefined : num;
+    if (gpsNumber !== undefined && gpsNumber < 1) return;
+    this.squadRows = this.squadRows.map((e) =>
+      e === entry ? { ...e, gpsNumber } : e
+    );
+    this.isDirty = true;
+    this.persistSquad();
+  }
+
   removePlayer(entry: SquadEntry): void {
     this.squadRows = this.squadRows.filter((e) => e !== entry);
     this.isDirty = true;
@@ -493,6 +505,7 @@ export class SquadEditorComponent implements OnInit {
     const squad = this.squadRows.map((e) => ({
       shirtNumber: e.shirtNumber,
       ...(e.dorsalNumber !== undefined && e.dorsalNumber !== e.shirtNumber && { dorsalNumber: e.dorsalNumber }),
+      ...(e.gpsNumber !== undefined && { gpsNumber: e.gpsNumber }),
       ...(e.isCaptain && { isCaptain: true }),
       ...(e.posterLabel && { posterLabel: e.posterLabel }),
       playerId: e.player.id!,

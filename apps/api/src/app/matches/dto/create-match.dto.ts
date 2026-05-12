@@ -55,6 +55,11 @@ export class SquadEntryDto {
   dorsalNumber?: number;
 
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  gpsNumber?: number;
+
+  @IsOptional()
   @IsBoolean()
   isCaptain?: boolean;
 
