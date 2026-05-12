@@ -543,7 +543,7 @@ export class PaymentsService {
   async getPaymentsForEntity(entityType: PaymentEntityTypeEnum, entityId: string) {
     return this.paymentModel
       .find({ entityType, entityId: new Types.ObjectId(entityId) })
-      .populate({ path: 'playerId', select: 'name idNumber' })
+      .populate({ path: 'playerId', select: 'name idNumber category' })
       .sort({ date: -1 });
   }
 

@@ -51,7 +51,10 @@ export class RecordManualPaymentDialogComponent {
     playerDni: new FormControl('', [Validators.required, Validators.minLength(6)]),
     playerId: new FormControl(''),
     playerName: new FormControl(''),
-    concept: new FormControl('Tercer tiempo', [Validators.required]),
+    concept: new FormControl(
+      this.data.entityType === PaymentEntityTypeEnum.TRIP ? '' : 'Tercer tiempo',
+      [Validators.required]
+    ),
     amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
     method: new FormControl(PaymentMethodEnum.CASH, [Validators.required]),
     date: new FormControl<Date | null>(new Date(), [Validators.required]),

@@ -56,6 +56,7 @@ export class PaymentLinksPanelComponent implements OnInit {
   @Input() entityType: PaymentEntityTypeEnum = PaymentEntityTypeEnum.MATCH;
   @Input() entityDate?: Date;
   @Input() entityLabel?: string;
+  @Input() categoryFilter: string[] | null = null;
 
   private readonly paymentsService = inject(PaymentsService);
   private readonly pdfService = inject(PaymentsReportPdfService);
@@ -163,8 +164,17 @@ export class PaymentLinksPanelComponent implements OnInit {
       .catch(() => this.snackBar.open('Error al generar el reporte', '', { duration: 3000 }));
   }
 
+  get visiblePayments(): IPayment[] {
+    if (!this.categoryFilter?.length) return this.payments;
+    const cats = new Set(this.categoryFilter);
+    return this.payments.filter((p) => {
+      const cat = (p.playerId as any)?.category;
+      return !cat || cats.has(cat);
+    });
+  }
+
   get totalApproved(): number {
-    return this.payments
+    return this.visiblePayments
       .filter((p) => p.status === PaymentStatusEnum.APPROVED)
       .reduce((s, p) => s + p.amount, 0);
   }

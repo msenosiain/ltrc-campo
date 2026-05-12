@@ -121,9 +121,15 @@ export class TripViewerComponent implements OnInit {
   private readonly currentUser = toSignal(this.authService.user$);
   readonly canViewCobros = computed(() => {
     const viewAs = this.viewAsService.viewAsRole();
-    const allowed = [RoleEnum.ADMIN, RoleEnum.COORDINATOR] as RoleEnum[];
+    const allowed = [RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER] as RoleEnum[];
     if (viewAs) return allowed.includes(viewAs as RoleEnum);
     return (this.currentUser()?.roles ?? []).some((r) => allowed.includes(r));
+  });
+
+  readonly cobrosFilter = computed((): string[] | null => {
+    if (this.hasFullAccess()) return null;
+    const cats = this.currentUser()?.categories ?? [];
+    return cats.length ? cats : null;
   });
 
   readonly hasFullAccess = computed(() => {

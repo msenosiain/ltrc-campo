@@ -102,10 +102,10 @@
 
   <h4 class="section-title">Pagos recibidos</h4>
 
-  @if (payments.length === 0) {
+  @if (visiblePayments.length === 0) {
     <p class="empty-state">Aún no hay pagos registrados.</p>
   } @else {
-    <table mat-table [dataSource]="payments" class="payments-table">
+    <table mat-table [dataSource]="visiblePayments" class="payments-table">
 
       <ng-container matColumnDef="player">
         <th mat-header-cell *matHeaderCellDef>Jugador</th>
