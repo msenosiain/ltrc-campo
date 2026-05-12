@@ -16,6 +16,10 @@ import { MatTabsModule } from '@angular/material/tabs';
          [active]="rlaFees.isActive">
         Derechos
       </a>
+      <a mat-tab-link routerLink="payment-links" routerLinkActive #rlaLinks="routerLinkActive"
+         [active]="rlaLinks.isActive">
+        Links de Pago
+      </a>
     </nav>
     <mat-tab-nav-panel #tabPanel>
       <router-outlet />

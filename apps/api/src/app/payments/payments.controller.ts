@@ -33,6 +33,27 @@ export class PaymentsController {
     return this.paymentsService.createLink(dto, (req as any).user);
   }
 
+  @Get('links/all')
+  getAllLinks(
+    @Query('status') status?: string,
+    @Query('entityType') entityType?: string,
+    @Query('concept') concept?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortDir') sortDir?: string,
+  ) {
+    return this.paymentsService.getAllLinks({
+      status, entityType, concept, dateFrom, dateTo,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      sortBy,
+      sortDir,
+    });
+  }
+
   @Get('links')
   getLinks(
     @Query('entityType') entityType: PaymentEntityTypeEnum,

@@ -121,6 +121,42 @@ export interface GlobalReportFilters {
   sortDir?: string;
 }
 
+export interface PaymentLinkReportRow {
+  id: string;
+  linkToken: string;
+  entityType: PaymentEntityTypeEnum;
+  entityLabel: string;
+  concept: string;
+  description?: string;
+  amount: number;
+  netAmount: number;
+  paymentType: string;
+  installmentNumber?: number;
+  installmentTotal?: number;
+  expiresAt: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface PaymentLinksReport {
+  data: PaymentLinkReportRow[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface PaymentLinksReportFilters {
+  status?: string;
+  entityType?: string;
+  concept?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortDir?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PaymentsService {
   private readonly http = inject(HttpClient);
@@ -208,6 +244,20 @@ export class PaymentsService {
     if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
     if (filters.sortDir) params = params.set('sortDir', filters.sortDir);
     return this.http.get<GlobalPaymentsReport>(`${this.apiUrl}/report/global`, { params });
+  }
+
+  getAllLinks(filters: PaymentLinksReportFilters) {
+    let params = new HttpParams();
+    if (filters.status) params = params.set('status', filters.status);
+    if (filters.entityType) params = params.set('entityType', filters.entityType);
+    if (filters.concept) params = params.set('concept', filters.concept);
+    if (filters.dateFrom) params = params.set('dateFrom', filters.dateFrom);
+    if (filters.dateTo) params = params.set('dateTo', filters.dateTo);
+    if (filters.page) params = params.set('page', String(filters.page));
+    if (filters.limit) params = params.set('limit', String(filters.limit));
+    if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
+    if (filters.sortDir) params = params.set('sortDir', filters.sortDir);
+    return this.http.get<PaymentLinksReport>(`${this.apiUrl}/links/all`, { params });
   }
 
   getEncounterReport(matchIds: string[]) {

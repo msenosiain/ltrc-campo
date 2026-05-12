@@ -79,6 +79,7 @@ const makeMockModel = () => ({
   distinct: jest.fn(),
   countDocuments: jest.fn(),
   aggregate: jest.fn(),
+  updateMany: jest.fn().mockResolvedValue({ modifiedCount: 0 }),
   sort: jest.fn(),
   lean: jest.fn(),
   populate: jest.fn(),

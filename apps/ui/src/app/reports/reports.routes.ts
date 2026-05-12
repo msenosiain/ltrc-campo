@@ -25,6 +25,13 @@ export const REPORTS_ROUTES: Routes = [
             (m) => m.PlayerFeesReportComponent
           ),
       },
+      {
+        path: 'payment-links',
+        loadComponent: () =>
+          import('./pages/payment-links-report/payment-links-report.component').then(
+            (m) => m.PaymentLinksReportComponent
+          ),
+      },
     ],
   },
 ];

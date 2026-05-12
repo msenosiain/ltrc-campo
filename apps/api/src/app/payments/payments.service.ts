@@ -161,6 +161,91 @@ export class PaymentsService {
     return link.save();
   }
 
+  async getAllLinks(filters: {
+    status?: string;
+    entityType?: string;
+    concept?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortDir?: string;
+  }) {
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.min(filters.limit ?? 50, 500);
+    const skip = (page - 1) * limit;
+
+    const query: Record<string, unknown> = {};
+    if (filters.status) {
+      const statuses = filters.status.split(',').filter(Boolean);
+      query['status'] = statuses.length === 1 ? statuses[0] : { $in: statuses };
+    }
+    if (filters.entityType) {
+      const types = filters.entityType.split(',').filter(Boolean);
+      query['entityType'] = types.length === 1 ? types[0] : { $in: types };
+    }
+    if (filters.concept) {
+      const concepts = filters.concept.split(',').filter(Boolean);
+      query['concept'] = concepts.length === 1 ? concepts[0] : { $in: concepts };
+    }
+    if (filters.dateFrom || filters.dateTo) {
+      const dateFilter: Record<string, Date> = {};
+      if (filters.dateFrom) dateFilter['$gte'] = new Date(filters.dateFrom);
+      if (filters.dateTo) {
+        const to = new Date(filters.dateTo);
+        to.setHours(23, 59, 59, 999);
+        dateFilter['$lte'] = to;
+      }
+      query['createdAt'] = dateFilter;
+    }
+
+    const SORTABLE: Record<string, string> = {
+      createdAt: 'createdAt',
+      expiresAt: 'expiresAt',
+      amount: 'amount',
+      status: 'status',
+      concept: 'concept',
+    };
+    const sortField = SORTABLE[filters.sortBy ?? ''] ?? 'createdAt';
+    const sortOrder = filters.sortDir === 'asc' ? 1 : -1;
+
+    const [total, links] = await Promise.all([
+      this.paymentLinkModel.countDocuments(query),
+      this.paymentLinkModel
+        .find(query)
+        .sort({ [sortField]: sortOrder, _id: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+    ]);
+
+    const data = await Promise.all(
+      links.map(async (link) => ({
+        id: (link._id as Types.ObjectId).toString(),
+        linkToken: link.linkToken,
+        entityType: link.entityType,
+        entityLabel: await this.resolveEntityLabel(
+          link.entityType,
+          link.entityId.toString(),
+          link.entityIds
+        ),
+        concept: link.concept,
+        description: link.description,
+        amount: link.amount,
+        netAmount: link.netAmount,
+        paymentType: link.paymentType,
+        installmentNumber: link.installmentNumber,
+        installmentTotal: link.installmentTotal,
+        expiresAt: link.expiresAt,
+        status: link.status,
+        createdAt: link.createdAt,
+      }))
+    );
+
+    return { data, total, page, limit };
+  }
+
   // ── Endpoints públicos ────────────────────────────────────────────────────
 
   async getPublicLinkInfo(token: string) {
@@ -498,6 +583,14 @@ export class PaymentsService {
     const payment = await this.paymentModel.findOne({ mpPaymentId });
     if (!payment) return;
     await this.syncWithMp(payment);
+  }
+
+  async syncExpiredLinks(): Promise<number> {
+    const result = await this.paymentLinkModel.updateMany(
+      { status: PaymentLinkStatusEnum.ACTIVE, expiresAt: { $lt: new Date() } },
+      { status: PaymentLinkStatusEnum.EXPIRED },
+    );
+    return result.modifiedCount;
   }
 
   async syncAllPending(): Promise<{ synced: number; updated: number }> {

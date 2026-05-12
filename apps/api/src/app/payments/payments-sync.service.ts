@@ -18,4 +18,15 @@ export class PaymentsSyncService {
       this.logger.error('Error al sincronizar pagos pendientes', err);
     }
   }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async syncExpiredLinks() {
+    this.logger.log('Marcando links de pago vencidos...');
+    try {
+      const count = await this.paymentsService.syncExpiredLinks();
+      if (count > 0) this.logger.log(`${count} link(s) marcados como vencidos`);
+    } catch (err) {
+      this.logger.error('Error al sincronizar links vencidos', err);
+    }
+  }
 }
