@@ -584,6 +584,26 @@ export class PaymentsService {
     return { playerId: player._id.toString(), playerName: player.name };
   }
 
+  async searchPlayers(q: string) {
+    if (!q || q.trim().length < 2) return [];
+    const escaped = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const players = await this.playerModel
+      .find({
+        $or: [
+          { name: { $regex: escaped, $options: 'i' } },
+          { idNumber: { $regex: `^${escaped}` } },
+        ],
+      })
+      .select('id name idNumber')
+      .limit(10)
+      .lean();
+    return players.map((p) => ({
+      playerId: p._id.toString(),
+      playerName: (p as any).name as string,
+      idNumber: (p as any).idNumber as string,
+    }));
+  }
+
   async deleteManualPayment(id: string) {
     const payment = await this.paymentModel.findById(id);
     if (!payment) throw new NotFoundException('Pago no encontrado');

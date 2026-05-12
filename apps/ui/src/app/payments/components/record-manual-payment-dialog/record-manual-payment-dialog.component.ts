@@ -8,9 +8,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { PaymentsService } from '../../services/payments.service';
 import { PaymentEntityTypeEnum, PaymentMethodEnum } from '@ltrc-campo/shared-api-model';
 import { format } from 'date-fns';
+import { debounceTime, distinctUntilChanged, Subject, switchMap, of } from 'rxjs';
 
 interface DialogData {
   entityType: PaymentEntityTypeEnum;
@@ -30,6 +32,7 @@ interface DialogData {
     MatButtonModule,
     MatDatepickerModule,
     MatProgressSpinnerModule,
+    MatAutocompleteModule,
   ],
   templateUrl: './record-manual-payment-dialog.component.html',
   styleUrl: './record-manual-payment-dialog.component.scss',
@@ -40,7 +43,6 @@ export class RecordManualPaymentDialogComponent {
   private readonly paymentsService = inject(PaymentsService);
 
   saving = false;
-  playerNotFound = false;
   saveError: string | null = null;
 
   readonly methods = [
@@ -48,8 +50,17 @@ export class RecordManualPaymentDialogComponent {
     { value: PaymentMethodEnum.TRANSFER, label: 'Transferencia' },
   ];
 
+  readonly searchInput = new FormControl('');
+  searchResults: { playerId: string; playerName: string; idNumber: string }[] = [];
+
+  private readonly search$ = new Subject<string>();
+  readonly searchResults$ = this.search$.pipe(
+    debounceTime(250),
+    distinctUntilChanged(),
+    switchMap((q) => q.trim().length >= 2 ? this.paymentsService.searchPlayers(q) : of([]))
+  );
+
   form = new FormGroup({
-    playerDni: new FormControl('', [Validators.required, Validators.minLength(6)]),
     playerId: new FormControl(''),
     playerName: new FormControl(''),
     concept: new FormControl(
@@ -62,20 +73,19 @@ export class RecordManualPaymentDialogComponent {
     notes: new FormControl(''),
   });
 
-  searchPlayer() {
-    const dni = this.form.get('playerDni')!.value;
-    if (!dni) return;
-    this.playerNotFound = false;
+  onSearchInput(value: string) {
+    this.form.patchValue({ playerId: '', playerName: '' });
+    this.search$.next(value);
+  }
 
-    this.paymentsService.findPlayerByDni(dni).subscribe({
-      next: (result) => {
-        this.form.patchValue({ playerId: result.playerId, playerName: result.playerName });
-      },
-      error: () => {
-        this.playerNotFound = true;
-        this.form.patchValue({ playerId: '', playerName: '' });
-      },
-    });
+  selectPlayer(player: { playerId: string; playerName: string; idNumber: string }) {
+    this.searchInput.setValue(`${player.playerName} (${player.idNumber})`, { emitEvent: false });
+    this.form.patchValue({ playerId: player.playerId, playerName: player.playerName });
+    this.saveError = null;
+  }
+
+  displayFn(value: string): string {
+    return value;
   }
 
   submit() {

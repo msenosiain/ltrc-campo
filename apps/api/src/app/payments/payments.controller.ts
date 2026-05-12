@@ -169,6 +169,11 @@ export class PaymentsController {
     return this.paymentsService.findPlayerByDni(dni);
   }
 
+  @Get('internal/players/search')
+  searchPlayers(@Query('q') q: string) {
+    return this.paymentsService.searchPlayers(q);
+  }
+
   @Get()
   getPayments(
     @Query('entityType') entityType: PaymentEntityTypeEnum,

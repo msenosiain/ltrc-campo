@@ -299,6 +299,13 @@ export class PaymentsService {
     return this.http.get<ValidateResult>(`${this.apiUrl}/internal/players/by-dni/${dni}`);
   }
 
+  searchPlayers(q: string) {
+    const params = new HttpParams().set('q', q);
+    return this.http.get<{ playerId: string; playerName: string; idNumber: string }[]>(
+      `${this.apiUrl}/internal/players/search`, { params }
+    );
+  }
+
   confirmPayment(externalReference: string, paymentId?: string, status?: string) {
     return this.http.post<ConfirmResult>(`${this.apiUrl}/public/confirm`, {
       externalReference,

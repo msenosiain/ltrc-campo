@@ -3,19 +3,21 @@
 <mat-dialog-content>
   <form [formGroup]="form" class="dialog-form">
 
-    <div class="dni-search-row">
-      <mat-form-field appearance="outline" class="dni-field">
-        <mat-label>DNI del jugador</mat-label>
-        <input matInput formControlName="playerDni" placeholder="Sin puntos" />
-        @if (form.get('playerDni')!.hasError('required')) {
-          <mat-error>El DNI es obligatorio</mat-error>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Buscar jugador por apellido o DNI</mat-label>
+      <input matInput
+             [formControl]="searchInput"
+             [matAutocomplete]="autoPlayer"
+             (input)="onSearchInput(searchInput.value!)" />
+      <mat-autocomplete #autoPlayer="matAutocomplete">
+        @for (p of (searchResults$ | async) ?? []; track p.playerId) {
+          <mat-option [value]="p.playerName" (click)="selectPlayer(p)">
+            <span class="option-name">{{ p.playerName }}</span>
+            <span class="option-dni">{{ p.idNumber }}</span>
+          </mat-option>
         }
-        @if (playerNotFound) {
-          <mat-error>No se encontró un jugador con ese DNI</mat-error>
-        }
-      </mat-form-field>
-      <button mat-stroked-button type="button" (click)="searchPlayer()">Buscar</button>
-    </div>
+      </mat-autocomplete>
+    </mat-form-field>
 
     @if (form.get('playerName')!.value) {
       <p class="player-found">Jugador: <strong>{{ form.get('playerName')!.value }}</strong></p>
