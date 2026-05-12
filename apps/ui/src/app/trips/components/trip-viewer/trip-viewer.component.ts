@@ -441,7 +441,7 @@ export class TripViewerComponent implements OnInit {
       });
   }
 
-  private loadTrip(id: string): void {
+  loadTrip(id: string): void {
     this.loading.set(true);
     this.tripsService
       .getTripById(id)

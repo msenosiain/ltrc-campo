@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnInit, signal } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -57,6 +57,7 @@ export class PaymentLinksPanelComponent implements OnInit {
   @Input() entityDate?: Date;
   @Input() entityLabel?: string;
   @Input() categoryFilter: string[] | null = null;
+  @Output() paymentRecorded = new EventEmitter<void>();
 
   private readonly paymentsService = inject(PaymentsService);
   private readonly pdfService = inject(PaymentsReportPdfService);
@@ -110,7 +111,10 @@ export class PaymentLinksPanelComponent implements OnInit {
       data: { entityType: this.entityType, entityId: this.entityId },
     });
     ref.afterClosed().subscribe((created) => {
-      if (created) this.loadAll();
+      if (created) {
+        this.loadAll();
+        this.paymentRecorded.emit();
+      }
     });
   }
 

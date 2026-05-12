@@ -61,6 +61,10 @@
   </form>
 </mat-dialog-content>
 
+@if (saveError) {
+  <p class="save-error">{{ saveError }}</p>
+}
+
 <mat-dialog-actions align="end">
   <button mat-button mat-dialog-close [disabled]="saving">Cancelar</button>
   <button

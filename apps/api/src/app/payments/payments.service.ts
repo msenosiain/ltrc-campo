@@ -518,6 +518,34 @@ export class PaymentsService {
     const player = await this.playerModel.findById(dto.playerId).select('id name idNumber').lean();
     if (!player) throw new NotFoundException('Jugador no encontrado');
 
+    if (dto.entityType === PaymentEntityTypeEnum.TRIP) {
+      const trip = await this.tripModel.findById(dto.entityId).select('participants').lean();
+      const participant = (trip?.participants ?? []).find(
+        (p: any) => p.type === TripParticipantTypeEnum.PLAYER &&
+                    p.player?.toString() === dto.playerId
+      ) as any;
+      if (participant && participant.costAssigned > 0) {
+        const approved = await this.paymentModel
+          .find({
+            entityType: PaymentEntityTypeEnum.TRIP,
+            entityId: new Types.ObjectId(dto.entityId),
+            status: PaymentStatusEnum.APPROVED,
+            playerId: new Types.ObjectId(dto.playerId),
+          })
+          .select('amount')
+          .lean();
+        const totalPaid = approved.reduce((sum, p) => sum + p.amount, 0);
+        const remaining = participant.costAssigned - totalPaid;
+        if (dto.amount > remaining) {
+          throw new BadRequestException(
+            remaining <= 0
+              ? 'Este pasajero ya tiene el pago completo'
+              : `El monto supera el saldo pendiente del pasajero ($${remaining.toLocaleString('es-AR')})`
+          );
+        }
+      }
+    }
+
     const payment = await this.paymentModel.create({
       entityType: dto.entityType,
       entityId: new Types.ObjectId(dto.entityId),

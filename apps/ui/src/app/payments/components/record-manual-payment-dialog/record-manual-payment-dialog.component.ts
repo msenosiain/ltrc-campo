@@ -41,6 +41,7 @@ export class RecordManualPaymentDialogComponent {
 
   saving = false;
   playerNotFound = false;
+  saveError: string | null = null;
 
   readonly methods = [
     { value: PaymentMethodEnum.CASH, label: 'Efectivo' },
@@ -80,6 +81,7 @@ export class RecordManualPaymentDialogComponent {
   submit() {
     if (this.form.invalid || !this.form.get('playerId')!.value) return;
     this.saving = true;
+    this.saveError = null;
     const value = this.form.value;
 
     this.paymentsService
@@ -95,7 +97,10 @@ export class RecordManualPaymentDialogComponent {
       })
       .subscribe({
         next: (payment) => this.dialogRef.close(payment),
-        error: () => (this.saving = false),
+        error: (err) => {
+          this.saving = false;
+          this.saveError = err?.error?.message ?? 'Error al registrar el pago';
+        },
       });
   }
 }
