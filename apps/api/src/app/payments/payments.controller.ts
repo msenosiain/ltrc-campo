@@ -34,6 +34,7 @@ export class PaymentsController {
   }
 
   @Get('links/all')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
   getAllLinks(
     @Query('status') status?: string,
     @Query('entityType') entityType?: string,
