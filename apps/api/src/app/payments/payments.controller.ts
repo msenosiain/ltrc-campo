@@ -129,6 +129,7 @@ export class PaymentsController {
     @Query('sport') sport?: string,
     @Query('category') category?: string,
     @Query('tournamentId') tournamentId?: string,
+    @Query('tripId') tripId?: string,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
     @Query('page') page?: string,
@@ -137,7 +138,7 @@ export class PaymentsController {
     @Query('sortDir') sortDir?: string,
   ) {
     return this.paymentsService.getGlobalReport({
-      status, method, concept, entityType, sport, category, tournamentId, dateFrom, dateTo,
+      status, method, concept, entityType, sport, category, tournamentId, tripId, dateFrom, dateTo,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       sortBy,

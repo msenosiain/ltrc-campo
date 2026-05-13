@@ -944,6 +944,7 @@ export class PaymentsService {
     sport?: string;
     category?: string;
     tournamentId?: string;
+    tripId?: string;
     dateFrom?: string;
     dateTo?: string;
   }): Promise<Record<string, unknown>> {
@@ -977,6 +978,11 @@ export class PaymentsService {
         .distinct('_id');
       query['entityType'] = PaymentEntityTypeEnum.MATCH;
       query['entityId'] = { $in: matchIds };
+    }
+
+    if (filters.tripId) {
+      query['entityType'] = PaymentEntityTypeEnum.TRIP;
+      query['entityId'] = new Types.ObjectId(filters.tripId);
     }
 
     if (filters.dateFrom || filters.dateTo) {
@@ -1059,6 +1065,7 @@ export class PaymentsService {
     sport?: string;
     category?: string;
     tournamentId?: string;
+    tripId?: string;
     dateFrom?: string;
     dateTo?: string;
     page?: number;

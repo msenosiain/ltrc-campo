@@ -35,6 +35,7 @@ import {
   RoleEnum,
   SportEnum,
   Tournament,
+  Trip,
 } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel, getCategoryOptionsBySport } from '../../../common/category-options';
 import { API_CONFIG_TOKEN } from '../../../app.config';
@@ -90,6 +91,8 @@ export class PaymentsReportComponent implements OnInit {
 
   tournaments = signal<Tournament[]>([]);
   loadingTournaments = signal(false);
+  trips = signal<Trip[]>([]);
+  loadingTrips = signal(false);
   report = signal<GlobalPaymentsReport | null>(null);
   loading = signal(false);
   generatingPdf = signal(false);
@@ -99,7 +102,7 @@ export class PaymentsReportComponent implements OnInit {
   sortDir = signal<'asc' | 'desc'>('desc');
 
   readonly filterForm = new FormGroup({
-    tournament: new FormControl<string | null>(null),
+    event: new FormControl<string | null>(null),
     status: new FormControl<PaymentStatusEnum[]>([]),
     method: new FormControl<PaymentMethodEnum[]>([]),
     concept: new FormControl<string[]>([]),
@@ -146,6 +149,12 @@ export class PaymentsReportComponent implements OnInit {
     return sport ? all.filter((t) => !t.sport || t.sport === sport) : all;
   });
 
+  readonly filteredTrips = computed(() => {
+    const sport = this.selectedSport();
+    const all = this.trips();
+    return sport ? all.filter((t) => !t.sport || t.sport === sport) : all;
+  });
+
   readonly columns = ['date', 'player', 'sport', 'entity', 'concept', 'method', 'amount', 'status'];
 
   readonly statusOptions = [
@@ -173,7 +182,7 @@ export class PaymentsReportComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.filterForm.get('category')!.setValue(null, { emitEvent: false });
-        this.filterForm.get('tournament')!.setValue(null, { emitEvent: false });
+        this.filterForm.get('event')!.setValue(null, { emitEvent: false });
       });
 
     this.filterForm.valueChanges
@@ -181,6 +190,7 @@ export class PaymentsReportComponent implements OnInit {
       .subscribe(() => this.search());
 
     this.loadTournaments();
+    this.loadTrips();
     this.loadConcepts();
     this.search();
   }
@@ -205,10 +215,32 @@ export class PaymentsReportComponent implements OnInit {
       });
   }
 
+  private loadTrips() {
+    this.loadingTrips.set(true);
+    const params = new HttpParams().set('size', '200').set('page', '1').set('sortBy', 'departureDate').set('sortDir', 'desc');
+    this.http
+      .get<PaginatedResponse<Trip>>(`${this.config.baseUrl}/trips`, { params })
+      .subscribe({
+        next: (res) => {
+          this.trips.set(res.items);
+          this.loadingTrips.set(false);
+        },
+        error: () => this.loadingTrips.set(false),
+      });
+  }
+
+  private parseEvent(event: string | null | undefined): { tournamentId?: string; tripId?: string } {
+    if (!event) return {};
+    const [type, id] = event.split(':');
+    if (type === 'tournament') return { tournamentId: id };
+    if (type === 'trip') return { tripId: id };
+    return {};
+  }
+
   private buildFilters(): GlobalReportFilters {
     const v = this.filterForm.value;
     return {
-      tournamentId: v.tournament ?? undefined,
+      ...this.parseEvent(v.event),
       status: v.status?.length ? v.status.join(',') : undefined,
       method: v.method?.length ? v.method.join(',') : undefined,
       concept: v.concept?.length ? v.concept.join(',') : undefined,
@@ -235,9 +267,16 @@ export class PaymentsReportComponent implements OnInit {
     ctrl.setValue(isMulti ? [] : null);
   }
 
-  private selectedTournamentName(): string | null {
-    const id = this.filterForm.get('tournament')!.value;
-    return id ? (this.tournaments().find((t) => t.id === id)?.name ?? null) : null;
+  private selectedEventName(): string | null {
+    const event = this.filterForm.get('event')!.value;
+    if (!event) return null;
+    const [type, id] = event.split(':');
+    if (type === 'tournament') return this.tournaments().find((t) => t.id === id)?.name ?? null;
+    if (type === 'trip') {
+      const trip = this.trips().find((t) => t.id === id);
+      return trip ? (trip.name || trip.destination || null) : null;
+    }
+    return null;
   }
 
   search(resetPage = true) {
@@ -296,7 +335,7 @@ export class PaymentsReportComponent implements OnInit {
     return {
       sport: v.sport ?? null,
       category: v.category ?? null,
-      tournamentName: this.selectedTournamentName(),
+      tournamentName: this.selectedEventName(),
       statusLabel: v.status?.length
         ? v.status.map((s) => this.statusLabel(s)).join(', ')
         : null,
@@ -341,7 +380,7 @@ export class PaymentsReportComponent implements OnInit {
   readonly activeFilterCount = computed(() => {
     const v = this.filterForm.value;
     let n = 0;
-    if (v.tournament) n++;
+    if (v.event) n++;
     if (v.status?.length) n++;
     if (v.method?.length) n++;
     if (v.concept?.length) n++;

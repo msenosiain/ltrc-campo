@@ -47,18 +47,29 @@
           }
 
           <mat-form-field appearance="outline" class="filter-field--wide">
-            <mat-label>Torneo</mat-label>
-            <mat-select formControlName="tournament">
-              <mat-option [value]="null">Todos los torneos</mat-option>
-              @for (t of filteredTournaments(); track t.id) {
-                <mat-option [value]="t.id">{{ t.name }}</mat-option>
+            <mat-label>Evento</mat-label>
+            <mat-select formControlName="event">
+              <mat-option [value]="null">Todos los eventos</mat-option>
+              @if (filteredTrips().length) {
+                <mat-optgroup label="Viajes">
+                  @for (t of filteredTrips(); track t.id) {
+                    <mat-option [value]="'trip:' + t.id">{{ t.name || t.destination }}</mat-option>
+                  }
+                </mat-optgroup>
+              }
+              @if (filteredTournaments().length) {
+                <mat-optgroup label="Torneos">
+                  @for (t of filteredTournaments(); track t.id) {
+                    <mat-option [value]="'tournament:' + t.id">{{ t.name }}</mat-option>
+                  }
+                </mat-optgroup>
               }
             </mat-select>
-            @if (filterForm.get('tournament')?.value) {
-              <button matIconSuffix mat-icon-button type="button" (click)="clearControl('tournament')">
+            @if (filterForm.get('event')?.value) {
+              <button matIconSuffix mat-icon-button type="button" (click)="clearControl('event')">
                 <mat-icon>close</mat-icon>
               </button>
-            } @else if (loadingTournaments()) {
+            } @else if (loadingTrips() || loadingTournaments()) {
               <mat-spinner matIconSuffix diameter="16" />
             }
           </mat-form-field>

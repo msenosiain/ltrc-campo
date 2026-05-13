@@ -127,6 +127,7 @@ export interface GlobalReportFilters {
   sport?: string;
   category?: string;
   tournamentId?: string;
+  tripId?: string;
   dateFrom?: string;
   dateTo?: string;
   page?: number;
@@ -251,6 +252,7 @@ export class PaymentsService {
     if (filters.sport) params = params.set('sport', filters.sport);
     if (filters.category) params = params.set('category', filters.category);
     if (filters.tournamentId) params = params.set('tournamentId', filters.tournamentId);
+    if (filters.tripId) params = params.set('tripId', filters.tripId);
     if (filters.dateFrom) params = params.set('dateFrom', filters.dateFrom);
     if (filters.dateTo) params = params.set('dateTo', filters.dateTo);
     if (filters.page) params = params.set('page', String(filters.page));
