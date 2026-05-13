@@ -11,7 +11,7 @@ const DRY_RUN = true; // cambiar a false para aplicar los cambios
 // ─────────────────────────────────────────────────────────────────────────────
 
 const tripOid  = ObjectId(TRIP_ID);
-const trip     = db.trips.findOne({ _id: tripOid }, { name: 1, costPerPerson: 1, participants: 1 });
+let   trip     = db.trips.findOne({ _id: tripOid }, { name: 1, costPerPerson: 1, participants: 1 });
 
 if (!trip) {
   print(`ERROR: no se encontró el viaje con _id = ${TRIP_ID}`);
@@ -20,6 +20,24 @@ if (!trip) {
   print(`\nViaje: "${trip.name}"`);
   print(`Participantes actuales: ${(trip.participants ?? []).length}`);
   print(`Costo por persona: $${trip.costPerPerson ?? 0}`);
+
+  // ─── PASO 1: corregir tipos en mayúsculas de carga anterior ────────────────
+  const withUppercase = (trip.participants ?? []).filter(p => ['PLAYER', 'STAFF', 'EXTERNAL'].includes(p.type));
+  if (withUppercase.length > 0) {
+    print(`\nParticipantes con tipo en mayúsculas (invisibles en UI): ${withUppercase.length}`);
+    if (DRY_RUN) {
+      print('[DRY RUN] Se corregirían los tipos a minúsculas.');
+    } else {
+      for (const p of withUppercase) {
+        db.trips.updateOne(
+          { _id: tripOid, 'participants._id': p._id },
+          { $set: { 'participants.$.type': p.type.toLowerCase() } }
+        );
+      }
+      print(`✓ ${withUppercase.length} tipos corregidos a minúsculas.`);
+      trip = db.trips.findOne({ _id: tripOid }, { name: 1, costPerPerson: 1, participants: 1 });
+    }
+  }
 
   const cost = trip.costPerPerson ?? 0;
 
@@ -44,13 +62,14 @@ if (!trip) {
     }
 
     // Participantes ya existentes (no tocar)
-    const existingPlayerIds = new Set((trip.participants ?? []).filter(p => p.type === 'PLAYER' && p.player).map(p => p.player.toString()));
-    const existingUserIds   = new Set((trip.participants ?? []).filter(p => p.type === 'STAFF'  && p.user).map(p => p.user.toString()));
-    const existingDnis      = new Set((trip.participants ?? []).filter(p => p.type === 'EXTERNAL' && p.externalDni).map(p => p.externalDni));
+    const existingPlayerIds = new Set((trip.participants ?? []).filter(p => p.type === 'player' && p.player).map(p => p.player.toString()));
+    const existingUserIds   = new Set((trip.participants ?? []).filter(p => p.type === 'staff'  && p.user).map(p => p.user.toString()));
+    const existingDnis      = new Set((trip.participants ?? []).filter(p => p.type === 'external' && p.externalDni).map(p => p.externalDni));
 
     print(`Participantes existentes conservados: ${(trip.participants ?? []).length}\n`);
 
-    const toAdd = [];
+    const toAdd    = [];
+    const toRemove = []; // _ids de externos que en realidad son jugadores
 
     // Jugadores
     for (const [id, pmts] of Object.entries(byPlayer)) {
@@ -64,7 +83,7 @@ if (!trip) {
       const pl        = db.players.findOne({ _id: ObjectId(id) }, { name: 1 });
       print(`  AGREGAR ${pl?.name ?? id} — pagado $${totalPaid} → ${status}`);
       toAdd.push({
-        _id: new ObjectId(), type: 'PLAYER', player: ObjectId(id),
+        _id: new ObjectId(), type: 'player', player: ObjectId(id),
         status, costAssigned: cost, documentationOk: false,
         payments: pmts.map(p => ({ _id: new ObjectId(), amount: p.amount, date: p.date, method: p.method ?? 'cash', notes: p.notes, sourcePaymentId: p._id })),
       });
@@ -82,37 +101,72 @@ if (!trip) {
       const u         = db.users.findOne({ _id: ObjectId(id) }, { name: 1 });
       print(`  AGREGAR ${u?.name ?? id} — pagado $${totalPaid} → ${status}`);
       toAdd.push({
-        _id: new ObjectId(), type: 'STAFF', user: ObjectId(id),
+        _id: new ObjectId(), type: 'staff', user: ObjectId(id),
         status, costAssigned: cost, documentationOk: false,
         payments: pmts.map(p => ({ _id: new ObjectId(), amount: p.amount, date: p.date, method: p.method ?? 'cash', notes: p.notes, sourcePaymentId: p._id })),
       });
     }
 
-    // Externos
+    // Pagos con DNI: buscar si existe un jugador con ese DNI, si no tratar como externo
     for (const [dni, pmts] of Object.entries(byDni)) {
-      if (existingDnis.has(dni)) {
-        print(`  SKIP    ${pmts[0].payerName ?? dni} — ya está en el viaje`);
-        continue;
+      const player = db.players.findOne({ idNumber: dni }, { name: 1 });
+
+      if (player) {
+        const pid = player._id.toString();
+        if (existingPlayerIds.has(pid)) {
+          print(`  SKIP    ${player.name} (DNI ${dni}) — ya está como JUGADOR`);
+          continue;
+        }
+        // Puede que esté como externo (carga anterior incorrecta) — marcarlo para remover
+        const wrongExternal = (trip.participants ?? []).find(p => p.type === 'external' && p.externalDni === dni);
+        if (wrongExternal) {
+          print(`  REEMPLAZAR ${player.name} (DNI ${dni}) — era EXTERNO, pasa a JUGADOR`);
+          toRemove.push(wrongExternal._id);
+        } else {
+          print(`  AGREGAR ${player.name} (DNI ${dni}) como JUGADOR`);
+        }
+        const totalPaid = pmts.reduce((s, p) => s + p.amount, 0);
+        const status    = cost > 0 && totalPaid >= cost ? 'confirmed' : 'pending';
+        toAdd.push({
+          _id: new ObjectId(), type: 'player', player: player._id,
+          status, costAssigned: cost, documentationOk: false,
+          payments: pmts.map(p => ({ _id: new ObjectId(), amount: p.amount, date: p.date, method: p.method ?? 'cash', notes: p.notes, sourcePaymentId: p._id })),
+        });
+      } else {
+        // No existe en el sistema — tratar como externo
+        if (existingDnis.has(dni)) {
+          print(`  SKIP    ${pmts[0].payerName ?? dni} — ya está como EXTERNO`);
+          continue;
+        }
+        const totalPaid = pmts.reduce((s, p) => s + p.amount, 0);
+        const status    = cost > 0 && totalPaid >= cost ? 'confirmed' : 'pending';
+        print(`  AGREGAR ${pmts[0].payerName ?? dni} (DNI ${dni}) como EXTERNO`);
+        toAdd.push({
+          _id: new ObjectId(), type: 'external', externalName: pmts[0].payerName, externalDni: dni,
+          status, costAssigned: cost, documentationOk: false,
+          payments: pmts.map(p => ({ _id: new ObjectId(), amount: p.amount, date: p.date, method: p.method ?? 'cash', notes: p.notes, sourcePaymentId: p._id })),
+        });
       }
-      const totalPaid = pmts.reduce((s, p) => s + p.amount, 0);
-      const status    = cost > 0 && totalPaid >= cost ? 'confirmed' : 'pending';
-      print(`  AGREGAR ${pmts[0].payerName ?? dni} (DNI ${dni}) — pagado $${totalPaid} → ${status}`);
-      toAdd.push({
-        _id: new ObjectId(), type: 'EXTERNAL', externalName: pmts[0].payerName, externalDni: dni,
-        status, costAssigned: cost, documentationOk: false,
-        payments: pmts.map(p => ({ _id: new ObjectId(), amount: p.amount, date: p.date, method: p.method ?? 'cash', notes: p.notes, sourcePaymentId: p._id })),
-      });
     }
 
-    print(`\nTotal a recuperar: ${toAdd.length} participantes`);
+    print(`\nResumen:`);
+    print(`  Externos a reemplazar por JUGADOR: ${toRemove.length}`);
+    print(`  Participantes a agregar:           ${toAdd.length}`);
 
-    if (toAdd.length === 0) {
-      print('Nada nuevo para agregar.');
+    if (toAdd.length === 0 && toRemove.length === 0) {
+      print('Nada para modificar.');
     } else if (DRY_RUN) {
-      print('[DRY RUN] Cambiá DRY_RUN = false para aplicar los cambios.');
+      print('\n[DRY RUN] Cambiá DRY_RUN = false para aplicar los cambios.');
     } else {
-      db.trips.updateOne({ _id: tripOid }, { $push: { participants: { $each: toAdd } } });
-      print(`✓ ${toAdd.length} participantes recuperados. Los M12 existentes no fueron modificados.`);
+      if (toRemove.length > 0) {
+        db.trips.updateOne({ _id: tripOid }, { $pull: { participants: { _id: { $in: toRemove } } } });
+        print(`✓ ${toRemove.length} externos incorrectos removidos.`);
+      }
+      if (toAdd.length > 0) {
+        db.trips.updateOne({ _id: tripOid }, { $push: { participants: { $each: toAdd } } });
+        print(`✓ ${toAdd.length} participantes agregados.`);
+      }
+      print('  Los M12 existentes no fueron modificados.');
       print('  Los participantes sin pagos registrados deben agregarse a mano.');
     }
 
