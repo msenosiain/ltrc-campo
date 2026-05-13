@@ -36,6 +36,8 @@ import {
   CategoryEnum,
   PaymentEntityTypeEnum,
   Player,
+  PlayerAvailabilityEnum,
+  PlayerStatusEnum,
   RoleEnum,
   SportEnum,
   TransportTypeEnum,
@@ -725,6 +727,8 @@ export class TripViewerComponent implements OnInit {
     const filters = {
       ...(this.trip.sport && { sport: this.trip.sport }),
       categories,
+      status: PlayerStatusEnum.ACTIVE,
+      availability: PlayerAvailabilityEnum.AVAILABLE,
     };
 
     // Fetch all pages then bulk-add the ones not already in the trip
