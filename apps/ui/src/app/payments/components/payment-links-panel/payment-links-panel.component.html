@@ -26,7 +26,7 @@
 
   @if (links.length > 0) {
     <h4 class="section-title">Links de cobro</h4>
-    <table mat-table [dataSource]="links" class="links-table">
+    <table mat-table [dataSource]="pagedLinks" class="links-table">
 
       <ng-container matColumnDef="concept">
         <th mat-header-cell *matHeaderCellDef>Concepto</th>
@@ -85,6 +85,18 @@
       <tr mat-header-row *matHeaderRowDef="linkColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: linkColumns;"></tr>
     </table>
+    @if (totalLinksPages > 1) {
+      <div class="panel-paginator">
+        <span class="panel-paginator__label">{{ linksRangeLabel }}</span>
+        <button mat-icon-button [disabled]="linksPage === 0" (click)="linksPage = linksPage - 1">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span class="panel-paginator__pages">{{ linksPage + 1 }} / {{ totalLinksPages }}</span>
+        <button mat-icon-button [disabled]="linksPage >= totalLinksPages - 1" (click)="linksPage = linksPage + 1">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    }
   }
 
   <mat-menu #shareMenu="matMenu">
@@ -105,7 +117,7 @@
   @if (visiblePayments.length === 0) {
     <p class="empty-state">Aún no hay pagos registrados.</p>
   } @else {
-    <table mat-table [dataSource]="visiblePayments" class="payments-table">
+    <table mat-table [dataSource]="pagedVisiblePayments" class="payments-table">
 
       <ng-container matColumnDef="player">
         <th mat-header-cell *matHeaderCellDef>Jugador</th>
@@ -168,5 +180,17 @@
       <tr mat-header-row *matHeaderRowDef="paymentColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: paymentColumns;"></tr>
     </table>
+    @if (totalPaymentsPages > 1) {
+      <div class="panel-paginator">
+        <span class="panel-paginator__label">{{ paymentsRangeLabel }}</span>
+        <button mat-icon-button [disabled]="paymentsPage === 0" (click)="paymentsPage = paymentsPage - 1">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span class="panel-paginator__pages">{{ paymentsPage + 1 }} / {{ totalPaymentsPages }}</span>
+        <button mat-icon-button [disabled]="paymentsPage >= totalPaymentsPages - 1" (click)="paymentsPage = paymentsPage + 1">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    }
   }
 }

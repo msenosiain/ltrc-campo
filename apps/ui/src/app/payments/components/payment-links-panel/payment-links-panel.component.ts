@@ -72,6 +72,43 @@ export class PaymentLinksPanelComponent implements OnInit {
   readonly linkColumns = ['concept', 'amount', 'type', 'expires', 'status', 'actions'];
   readonly paymentColumns = ['player', 'concept', 'method', 'amount', 'date', 'status', 'actions'];
 
+  readonly LINKS_PAGE_SIZE = 10;
+  readonly PAYMENTS_PAGE_SIZE = 15;
+  linksPage = 0;
+  paymentsPage = 0;
+
+  get pagedLinks(): IPaymentLink[] {
+    const start = this.linksPage * this.LINKS_PAGE_SIZE;
+    return this.links.slice(start, start + this.LINKS_PAGE_SIZE);
+  }
+
+  get totalLinksPages(): number {
+    return Math.ceil(this.links.length / this.LINKS_PAGE_SIZE);
+  }
+
+  get linksRangeLabel(): string {
+    const total = this.links.length;
+    const start = this.linksPage * this.LINKS_PAGE_SIZE + 1;
+    const end = Math.min(start + this.LINKS_PAGE_SIZE - 1, total);
+    return `${start}–${end} de ${total}`;
+  }
+
+  get pagedVisiblePayments(): IPayment[] {
+    const start = this.paymentsPage * this.PAYMENTS_PAGE_SIZE;
+    return this.visiblePayments.slice(start, start + this.PAYMENTS_PAGE_SIZE);
+  }
+
+  get totalPaymentsPages(): number {
+    return Math.ceil(this.visiblePayments.length / this.PAYMENTS_PAGE_SIZE);
+  }
+
+  get paymentsRangeLabel(): string {
+    const total = this.visiblePayments.length;
+    const start = this.paymentsPage * this.PAYMENTS_PAGE_SIZE + 1;
+    const end = Math.min(start + this.PAYMENTS_PAGE_SIZE - 1, total);
+    return `${start}–${end} de ${total}`;
+  }
+
   readonly PaymentLinkStatusEnum = PaymentLinkStatusEnum;
   readonly RoleEnum = RoleEnum;
   readonly PaymentMethodEnum = PaymentMethodEnum;
@@ -83,6 +120,8 @@ export class PaymentLinksPanelComponent implements OnInit {
 
   loadAll() {
     this.loading.set(true);
+    this.linksPage = 0;
+    this.paymentsPage = 0;
     this.paymentsService.getLinks(this.entityType, this.entityId).subscribe({
       next: (links) => (this.links = links),
     });

@@ -186,7 +186,7 @@ export class TripViewerComponent implements OnInit {
   participantStatusFilter: TripParticipantStatusEnum | null = null;
   participantCategoryFilter: string | null = null;
   participantPage = 0;
-  readonly PARTICIPANT_PAGE_SIZE = 50;
+  readonly PARTICIPANT_PAGE_SIZE = 15;
 
   private readonly categoryOrder = new Map(
     categoryOptions.map((c, i) => [c.id as string, i])
