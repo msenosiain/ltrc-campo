@@ -159,6 +159,22 @@
   } @else if (filteredPayments.length === 0) {
     <p class="empty-state">No hay resultados para los filtros aplicados.</p>
   } @else {
+    <ng-template #paymentsPaginator>
+      <div class="panel-paginator">
+        <span class="panel-paginator__label">{{ paymentsRangeLabel }}</span>
+        @if (totalPaymentsPages > 1) {
+          <button mat-icon-button [disabled]="paymentsPage === 0" (click)="paymentsPage = paymentsPage - 1">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="panel-paginator__pages">{{ paymentsPage + 1 }} / {{ totalPaymentsPages }}</span>
+          <button mat-icon-button [disabled]="paymentsPage >= totalPaymentsPages - 1" (click)="paymentsPage = paymentsPage + 1">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        }
+      </div>
+    </ng-template>
+
+    <ng-container *ngTemplateOutlet="paymentsPaginator" />
     <table mat-table [dataSource]="pagedVisiblePayments" class="payments-table">
 
       <ng-container matColumnDef="player">
@@ -222,17 +238,6 @@
       <tr mat-header-row *matHeaderRowDef="paymentColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: paymentColumns;"></tr>
     </table>
-    <div class="panel-paginator">
-      <span class="panel-paginator__label">{{ paymentsRangeLabel }}</span>
-      @if (totalPaymentsPages > 1) {
-        <button mat-icon-button [disabled]="paymentsPage === 0" (click)="paymentsPage = paymentsPage - 1">
-          <mat-icon>chevron_left</mat-icon>
-        </button>
-        <span class="panel-paginator__pages">{{ paymentsPage + 1 }} / {{ totalPaymentsPages }}</span>
-        <button mat-icon-button [disabled]="paymentsPage >= totalPaymentsPages - 1" (click)="paymentsPage = paymentsPage + 1">
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-      }
-    </div>
+    <ng-container *ngTemplateOutlet="paymentsPaginator" />
   }
 }
