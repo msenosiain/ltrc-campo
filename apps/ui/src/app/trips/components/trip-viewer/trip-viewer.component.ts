@@ -10,8 +10,8 @@ import {
 import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { concat, of, Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, expand, filter, last, map, reduce, switchMap, takeWhile } from 'rxjs/operators';
+import { concat, EMPTY, of, Subject } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, expand, filter, last, map, reduce, switchMap, takeWhile } from 'rxjs/operators';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -796,9 +796,17 @@ export class TripViewerComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter((confirmed) => !!confirmed),
-        switchMap(() =>
-          this.tripsService.removeParticipant(this.trip!.id!, p.id!)
-        ),
+        switchMap(() => {
+          const snapshot = this.trip!;
+          this.trip = { ...snapshot, participants: snapshot.participants.filter((x) => x.id !== p.id) } as unknown as Trip;
+          return this.tripsService.removeParticipant(snapshot.id!, p.id!).pipe(
+            catchError((err) => {
+              this.trip = snapshot;
+              this.snackBar.open(getErrorMessage(err, 'Error al quitar participante'), 'Cerrar', { duration: 4000 });
+              return EMPTY;
+            })
+          );
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({ next: (trip) => (this.trip = trip) });
