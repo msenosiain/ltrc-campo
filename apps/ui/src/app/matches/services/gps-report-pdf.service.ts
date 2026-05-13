@@ -285,7 +285,7 @@ function drawTable(doc: jsPDF, players: GpsPlayerData[], y: number): number {
     body: players.map(p => {
       const isTit = p.shirtNumber > 0 && p.shirtNumber <= 15;
       return [
-        `${p.shirtNumber > 0 ? p.shirtNumber + ' ' : ''}${playerBarLabel(p.shirtNumber, p.fullName).replace(/^\d+ /, '')}${isTit ? ' ★' : ''}`,
+        `${p.shirtNumber > 0 ? p.shirtNumber + ' ' : ''}${playerBarLabel(p.shirtNumber, p.fullName).replace(/^\d+ /, '')}${isTit ? ' *' : ''}`,
         Math.round(p.distanceM),
         Math.round(p.hir),
         Math.round(p.hsr),
@@ -312,7 +312,7 @@ function drawTable(doc: jsPDF, players: GpsPlayerData[], y: number): number {
     didParseCell: (data) => {
       if (data.section === 'body' && data.column.index === 0) {
         const txt = String(data.cell.raw ?? '');
-        if (txt.endsWith('★')) data.cell.styles.textColor = MAROON;
+        if (txt.endsWith('*')) data.cell.styles.textColor = MAROON;
       }
     },
     columnStyles: {
@@ -625,8 +625,9 @@ function playerBarLabel(shirtNumber: number, fullName: string): string {
   const parts = fullName.trim().split(/\s+/);
   const prefix = shirtNumber > 0 ? `${shirtNumber} ` : '';
   if (parts.length === 1) return `${prefix}${parts[0]}`;
-  const surname = parts[0];
-  const nameInitial = `${parts[1][0].toUpperCase()}.`;
+  const firstName = parts[parts.length - 1];
+  const surname = parts.slice(0, parts.length - 1).join(' ');
+  const nameInitial = `${firstName[0].toUpperCase()}.`;
   return `${prefix}${surname} ${nameInitial}`;
 }
 
