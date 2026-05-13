@@ -22,3 +22,4 @@
 - No usar `any` en TypeScript
 - Siempre usar context7 para consultar documentación antes de generar código
   de Angular, NestJS, Mongoose o Angular Material
+- **NUNCA hacer commit ni push sin que el usuario lo pida explícitamente** — cada push dispara un deploy automático en Render

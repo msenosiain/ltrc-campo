@@ -114,8 +114,50 @@
 
   <h4 class="section-title">Pagos recibidos</h4>
 
-  @if (visiblePayments.length === 0) {
+  @if (payments.length > 0) {
+    <div class="payments-filters">
+      <mat-form-field appearance="outline" class="pfilter-search">
+        <mat-label>Buscar</mat-label>
+        <input matInput [value]="paymentsSearch" (input)="onPaymentsSearchChange($any($event.target).value)" placeholder="Nombre o concepto" />
+        @if (paymentsSearch) {
+          <button mat-icon-button matSuffix type="button" (click)="onPaymentsSearchChange('')"><mat-icon>close</mat-icon></button>
+        } @else {
+          <mat-icon matSuffix>search</mat-icon>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="pfilter-select">
+        <mat-label>Método</mat-label>
+        <mat-select [(ngModel)]="paymentsMethodFilter" (ngModelChange)="onPaymentsFilterChange()">
+          <mat-option [value]="null">Todos</mat-option>
+          @for (opt of methodOptions; track opt.id) {
+            <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="pfilter-select">
+        <mat-label>Estado</mat-label>
+        <mat-select [(ngModel)]="paymentsStatusFilter" (ngModelChange)="onPaymentsFilterChange()">
+          <mat-option [value]="null">Todos</mat-option>
+          @for (opt of statusOptions; track opt.id) {
+            <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (hasActivePaymentsFilters) {
+        <button mat-icon-button matTooltip="Limpiar filtros" (click)="resetPaymentsFilters()">
+          <mat-icon>filter_alt_off</mat-icon>
+        </button>
+      }
+    </div>
+  }
+
+  @if (payments.length === 0) {
     <p class="empty-state">Aún no hay pagos registrados.</p>
+  } @else if (filteredPayments.length === 0) {
+    <p class="empty-state">No hay resultados para los filtros aplicados.</p>
   } @else {
     <table mat-table [dataSource]="pagedVisiblePayments" class="payments-table">
 

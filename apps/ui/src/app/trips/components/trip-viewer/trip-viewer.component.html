@@ -345,16 +345,18 @@
         }
 
         <ng-template #participantPaginator>
-          @if (totalPages > 1) {
+          @if (totalFilteredCount > 0) {
             <div class="participant-paginator">
               <span class="participant-paginator__label">{{ paginatorLabel }}</span>
-              <button mat-icon-button [disabled]="participantPage === 0" (click)="participantPage = participantPage - 1">
-                <mat-icon>chevron_left</mat-icon>
-              </button>
-              <span class="participant-paginator__pages">{{ participantPage + 1 }} / {{ totalPages }}</span>
-              <button mat-icon-button [disabled]="participantPage >= totalPages - 1" (click)="participantPage = participantPage + 1">
-                <mat-icon>chevron_right</mat-icon>
-              </button>
+              @if (totalPages > 1) {
+                <button mat-icon-button [disabled]="participantPage === 0" (click)="participantPage = participantPage - 1">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+                <span class="participant-paginator__pages">{{ participantPage + 1 }} / {{ totalPages }}</span>
+                <button mat-icon-button [disabled]="participantPage >= totalPages - 1" (click)="participantPage = participantPage + 1">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+              }
             </div>
           }
         </ng-template>
