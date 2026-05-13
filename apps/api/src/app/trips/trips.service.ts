@@ -17,11 +17,14 @@ import {
   CATEGORY_AGE_RANK,
   MAX_CATEGORY_AGE_GAP,
   PaginatedResponse,
+  PaymentEntityTypeEnum,
+  PaymentStatusEnum,
   SortOrder,
   TripParticipantTypeEnum,
   TripParticipantStatusEnum,
 } from '@ltrc-campo/shared-api-model';
 import { User } from '../users/schemas/user.schema';
+import { PaymentEntity } from '../payments/schemas/payment.entity';
 
 const POPULATE_FIELDS = [
   { path: 'participants.player', select: 'name category sport idNumber' },
@@ -33,7 +36,9 @@ const POPULATE_FIELDS = [
 export class TripsService {
   constructor(
     @InjectModel(TripEntity.name)
-    private readonly tripModel: Model<TripEntity>
+    private readonly tripModel: Model<TripEntity>,
+    @InjectModel(PaymentEntity.name)
+    private readonly paymentModel: Model<PaymentEntity>,
   ) {}
 
   async create(dto: CreateTripDto, caller?: User) {
@@ -142,6 +147,11 @@ export class TripsService {
     if (caller) trip.updatedBy = (caller as any)._id;
     trip.participants.push(participant as TripParticipantEntity);
     await trip.save();
+
+    const newParticipant = trip.participants[trip.participants.length - 1] as any;
+    const synced = await this.syncExistingPaymentsToParticipant(trip, newParticipant);
+    if (synced) await trip.save();
+
     return this.findOne(id);
   }
 
@@ -229,6 +239,52 @@ export class TripsService {
     if (caller) trip.updatedBy = (caller as any)._id;
     await trip.save();
     return this.findOne(id);
+  }
+
+  private async syncExistingPaymentsToParticipant(
+    trip: TripEntity,
+    participant: any,
+  ): Promise<boolean> {
+    const query: Record<string, unknown> = {
+      entityType: PaymentEntityTypeEnum.TRIP,
+      entityId: (trip as any)._id,
+      status: PaymentStatusEnum.APPROVED,
+    };
+
+    if (participant.type === TripParticipantTypeEnum.PLAYER && participant.player) {
+      query['playerId'] = participant.player;
+    } else if (participant.type === TripParticipantTypeEnum.STAFF && participant.user) {
+      query['userId'] = participant.user;
+    } else if (participant.type === TripParticipantTypeEnum.EXTERNAL && participant.externalDni) {
+      query['payerDni'] = participant.externalDni;
+    } else {
+      return false;
+    }
+
+    const payments = await this.paymentModel.find(query).lean();
+    if (payments.length === 0) return false;
+
+    for (const payment of payments) {
+      const alreadySynced = participant.payments.some(
+        (p: any) => p.sourcePaymentId?.toString() === (payment as any)._id.toString(),
+      );
+      if (!alreadySynced) {
+        participant.payments.push({
+          amount: payment.amount,
+          date: payment.date ?? new Date(),
+          method: payment.method,
+          notes: payment.notes,
+          sourcePaymentId: (payment as any)._id,
+        });
+      }
+    }
+
+    const totalPaid = participant.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
+    if (participant.costAssigned > 0 && totalPaid >= participant.costAssigned) {
+      participant.status = TripParticipantStatusEnum.CONFIRMED;
+    }
+
+    return true;
   }
 
   async removeParticipant(id: string, participantId: string, caller?: User) {

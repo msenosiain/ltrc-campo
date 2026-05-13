@@ -15,7 +15,7 @@
     </div>
     <div class="sticky-toolbar__actions">
       <button
-        *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR]"
+        *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR]"
         mat-flat-button
         color="primary"
         (click)="goToEdit()"
@@ -146,7 +146,7 @@
           }
           @if (trip.participants.length > 0) {
             <button
-              *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR]"
+              *ltrcAllowedRoles="[RoleEnum.ADMIN]"
               mat-stroked-button
               color="warn"
               type="button"
@@ -344,10 +344,12 @@
           </div>
         }
 
-        <ng-template #participantPaginator>
-          @if (totalPages > 1) {
-            <div class="participant-paginator">
-              <span class="participant-paginator__label">{{ paginatorLabel }}</span>
+        <!-- Tabla participantes -->
+        @if (trip.participants.length > 0) {
+        @if (totalFilteredCount > 0) {
+          <div class="participant-paginator">
+            <span class="participant-paginator__label">{{ paginatorLabel }}</span>
+            @if (totalPages > 1) {
               <button mat-icon-button [disabled]="participantPage === 0" (click)="participantPage = participantPage - 1">
                 <mat-icon>chevron_left</mat-icon>
               </button>
@@ -355,13 +357,9 @@
               <button mat-icon-button [disabled]="participantPage >= totalPages - 1" (click)="participantPage = participantPage + 1">
                 <mat-icon>chevron_right</mat-icon>
               </button>
-            </div>
-          }
-        </ng-template>
-
-        <!-- Tabla participantes -->
-        @if (trip.participants.length > 0) {
-        <ng-container *ngTemplateOutlet="participantPaginator" />
+            }
+          </div>
+        }
         <table mat-table [dataSource]="pagedParticipants" class="participants-table">
 
           <ng-container matColumnDef="select">
@@ -484,7 +482,20 @@
           <tr mat-header-row *matHeaderRowDef="participantColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: participantColumns"></tr>
         </table>
-        <ng-container *ngTemplateOutlet="participantPaginator" />
+        @if (totalFilteredCount > 0) {
+          <div class="participant-paginator">
+            <span class="participant-paginator__label">{{ paginatorLabel }}</span>
+            @if (totalPages > 1) {
+              <button mat-icon-button [disabled]="participantPage === 0" (click)="participantPage = participantPage - 1">
+                <mat-icon>chevron_left</mat-icon>
+              </button>
+              <span class="participant-paginator__pages">{{ participantPage + 1 }} / {{ totalPages }}</span>
+              <button mat-icon-button [disabled]="participantPage >= totalPages - 1" (click)="participantPage = participantPage + 1">
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            }
+          </div>
+        }
         } @else {
         <p class="empty-message">Sin participantes aún.</p>
         }

@@ -10,8 +10,8 @@ import {
 import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { concat, of, Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, expand, filter, last, map, reduce, switchMap, takeWhile } from 'rxjs/operators';
+import { concat, EMPTY, of, Subject } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, expand, filter, last, map, reduce, switchMap, takeWhile } from 'rxjs/operators';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -36,6 +36,8 @@ import {
   CategoryEnum,
   PaymentEntityTypeEnum,
   Player,
+  PlayerAvailabilityEnum,
+  PlayerStatusEnum,
   RoleEnum,
   SportEnum,
   TransportTypeEnum,
@@ -184,7 +186,7 @@ export class TripViewerComponent implements OnInit {
   participantStatusFilter: TripParticipantStatusEnum | null = null;
   participantCategoryFilter: string | null = null;
   participantPage = 0;
-  readonly PARTICIPANT_PAGE_SIZE = 50;
+  readonly PARTICIPANT_PAGE_SIZE = 15;
 
   private readonly categoryOrder = new Map(
     categoryOptions.map((c, i) => [c.id as string, i])
@@ -536,19 +538,19 @@ export class TripViewerComponent implements OnInit {
   }
 
   get confirmedByCategory(): { label: string; count: number }[] {
-    const map = new Map<string, number>();
+    const map = new Map<string, { label: string; count: number }>();
     this.trip?.participants
       .filter((p) => p.status === TripParticipantStatusEnum.CONFIRMED && p.type === TripParticipantTypeEnum.PLAYER)
       .forEach((p) => {
         const cat = (p.player as any)?.category;
         if (cat) {
-          const label = getCategoryLabel(cat);
-          map.set(label, (map.get(label) ?? 0) + 1);
+          const entry = map.get(cat) ?? { label: getCategoryLabel(cat), count: 0 };
+          map.set(cat, { ...entry, count: entry.count + 1 });
         }
       });
     return [...map.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([label, count]) => ({ label, count }));
+      .sort((a, b) => (this.categoryOrder.get(a[0]) ?? 999) - (this.categoryOrder.get(b[0]) ?? 999))
+      .map(([, entry]) => entry);
   }
 
   get totalDebt(): number {
@@ -673,18 +675,23 @@ export class TripViewerComponent implements OnInit {
 
   removeAllParticipants(): void {
     if (!this.trip?.id || !this.trip.participants.length) return;
+    const count = this.trip.participants.length;
     this.dialog
       .open(ConfirmDialogComponent, {
         data: {
           title: 'Quitar todos los participantes',
-          message: `¿Quitar los ${this.trip.participants.length} participantes del viaje? Esta acción no se puede deshacer.`,
-          confirmLabel: 'Quitar todos',
+          message: `Esta acción quitará los ${count} participantes del viaje y NO SE PUEDE DESHACER.\n\nEn el siguiente paso tenés que escribir "${count}" para confirmar.`,
+          confirmLabel: 'Continuar',
         },
       })
       .afterClosed()
       .pipe(
         filter((confirmed) => !!confirmed),
-        switchMap(() => this.tripsService.removeAllParticipants(this.trip!.id!)),
+        switchMap(() => {
+          const input = window.prompt(`Escribí el número ${count} para confirmar que querés quitar a TODOS los participantes:`);
+          if (input?.trim() !== String(count)) return EMPTY;
+          return this.tripsService.removeAllParticipants(this.trip!.id!);
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
@@ -725,6 +732,8 @@ export class TripViewerComponent implements OnInit {
     const filters = {
       ...(this.trip.sport && { sport: this.trip.sport }),
       categories,
+      status: PlayerStatusEnum.ACTIVE,
+      availability: PlayerAvailabilityEnum.AVAILABLE,
     };
 
     // Fetch all pages then bulk-add the ones not already in the trip
@@ -792,9 +801,17 @@ export class TripViewerComponent implements OnInit {
       .afterClosed()
       .pipe(
         filter((confirmed) => !!confirmed),
-        switchMap(() =>
-          this.tripsService.removeParticipant(this.trip!.id!, p.id!)
-        ),
+        switchMap(() => {
+          const snapshot = this.trip!;
+          this.trip = { ...snapshot, participants: snapshot.participants.filter((x) => x.id !== p.id) } as unknown as Trip;
+          return this.tripsService.removeParticipant(snapshot.id!, p.id!).pipe(
+            catchError((err) => {
+              this.trip = snapshot;
+              this.snackBar.open(getErrorMessage(err, 'Error al quitar participante'), 'Cerrar', { duration: 4000 });
+              return EMPTY;
+            })
+          );
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({ next: (trip) => (this.trip = trip) });

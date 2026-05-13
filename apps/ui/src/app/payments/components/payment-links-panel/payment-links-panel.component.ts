@@ -1,5 +1,6 @@
 import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -9,6 +10,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { PaymentsService } from '../../services/payments.service';
 import { PaymentsReportPdfService } from '../../../reports/services/payments-report-pdf.service';
 import { CreatePaymentLinkDialogComponent } from '../create-payment-link-dialog/create-payment-link-dialog.component';
@@ -36,6 +40,7 @@ import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.di
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatButtonModule,
     MatIconModule,
     MatDialogModule,
@@ -45,6 +50,9 @@ import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.di
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatMenuModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
     AllowedRolesDirective,
   ],
   templateUrl: './payment-links-panel.component.html',
@@ -72,6 +80,83 @@ export class PaymentLinksPanelComponent implements OnInit {
   readonly linkColumns = ['concept', 'amount', 'type', 'expires', 'status', 'actions'];
   readonly paymentColumns = ['player', 'concept', 'method', 'amount', 'date', 'status', 'actions'];
 
+  readonly LINKS_PAGE_SIZE = 10;
+  readonly PAYMENTS_PAGE_SIZE = 15;
+  linksPage = 0;
+  paymentsPage = 0;
+
+  // ── Filtros de pagos recibidos ───────────────────────────────────────────
+  paymentsSearch = '';
+  paymentsMethodFilter: PaymentMethodEnum | null = null;
+  paymentsStatusFilter: PaymentStatusEnum | null = null;
+
+  readonly methodOptions = [
+    { id: PaymentMethodEnum.CASH,        label: 'Efectivo' },
+    { id: PaymentMethodEnum.TRANSFER,    label: 'Transferencia' },
+    { id: PaymentMethodEnum.MERCADOPAGO, label: 'Mercado Pago' },
+  ];
+
+  readonly statusOptions = [
+    { id: PaymentStatusEnum.APPROVED,   label: 'Aprobado' },
+    { id: PaymentStatusEnum.PENDING,    label: 'Pendiente' },
+    { id: PaymentStatusEnum.REJECTED,   label: 'Rechazado' },
+  ];
+
+  onPaymentsFilterChange(): void {
+    this.paymentsPage = 0;
+  }
+
+  onPaymentsSearchChange(value: string): void {
+    this.paymentsSearch = value;
+    this.paymentsPage = 0;
+  }
+
+  resetPaymentsFilters(): void {
+    this.paymentsSearch = '';
+    this.paymentsMethodFilter = null;
+    this.paymentsStatusFilter = null;
+    this.paymentsPage = 0;
+  }
+
+  get hasActivePaymentsFilters(): boolean {
+    return !!(this.paymentsSearch || this.paymentsMethodFilter || this.paymentsStatusFilter);
+  }
+
+  // ── Paginación ───────────────────────────────────────────────────────────
+
+  get pagedLinks(): IPaymentLink[] {
+    const start = this.linksPage * this.LINKS_PAGE_SIZE;
+    return this.links.slice(start, start + this.LINKS_PAGE_SIZE);
+  }
+
+  get totalLinksPages(): number {
+    return Math.ceil(this.links.length / this.LINKS_PAGE_SIZE);
+  }
+
+  get linksRangeLabel(): string {
+    const total = this.links.length;
+    const start = this.linksPage * this.LINKS_PAGE_SIZE + 1;
+    const end = Math.min(start + this.LINKS_PAGE_SIZE - 1, total);
+    return `${start}–${end} de ${total}`;
+  }
+
+  get pagedVisiblePayments(): IPayment[] {
+    const start = this.paymentsPage * this.PAYMENTS_PAGE_SIZE;
+    return this.filteredPayments.slice(start, start + this.PAYMENTS_PAGE_SIZE);
+  }
+
+  get totalPaymentsPages(): number {
+    return Math.ceil(this.filteredPayments.length / this.PAYMENTS_PAGE_SIZE);
+  }
+
+  get paymentsRangeLabel(): string {
+    const total = this.filteredPayments.length;
+    if (total === 0) return '0 pagos';
+    const start = this.paymentsPage * this.PAYMENTS_PAGE_SIZE + 1;
+    const end = Math.min(start + this.PAYMENTS_PAGE_SIZE - 1, total);
+    return `${start}–${end} de ${total}`;
+  }
+
   readonly PaymentLinkStatusEnum = PaymentLinkStatusEnum;
   readonly RoleEnum = RoleEnum;
   readonly PaymentMethodEnum = PaymentMethodEnum;
@@ -83,6 +168,8 @@ export class PaymentLinksPanelComponent implements OnInit {
 
   loadAll() {
     this.loading.set(true);
+    this.linksPage = 0;
+    this.paymentsPage = 0;
     this.paymentsService.getLinks(this.entityType, this.entityId).subscribe({
       next: (links) => (this.links = links),
     });
@@ -168,7 +255,7 @@ export class PaymentLinksPanelComponent implements OnInit {
       .catch(() => this.snackBar.open('Error al generar el reporte', '', { duration: 3000 }));
   }
 
-  get visiblePayments(): IPayment[] {
+  private get categoryFilteredPayments(): IPayment[] {
     if (!this.categoryFilter?.length) return this.payments;
     const cats = new Set(this.categoryFilter);
     return this.payments.filter((p) => {
@@ -177,8 +264,22 @@ export class PaymentLinksPanelComponent implements OnInit {
     });
   }
 
+  get filteredPayments(): IPayment[] {
+    const term = this.paymentsSearch.toLowerCase().trim();
+    return this.categoryFilteredPayments.filter((p) => {
+      if (term) {
+        const name = ((p.playerId as any)?.name ?? p.playerName ?? '').toLowerCase();
+        const concept = (p.concept ?? '').toLowerCase();
+        if (!name.includes(term) && !concept.includes(term)) return false;
+      }
+      if (this.paymentsMethodFilter && p.method !== this.paymentsMethodFilter) return false;
+      if (this.paymentsStatusFilter && p.status !== this.paymentsStatusFilter) return false;
+      return true;
+    });
+  }
+
   get totalApproved(): number {
-    return this.visiblePayments
+    return this.categoryFilteredPayments
       .filter((p) => p.status === PaymentStatusEnum.APPROVED)
       .reduce((s, p) => s + p.amount, 0);
   }

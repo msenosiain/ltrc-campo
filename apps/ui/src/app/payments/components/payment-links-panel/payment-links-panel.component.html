@@ -26,7 +26,7 @@
 
   @if (links.length > 0) {
     <h4 class="section-title">Links de cobro</h4>
-    <table mat-table [dataSource]="links" class="links-table">
+    <table mat-table [dataSource]="pagedLinks" class="links-table">
 
       <ng-container matColumnDef="concept">
         <th mat-header-cell *matHeaderCellDef>Concepto</th>
@@ -85,6 +85,18 @@
       <tr mat-header-row *matHeaderRowDef="linkColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: linkColumns;"></tr>
     </table>
+    @if (totalLinksPages > 1) {
+      <div class="panel-paginator">
+        <span class="panel-paginator__label">{{ linksRangeLabel }}</span>
+        <button mat-icon-button [disabled]="linksPage === 0" (click)="linksPage = linksPage - 1">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span class="panel-paginator__pages">{{ linksPage + 1 }} / {{ totalLinksPages }}</span>
+        <button mat-icon-button [disabled]="linksPage >= totalLinksPages - 1" (click)="linksPage = linksPage + 1">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    }
   }
 
   <mat-menu #shareMenu="matMenu">
@@ -102,10 +114,68 @@
 
   <h4 class="section-title">Pagos recibidos</h4>
 
-  @if (visiblePayments.length === 0) {
+  @if (payments.length > 0) {
+    <div class="payments-filters">
+      <mat-form-field appearance="outline" class="pfilter-search">
+        <mat-label>Buscar</mat-label>
+        <input matInput [value]="paymentsSearch" (input)="onPaymentsSearchChange($any($event.target).value)" placeholder="Nombre o concepto" />
+        @if (paymentsSearch) {
+          <button mat-icon-button matSuffix type="button" (click)="onPaymentsSearchChange('')"><mat-icon>close</mat-icon></button>
+        } @else {
+          <mat-icon matSuffix>search</mat-icon>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="pfilter-select">
+        <mat-label>Método</mat-label>
+        <mat-select [(ngModel)]="paymentsMethodFilter" (ngModelChange)="onPaymentsFilterChange()">
+          <mat-option [value]="null">Todos</mat-option>
+          @for (opt of methodOptions; track opt.id) {
+            <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="pfilter-select">
+        <mat-label>Estado</mat-label>
+        <mat-select [(ngModel)]="paymentsStatusFilter" (ngModelChange)="onPaymentsFilterChange()">
+          <mat-option [value]="null">Todos</mat-option>
+          @for (opt of statusOptions; track opt.id) {
+            <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (hasActivePaymentsFilters) {
+        <button mat-icon-button matTooltip="Limpiar filtros" (click)="resetPaymentsFilters()">
+          <mat-icon>filter_alt_off</mat-icon>
+        </button>
+      }
+    </div>
+  }
+
+  @if (payments.length === 0) {
     <p class="empty-state">Aún no hay pagos registrados.</p>
+  } @else if (filteredPayments.length === 0) {
+    <p class="empty-state">No hay resultados para los filtros aplicados.</p>
   } @else {
-    <table mat-table [dataSource]="visiblePayments" class="payments-table">
+    <ng-template #paymentsPaginator>
+      <div class="panel-paginator">
+        <span class="panel-paginator__label">{{ paymentsRangeLabel }}</span>
+        @if (totalPaymentsPages > 1) {
+          <button mat-icon-button [disabled]="paymentsPage === 0" (click)="paymentsPage = paymentsPage - 1">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="panel-paginator__pages">{{ paymentsPage + 1 }} / {{ totalPaymentsPages }}</span>
+          <button mat-icon-button [disabled]="paymentsPage >= totalPaymentsPages - 1" (click)="paymentsPage = paymentsPage + 1">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        }
+      </div>
+    </ng-template>
+
+    <ng-container *ngTemplateOutlet="paymentsPaginator" />
+    <table mat-table [dataSource]="pagedVisiblePayments" class="payments-table">
 
       <ng-container matColumnDef="player">
         <th mat-header-cell *matHeaderCellDef>Jugador</th>
@@ -168,5 +238,6 @@
       <tr mat-header-row *matHeaderRowDef="paymentColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: paymentColumns;"></tr>
     </table>
+    <ng-container *ngTemplateOutlet="paymentsPaginator" />
   }
 }
