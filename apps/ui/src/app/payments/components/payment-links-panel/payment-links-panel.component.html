@@ -180,9 +180,9 @@
       <tr mat-header-row *matHeaderRowDef="paymentColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: paymentColumns;"></tr>
     </table>
-    @if (totalPaymentsPages > 1) {
-      <div class="panel-paginator">
-        <span class="panel-paginator__label">{{ paymentsRangeLabel }}</span>
+    <div class="panel-paginator">
+      <span class="panel-paginator__label">{{ paymentsRangeLabel }}</span>
+      @if (totalPaymentsPages > 1) {
         <button mat-icon-button [disabled]="paymentsPage === 0" (click)="paymentsPage = paymentsPage - 1">
           <mat-icon>chevron_left</mat-icon>
         </button>
@@ -190,7 +190,7 @@
         <button mat-icon-button [disabled]="paymentsPage >= totalPaymentsPages - 1" (click)="paymentsPage = paymentsPage + 1">
           <mat-icon>chevron_right</mat-icon>
         </button>
-      </div>
-    }
+      }
+    </div>
   }
 }
