@@ -695,7 +695,14 @@ describe('PaymentsService', () => {
         _id: new Types.ObjectId('cccccccccccccccccccccccc'),
       });
       mockPaymentModel.create.mockResolvedValue(payment);
-      mockTripModel.findById.mockResolvedValue(trip);
+      mockPaymentModel.find.mockReturnValue({
+        select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([]) }),
+      });
+      mockTripModel.findById
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(trip) }),
+        })
+        .mockResolvedValueOnce(trip);
 
       await service.recordManualPayment({
         entityType: PaymentEntityTypeEnum.TRIP,

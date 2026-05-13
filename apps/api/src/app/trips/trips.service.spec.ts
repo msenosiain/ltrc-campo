@@ -4,6 +4,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { TripsService } from './trips.service';
 import { TripEntity } from './schemas/trip.entity';
+import { PaymentEntity } from '../payments/schemas/payment.entity';
 import {
   TripParticipantStatusEnum,
   TripParticipantTypeEnum,
@@ -64,6 +65,12 @@ const mockTripModel = {
   countDocuments: jest.fn(),
 };
 
+const mockPaymentModel = {
+  create: jest.fn(),
+  find: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([]) }),
+  findById: jest.fn(),
+};
+
 // ── suite ─────────────────────────────────────────────────────────────────────
 
 describe('TripsService', () => {
@@ -76,6 +83,7 @@ describe('TripsService', () => {
       providers: [
         TripsService,
         { provide: getModelToken(TripEntity.name), useValue: mockTripModel },
+        { provide: getModelToken(PaymentEntity.name), useValue: mockPaymentModel },
       ],
     }).compile();
 
