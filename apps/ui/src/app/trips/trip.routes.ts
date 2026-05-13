@@ -16,7 +16,7 @@ export const TRIPS_ROUTES: Routes = [
     path: 'create',
     component: TripEditorComponent,
     canActivate: [hasRoleGuard],
-    data: { title: 'Nuevo viaje', allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN] },
+    data: { title: 'Nuevo viaje', allowedRoles: [RoleEnum.ADMIN, RoleEnum.COORDINATOR] },
   },
   {
     path: ':id',
@@ -28,6 +28,6 @@ export const TRIPS_ROUTES: Routes = [
     path: ':id/edit',
     component: TripEditorComponent,
     canActivate: [hasRoleGuard],
-    data: { title: 'Editar viaje', allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN] },
+    data: { title: 'Editar viaje', allowedRoles: [RoleEnum.ADMIN, RoleEnum.COORDINATOR] },
   },
 ];

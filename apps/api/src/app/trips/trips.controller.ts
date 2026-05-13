@@ -40,7 +40,7 @@ export class TripsController {
   }
 
   @Post()
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
   create(@Body() dto: CreateTripDto, @Req() req: Request) {
     return this.tripsService.create(dto, (req as any).user);
   }
@@ -51,7 +51,7 @@ export class TripsController {
   }
 
   @Patch(':id')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
   update(
     @Param('id') id: string,
     @Body() dto: UpdateTripDto,
@@ -61,7 +61,7 @@ export class TripsController {
   }
 
   @Delete(':id')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
   delete(@Param('id') id: string) {
     return this.tripsService.delete(id);
   }
