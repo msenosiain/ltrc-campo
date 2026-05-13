@@ -67,16 +67,20 @@ export class MatchesService {
 
   async updateSquad(
     id: string,
-    squad: { shirtNumber: number; playerId: string }[]
+    squad: { shirtNumber: number; playerId: string; dorsalNumber?: number; gpsNumber?: number; isCaptain?: boolean; posterLabel?: string }[]
   ) {
     const match = await this.matchModel.findById(id);
     if (!match) throw new NotFoundException('Match not found');
 
     match.set(
       'squad',
-      squad.map(({ shirtNumber, playerId }) => ({
+      squad.map(({ shirtNumber, playerId, dorsalNumber, gpsNumber, isCaptain, posterLabel }) => ({
         shirtNumber,
         player: playerId,
+        ...(dorsalNumber !== undefined && { dorsalNumber }),
+        ...(gpsNumber !== undefined && { gpsNumber }),
+        ...(isCaptain && { isCaptain }),
+        ...(posterLabel && { posterLabel }),
       }))
     );
     return this.stripOrphanedSquad(
@@ -349,7 +353,11 @@ export class MatchesService {
     if (!match) throw new NotFoundException('Match not found');
     const att = match.attachments?.find((a) => a.fileId === fileId);
     if (!att) throw new NotFoundException('Attachment not found');
-    return { stream: this.gridFsService.getFileStream('matchAttachments', fileId), mimeType: att.mimeType };
+    return {
+      stream: this.gridFsService.getFileStream('matchAttachments', fileId),
+      mimeType: att.mimeType,
+      filename: att.filename,
+    };
   }
 
   async deleteAttachment(matchId: string, fileId: string) {

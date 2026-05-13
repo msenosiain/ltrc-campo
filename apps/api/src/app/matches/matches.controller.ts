@@ -165,11 +165,15 @@ export class MatchesController {
     @Param('fileId') fileId: string,
     @Res() res: Response
   ) {
-    const { stream, mimeType } = await this.matchesService.getAttachmentStream(
+    const { stream, mimeType, filename } = await this.matchesService.getAttachmentStream(
       id,
       fileId
     );
     res.setHeader('Content-Type', mimeType);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`
+    );
     stream.pipe(res);
   }
 

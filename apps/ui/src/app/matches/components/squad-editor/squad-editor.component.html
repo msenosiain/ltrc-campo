@@ -193,6 +193,21 @@
         />
       </td>
     </ng-container>
+    <ng-container matColumnDef="gpsNumber">
+      <th mat-header-cell *matHeaderCellDef>GPS</th>
+      <td mat-cell *matCellDef="let entry">
+        <input
+          class="dorsal-input"
+          type="number"
+          [value]="entry.gpsNumber ?? ''"
+          min="1"
+          placeholder="—"
+          [class.dorsal-modified]="entry.gpsNumber !== undefined"
+          (change)="updateGpsNumber(entry, $event)"
+          [disabled]="saving"
+        />
+      </td>
+    </ng-container>
     <ng-container matColumnDef="player">
       <th mat-header-cell *matHeaderCellDef>Jugador</th>
       <td mat-cell *matCellDef="let entry">
@@ -263,6 +278,21 @@
           max="99"
           [class.dorsal-modified]="entry.dorsalNumber !== undefined && entry.dorsalNumber !== entry.shirtNumber"
           (change)="updateDorsal(entry, $event)"
+          [disabled]="saving"
+        />
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="gpsNumber">
+      <th mat-header-cell *matHeaderCellDef>GPS</th>
+      <td mat-cell *matCellDef="let entry">
+        <input
+          class="dorsal-input"
+          type="number"
+          [value]="entry.gpsNumber ?? ''"
+          min="1"
+          placeholder="—"
+          [class.dorsal-modified]="entry.gpsNumber !== undefined"
+          (change)="updateGpsNumber(entry, $event)"
           [disabled]="saving"
         />
       </td>

@@ -1,10 +1,12 @@
 import {
   Component,
+  ElementRef,
   HostListener,
   inject,
   OnInit,
   DestroyRef,
   signal,
+  ViewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatchesService } from '../../services/matches.service';
@@ -40,6 +42,7 @@ import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PlayersService } from '../../../players/services/players.service';
 import { SquadPdfService } from '../../services/squad-pdf.service';
+import { GpsReportPdfService } from '../../services/gps-report-pdf.service';
 import { ShareSquadDialogComponent, ShareSquadDialogData } from '../share-squad-dialog/share-squad-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { UploadAttachmentDialogComponent, UploadAttachmentDialogData, UploadAttachmentResult } from '../upload-attachment-dialog/upload-attachment-dialog.component';
@@ -74,16 +77,20 @@ export class MatchViewerComponent implements OnInit {
   private readonly matchesService = inject(MatchesService);
   private readonly playersService = inject(PlayersService);
   private readonly squadPdf = inject(SquadPdfService);
+  private readonly gpsReportPdf = inject(GpsReportPdfService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
   private readonly paymentsService = inject(PaymentsService);
+
+  @ViewChild('gpsInput') gpsInputRef!: ElementRef<HTMLInputElement>;
 
   match?: Match;
   isCompetitive = false;
   isInfantiles = false;
   loading = signal(false);
   uploadingAttachment = signal(false);
+  generatingGpsReport = signal(false);
   readonly MatchStatusEnum = MatchStatusEnum;
   readonly AttendanceStatusEnum = AttendanceStatusEnum;
   readonly PlayerStatusEnum = PlayerStatusEnum;
@@ -229,6 +236,46 @@ export class MatchViewerComponent implements OnInit {
     }
   }
 
+  openGpsFilePicker(): void {
+    this.gpsInputRef.nativeElement.value = '';
+    this.gpsInputRef.nativeElement.click();
+  }
+
+  async onGpsCsvSelected(event: Event): Promise<void> {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file || !this.match) return;
+
+    this.generatingGpsReport.set(true);
+    try {
+      const csvText = await file.text();
+      const blob = await this.gpsReportPdf.generateReport(this.match, csvText);
+      const dateStr = this.match.date
+        ? new Date(this.match.date).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
+        : 'sin fecha';
+      const division = this.match.division ? `${this.match.division} ` : '';
+      const partido = this.match.name
+        ?? (this.match.opponent ? `${division}vs ${this.match.opponent}` : 'Partido');
+      const reportName = `Informe GPS ${partido} ${dateStr}`;
+      const pdfFile = new File([blob], `${reportName}.pdf`, { type: 'application/pdf' });
+
+      this.matchesService.uploadAttachment(this.match.id!, pdfFile, reportName, 'all').subscribe({
+        next: (att) => {
+          (this.match as any).attachments = [...(this.match!.attachments ?? []), att];
+          this.generatingGpsReport.set(false);
+          this.snackBar.open('Informe GPS generado y adjuntado', 'Cerrar', { duration: 4000 });
+        },
+        error: () => {
+          this.generatingGpsReport.set(false);
+          this.snackBar.open('Error al subir el informe GPS', 'Cerrar', { duration: 4000 });
+        },
+      });
+    } catch (err) {
+      this.generatingGpsReport.set(false);
+      const msg = err instanceof Error ? err.message : 'Error al generar el informe GPS';
+      this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
+    }
+  }
+
   shareSquad(): void {
     if (!this.match) return;
     this.dialog.open(ShareSquadDialogComponent, {
@@ -253,7 +300,16 @@ export class MatchViewerComponent implements OnInit {
     this.matchesService.fetchAttachmentBlob(this.match!.id!, att.fileId).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        const a = document.createElement('a');
+        a.href = url;
+        if (this.isImage(att)) {
+          a.target = '_blank';
+        } else {
+          a.download = att.filename;
+        }
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 10000);
       },
     });

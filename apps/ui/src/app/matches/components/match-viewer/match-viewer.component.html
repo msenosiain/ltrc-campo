@@ -29,7 +29,13 @@
           <mat-icon>campaign</mat-icon>
           Carteles de vestuario
         </button>
+        <mat-divider />
+        <button mat-menu-item [disabled]="generatingGpsReport()" (click)="openGpsFilePicker()">
+          <mat-icon>speed</mat-icon>
+          {{ generatingGpsReport() ? 'Generando informe GPS…' : 'Generar informe GPS (Catapult)' }}
+        </button>
       </mat-menu>
+      <input #gpsInput type="file" accept=".csv" hidden (change)="onGpsCsvSelected($event)" />
       @if (match!.squad.length) {
         <button
           *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH]"
@@ -205,6 +211,9 @@
           <div class="squad-entry">
             <span class="shirt-number">{{ entry.shirtNumber }}</span>
             <span class="player-name">{{ entry.player ? entry.player.name : '(eliminado)' }}</span>
+            @if (entry.gpsNumber !== undefined) {
+              <span class="gps-badge" matTooltip="Dispositivo GPS">GPS {{ entry.gpsNumber }}</span>
+            }
           </div>
           }
         }
@@ -215,6 +224,9 @@
           <div class="squad-entry">
             <span class="shirt-number">{{ entry.shirtNumber }}</span>
             <span class="player-name">{{ entry.player ? entry.player.name : '(eliminado)' }}</span>
+            @if (entry.gpsNumber !== undefined) {
+              <span class="gps-badge" matTooltip="Dispositivo GPS">GPS {{ entry.gpsNumber }}</span>
+            }
           </div>
           }
         }

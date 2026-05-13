@@ -36,6 +36,7 @@ export interface MatchDayStaff {
 export interface SquadEntry {
   shirtNumber: number;
   dorsalNumber?: number;
+  gpsNumber?: number;
   isCaptain?: boolean;
   posterLabel?: string;
   player: Player;
