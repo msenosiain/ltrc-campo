@@ -675,18 +675,23 @@ export class TripViewerComponent implements OnInit {
 
   removeAllParticipants(): void {
     if (!this.trip?.id || !this.trip.participants.length) return;
+    const count = this.trip.participants.length;
     this.dialog
       .open(ConfirmDialogComponent, {
         data: {
           title: 'Quitar todos los participantes',
-          message: `¿Quitar los ${this.trip.participants.length} participantes del viaje? Esta acción no se puede deshacer.`,
-          confirmLabel: 'Quitar todos',
+          message: `Esta acción quitará los ${count} participantes del viaje y NO SE PUEDE DESHACER.\n\nEn el siguiente paso tenés que escribir "${count}" para confirmar.`,
+          confirmLabel: 'Continuar',
         },
       })
       .afterClosed()
       .pipe(
         filter((confirmed) => !!confirmed),
-        switchMap(() => this.tripsService.removeAllParticipants(this.trip!.id!)),
+        switchMap(() => {
+          const input = window.prompt(`Escribí el número ${count} para confirmar que querés quitar a TODOS los participantes:`);
+          if (input?.trim() !== String(count)) return EMPTY;
+          return this.tripsService.removeAllParticipants(this.trip!.id!);
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
