@@ -538,19 +538,19 @@ export class TripViewerComponent implements OnInit {
   }
 
   get confirmedByCategory(): { label: string; count: number }[] {
-    const map = new Map<string, number>();
+    const map = new Map<string, { label: string; count: number }>();
     this.trip?.participants
       .filter((p) => p.status === TripParticipantStatusEnum.CONFIRMED && p.type === TripParticipantTypeEnum.PLAYER)
       .forEach((p) => {
         const cat = (p.player as any)?.category;
         if (cat) {
-          const label = getCategoryLabel(cat);
-          map.set(label, (map.get(label) ?? 0) + 1);
+          const entry = map.get(cat) ?? { label: getCategoryLabel(cat), count: 0 };
+          map.set(cat, { ...entry, count: entry.count + 1 });
         }
       });
     return [...map.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([label, count]) => ({ label, count }));
+      .sort((a, b) => (this.categoryOrder.get(a[0]) ?? 999) - (this.categoryOrder.get(b[0]) ?? 999))
+      .map(([, entry]) => entry);
   }
 
   get totalDebt(): number {
