@@ -3,11 +3,13 @@ import {
   InjectionToken,
   LOCALE_ID,
   Provider,
+  isDevMode,
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideServiceWorker } from '@angular/service-worker';
 import { registerLocaleData } from '@angular/common';
 import localeEsAr from '@angular/common/locales/es-AR';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
@@ -72,6 +74,10 @@ export const appConfig: ApplicationConfig = {
     },
     provideCharts(withDefaultRegisterables()),
     provideAppIcons(),
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
     provideDateFnsAdapter({
       parse: {
         dateInput: 'dd/MM/yyyy',

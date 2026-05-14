@@ -1,0 +1,23 @@
+{
+  "name": "Los Tordos RC — Campo",
+  "short_name": "LTRC Campo",
+  "theme_color": "#132142",
+  "background_color": "#132142",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

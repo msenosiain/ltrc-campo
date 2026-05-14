@@ -1,0 +1,70 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app-shell",
+      "installMode": "prefetch",
+      "resources": {
+        "files": [
+          "/favicon.ico",
+          "/index.html",
+          "/manifest.webmanifest",
+          "/*.css",
+          "/*.js"
+        ]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/icons/**",
+          "/*.png",
+          "/*.jpg"
+        ]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "players-api",
+      "urls": [
+        "http://localhost:3000/api/v1/players",
+        "http://localhost:3000/api/v1/players/**"
+      ],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxSize": 200,
+        "maxAge": "2h",
+        "timeout": "5s"
+      }
+    },
+    {
+      "name": "player-fees-api",
+      "urls": [
+        "http://localhost:3000/api/v1/player-fees/**"
+      ],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxSize": 100,
+        "maxAge": "2h",
+        "timeout": "5s"
+      }
+    },
+    {
+      "name": "reports-api",
+      "urls": [
+        "http://localhost:3000/api/v1/reports/**"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 20,
+        "maxAge": "30m",
+        "timeout": "10s"
+      }
+    }
+  ]
+}

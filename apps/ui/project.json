@@ -30,6 +30,8 @@
       },
       "configurations": {
         "production": {
+          "serviceWorker": true,
+          "ngswConfigPath": "apps/ui/ngsw-config.json",
           "budgets": [
             {
               "type": "initial",
@@ -62,6 +64,11 @@
               "with": "apps/ui/src/environments/environment.prod.ts"
             }
           ],
+          "outputHashing": "all"
+        },
+        "pwa-local": {
+          "serviceWorker": true,
+          "ngswConfigPath": "apps/ui/ngsw-config.local.json",
           "outputHashing": "all"
         },
         "development": {
