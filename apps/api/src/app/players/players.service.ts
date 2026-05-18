@@ -231,18 +231,26 @@ export class PlayersService {
     // Each word in the term is matched independently (AND) against name or nickName.
     // The fuzzy pattern allows extra chars between letters AND tolerates 1 wrong char
     // by also trying each word with each letter deleted (handles typos like "bnildo" → "Bildosola").
+    // Accent-insensitive: "lert" matches "Lértora", "e" matches "é", etc.
     if (filters.searchTerm) {
+      const stripAccents = (s: string) =>
+        s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+      const ACCENT_CLASS: Record<string, string> = {
+        a: '[aá]', e: '[eé]', i: '[ií]', o: '[oó]', u: '[uúü]', n: '[nñ]',
+      };
+
       const makeSubseq = (s: string) =>
-        s.split('').join('[^a-záéíóúüñ]*');
+        s.split('').map(c => ACCENT_CLASS[c] ?? c).join('[^a-záéíóúüñ]*');
 
       const buildVariants = (word: string): string[] => {
-        const cleaned = word.replace(/[^a-záéíóúüñ]/gi, '').toLowerCase();
+        const cleaned = stripAccents(word.replace(/[^a-záéíóúüñ]/gi, '').toLowerCase());
         if (!cleaned) return [];
         const variants = [makeSubseq(cleaned)];
-        if (cleaned.length >= 4) {
+        if (cleaned.length >= 6) {
           for (let i = 0; i < cleaned.length; i++) {
             const shortened = cleaned.slice(0, i) + cleaned.slice(i + 1);
-            if (shortened.length >= 3) variants.push(makeSubseq(shortened));
+            if (shortened.length >= 5) variants.push(makeSubseq(shortened));
           }
         }
         return [...new Set(variants)];
@@ -359,7 +367,16 @@ export class PlayersService {
     // the last word of the name (apellido) so "Martin Santiago" appears first
     // when searching "Santiago".
     if (filters.searchTerm && !sortBy) {
-      const termRegex = filters.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const SORT_ACCENT_CLASS: Record<string, string> = {
+        a: '[aá]', e: '[eé]', i: '[ií]', o: '[oó]', u: '[uúü]', n: '[nñ]',
+      };
+      const termRegex = filters.searchTerm
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        .toLowerCase()
+        .split('')
+        .map((c: string) => SORT_ACCENT_CLASS[c] ?? c)
+        .join('');
       const [items, total] = await Promise.all([
         this.playerModel.aggregate([
           { $match: queryFilters },
