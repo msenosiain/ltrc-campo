@@ -3,7 +3,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Match, SquadEntry } from '@ltrc-campo/shared-api-model';
+import { Match, SquadEntry, SportEnum } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../common/category-options';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ function drawPage1(doc: jsPDF, match: Match, players: GpsPlayerData[], logoB64: 
   y = drawHeader(doc, match, players, logoB64, y);
   y = drawMetricKpis(doc, players, y + 5);
   y = drawSectionBar(doc, 'Tabla General de Rendimiento', y + 5, NAVY);
-  y = drawTable(doc, players, y + 1);
+  y = drawTable(doc, players, y + 1, match);
   y = drawSectionBar(doc, 'Balance de Resistencia', y + 5, MAROON);
   const remainH = PH - MB - y;
   drawBarPair(doc,
@@ -278,12 +278,13 @@ function drawMetricKpis(doc: jsPDF, players: GpsPlayerData[], y: number): number
 
 // ─── General table ────────────────────────────────────────────────────────────
 
-function drawTable(doc: jsPDF, players: GpsPlayerData[], y: number): number {
+function drawTable(doc: jsPDF, players: GpsPlayerData[], y: number, match: Match): number {
+  const startersCount = (match.tournament as any)?.sport === SportEnum.HOCKEY || match.sport === SportEnum.HOCKEY ? 11 : 15;
   autoTable(doc, {
     startY: y,
     head: [['JUGADOR', 'DIST (M)', 'HIR (M)', 'HSR (M)', 'M/MIN', 'VEL MÁX', 'LOAD', 'P.PLAYS', 'IMPACTOS', 'ACEL.', 'DESAC.', 'A+D/MIN']],
     body: players.map(p => {
-      const isTit = p.shirtNumber > 0 && p.shirtNumber <= 15;
+      const isTit = p.shirtNumber > 0 && p.shirtNumber <= startersCount;
       return [
         `${p.shirtNumber > 0 ? p.shirtNumber + ' ' : ''}${playerBarLabel(p.shirtNumber, p.fullName).replace(/^\d+ /, '')}${isTit ? ' *' : ''}`,
         Math.round(p.distanceM),

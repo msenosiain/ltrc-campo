@@ -10,7 +10,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { CategoryEnum, RoleEnum } from '@ltrc-campo/shared-api-model';
+import { CategoryEnum, RoleEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 import { Request } from 'express';
 import { SquadsService } from './squads.service';
 import { CreateSquadDto } from './dto/create-squad.dto';
@@ -26,10 +26,11 @@ export class SquadsController {
 
   @Get()
   async findAll(
+    @Query('sport') sport?: SportEnum,
     @Query('category') category?: CategoryEnum,
     @Req() req?: Request
   ) {
-    return this.squadsService.findAll(category, (req as any)?.user);
+    return this.squadsService.findAll(sport, category, (req as any)?.user);
   }
 
   @Post()

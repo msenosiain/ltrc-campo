@@ -67,7 +67,7 @@ export class MatchesController {
   }
 
   @Patch(':id/squad')
-  @Roles(RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COACH)
+  @Roles(RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.TRAINER)
   async updateSquad(@Param('id') id: string, @Body() dto: UpdateMatchSquadDto) {
     return this.matchesService.updateSquad(id, dto.squad);
   }

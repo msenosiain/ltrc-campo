@@ -13,6 +13,7 @@ const SquadPlayerSchema = new Schema(
 export const SquadSchema = new Schema<SquadEntity>(
   {
     name: { type: String, required: true },
+    sport: { type: String },
     category: { type: String },
     players: [SquadPlayerSchema],
     createdBy: { type: Types.ObjectId, ref: 'User' },

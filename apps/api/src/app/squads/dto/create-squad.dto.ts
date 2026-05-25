@@ -11,7 +11,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CategoryEnum } from '@ltrc-campo/shared-api-model';
+import { CategoryEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 
 export class SquadEntryDto {
   @IsInt()
@@ -27,6 +27,10 @@ export class CreateSquadDto {
   @IsNotEmpty()
   @IsString()
   readonly name!: string;
+
+  @IsOptional()
+  @IsEnum(SportEnum)
+  readonly sport?: SportEnum;
 
   @IsOptional()
   @IsEnum(CategoryEnum)

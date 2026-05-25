@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { CategoryEnum, RoleEnum } from '@ltrc-campo/shared-api-model';
+import { CategoryEnum, RoleEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 import { SquadEntity } from './schemas/squad.entity';
 import { CreateSquadDto } from './dto/create-squad.dto';
 import { UpdateSquadDto } from './dto/update-squad.dto';
@@ -20,6 +20,7 @@ export class SquadsService {
     const callerId = caller ? (caller as any)._id : undefined;
     const squad = await this.squadModel.create({
       name: dto.name,
+      sport: dto.sport,
       category: dto.category,
       players: dto.players.map(({ shirtNumber, playerId }) => ({
         shirtNumber,
@@ -31,13 +32,19 @@ export class SquadsService {
     return squad!.populate(POPULATE_PLAYERS);
   }
 
-  async findAll(category?: CategoryEnum, caller?: User) {
-    let filter: Record<string, unknown> = category ? { category } : {};
+  async findAll(sport?: SportEnum, category?: CategoryEnum, caller?: User) {
+    let filter: Record<string, unknown> = {
+      ...(sport && { sport }),
+      ...(category && { category }),
+    };
 
     // Server-side restriction: limit results to user's assigned scope
     if (caller && !caller.roles?.includes(RoleEnum.ADMIN)) {
       if (caller.categories?.length) {
-        filter = { category: { $in: caller.categories } };
+        filter = {
+          ...(sport && { sport }),
+          category: { $in: caller.categories },
+        };
       }
     }
 
@@ -59,6 +66,7 @@ export class SquadsService {
     if (!squad) throw new NotFoundException('Squad not found');
 
     if (dto.name) squad.name = dto.name;
+    if (dto.sport !== undefined) squad.sport = dto.sport;
     if (dto.category !== undefined) squad.category = dto.category;
     if (dto.players) {
       squad.set(

@@ -165,15 +165,20 @@ export class MatchViewerComponent implements OnInit {
     }
   }
 
+  private get startersCount(): number {
+    const sport = this.tournament?.sport ?? this.match?.sport;
+    return sport === SportEnum.HOCKEY ? 11 : 15;
+  }
+
   get titulares(): SquadEntry[] {
     return (this.match?.squad ?? [])
-      .filter((e) => e.shirtNumber <= 15)
+      .filter((e) => e.shirtNumber <= this.startersCount)
       .sort((a, b) => a.shirtNumber - b.shirtNumber);
   }
 
   get suplentes(): SquadEntry[] {
     return (this.match?.squad ?? [])
-      .filter((e) => e.shirtNumber > 15)
+      .filter((e) => e.shirtNumber > this.startersCount)
       .sort((a, b) => a.shirtNumber - b.shirtNumber);
   }
 

@@ -138,9 +138,9 @@ export class SquadEditorComponent implements OnInit {
 
   private readonly hockeyFormationGroups: number[][][] = [
     [[1]],
-    [[2, 3, 4, 5]],
-    [[6, 7, 8]],
-    [[9, 10, 11]],
+    [[2, 3]],
+    [[4, 5, 6]],
+    [[7, 8, 9, 10, 11]],
   ];
   private readonly hockeyFormationShirts = new Set([
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
@@ -148,6 +148,10 @@ export class SquadEditorComponent implements OnInit {
 
   get matchSport(): SportEnum | null {
     return (this.match?.tournament as Tournament | undefined)?.sport ?? this.match?.sport ?? null;
+  }
+
+  get startersCount(): number {
+    return this.matchSport === SportEnum.HOCKEY ? 11 : 15;
   }
 
   get formationGroups(): number[][][] {
@@ -182,13 +186,13 @@ export class SquadEditorComponent implements OnInit {
 
   get titulares(): SquadEntry[] {
     return this.squadRows
-      .filter((e) => e.shirtNumber <= 15)
+      .filter((e) => e.shirtNumber <= this.startersCount)
       .sort((a, b) => a.shirtNumber - b.shirtNumber);
   }
 
   get suplentes(): SquadEntry[] {
     return this.squadRows
-      .filter((e) => e.shirtNumber > 15)
+      .filter((e) => e.shirtNumber > this.startersCount)
       .sort((a, b) => a.shirtNumber - b.shirtNumber);
   }
 
@@ -421,11 +425,15 @@ export class SquadEditorComponent implements OnInit {
           if (result.mode === 'create') {
             return this.squadsService.createSquad({
               name: result.name,
+              sport: this.matchSport ?? undefined,
               category: this.match?.category,
               players,
             });
           } else {
-            return this.squadsService.updateSquad(result.squadId, { players });
+            return this.squadsService.updateSquad(result.squadId, {
+              sport: this.matchSport ?? undefined,
+              players,
+            });
           }
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -488,7 +496,7 @@ export class SquadEditorComponent implements OnInit {
 
   private loadSquads(): void {
     this.squadsService
-      .getSquads(this.match?.category)
+      .getSquads(this.matchSport, this.match?.category)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((squads) => (this.squads = squads));
   }

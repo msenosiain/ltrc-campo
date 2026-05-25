@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CategoryEnum, Squad } from '@ltrc-campo/shared-api-model';
+import { CategoryEnum, SportEnum, Squad } from '@ltrc-campo/shared-api-model';
 import { API_CONFIG_TOKEN } from '../../app.config';
 
 export interface SquadPayloadEntry {
@@ -11,6 +11,7 @@ export interface SquadPayloadEntry {
 
 export interface SquadPayload {
   name: string;
+  sport?: SportEnum;
   category?: CategoryEnum;
   players: SquadPayloadEntry[];
 }
@@ -21,10 +22,10 @@ export class SquadsService {
   private readonly config = inject(API_CONFIG_TOKEN);
   private readonly baseUrl = `${this.config.baseUrl}/squads`;
 
-  getSquads(category?: CategoryEnum): Observable<Squad[]> {
-    const params = category
-      ? new HttpParams().set('category', category)
-      : undefined;
+  getSquads(sport?: SportEnum | null, category?: CategoryEnum): Observable<Squad[]> {
+    let params = new HttpParams();
+    if (sport) params = params.set('sport', sport);
+    if (category) params = params.set('category', category);
     return this.http.get<Squad[]>(this.baseUrl, { params });
   }
 

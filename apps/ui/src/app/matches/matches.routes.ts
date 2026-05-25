@@ -42,7 +42,7 @@ export const MATCHES_ROUTES: Routes = [
     canActivate: [hasRoleGuard],
     data: {
       title: 'Gestionar plantel',
-      allowedRoles: [RoleEnum.COACH, RoleEnum.MANAGER, RoleEnum.ADMIN],
+      allowedRoles: [RoleEnum.TRAINER, RoleEnum.COACH, RoleEnum.MANAGER, RoleEnum.ADMIN],
     },
   },
   {
