@@ -38,10 +38,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SessionEditDialogComponent, SessionEditDialogResult } from '../session-edit-dialog/session-edit-dialog.component';
-import {
-  UploadAttachmentDialogComponent,
-  UploadAttachmentResult,
-} from '../../../matches/components/upload-attachment-dialog/upload-attachment-dialog.component';
+import type { UploadAttachmentResult } from '../../../matches/components/upload-attachment-dialog/upload-attachment-dialog.component';
 
 @Component({
   selector: 'ltrc-session-viewer',
@@ -231,42 +228,50 @@ export class SessionViewerComponent implements OnInit {
   }
 
   openUploadDialog(): void {
-    const ref = this.dialog.open(UploadAttachmentDialogComponent, {
-      width: '420px',
-      data: { squad: this.attendanceSquad },
-    });
-    ref.afterClosed().subscribe((result: UploadAttachmentResult | undefined) => {
-      if (!result?.file) return;
-      this.sessionsService
-        .uploadAttachment(this.session!.id!, result.file, result.name, result.visibility, result.targetPlayers)
-        .subscribe({
-          next: (att) => {
-            (this.session as any).attachments = [...(this.session!.attachments ?? []), att];
-            this.snackBar.open('Archivo adjuntado', 'Cerrar', { duration: 3000 });
-          },
-          error: () => this.snackBar.open('Error al subir el archivo', 'Cerrar', { duration: 4000 }),
+    import('../../../matches/components/upload-attachment-dialog/upload-attachment-dialog.component').then(
+      ({ UploadAttachmentDialogComponent }) => {
+        const ref = this.dialog.open(UploadAttachmentDialogComponent, {
+          width: '420px',
+          data: { squad: this.attendanceSquad },
         });
-    });
+        ref.afterClosed().subscribe((result: UploadAttachmentResult | undefined) => {
+          if (!result?.file) return;
+          this.sessionsService
+            .uploadAttachment(this.session!.id!, result.file, result.name, result.visibility, result.targetPlayers)
+            .subscribe({
+              next: (att) => {
+                (this.session as any).attachments = [...(this.session!.attachments ?? []), att];
+                this.snackBar.open('Archivo adjuntado', 'Cerrar', { duration: 3000 });
+              },
+              error: () => this.snackBar.open('Error al subir el archivo', 'Cerrar', { duration: 4000 }),
+            });
+        });
+      }
+    );
   }
 
   openEditAttachmentDialog(att: TrainingSessionAttachment): void {
-    const ref = this.dialog.open(UploadAttachmentDialogComponent, {
-      width: '420px',
-      data: { attachment: att, squad: this.attendanceSquad },
-    });
-    ref.afterClosed().subscribe((result: UploadAttachmentResult | undefined) => {
-      if (!result) return;
-      this.sessionsService
-        .updateAttachment(this.session!.id!, att.fileId, result.name, result.visibility, result.targetPlayers)
-        .subscribe({
-          next: (updated) => {
-            const idx = (this.session!.attachments ?? []).findIndex((a) => a.fileId === att.fileId);
-            if (idx !== -1) (this.session!.attachments as any)[idx] = updated;
-            this.snackBar.open('Adjunto actualizado', 'Cerrar', { duration: 3000 });
-          },
-          error: () => this.snackBar.open('Error al actualizar', 'Cerrar', { duration: 4000 }),
+    import('../../../matches/components/upload-attachment-dialog/upload-attachment-dialog.component').then(
+      ({ UploadAttachmentDialogComponent }) => {
+        const ref = this.dialog.open(UploadAttachmentDialogComponent, {
+          width: '420px',
+          data: { attachment: att, squad: this.attendanceSquad },
         });
-    });
+        ref.afterClosed().subscribe((result: UploadAttachmentResult | undefined) => {
+          if (!result) return;
+          this.sessionsService
+            .updateAttachment(this.session!.id!, att.fileId, result.name, result.visibility, result.targetPlayers)
+            .subscribe({
+              next: (updated) => {
+                const idx = (this.session!.attachments ?? []).findIndex((a) => a.fileId === att.fileId);
+                if (idx !== -1) (this.session!.attachments as any)[idx] = updated;
+                this.snackBar.open('Adjunto actualizado', 'Cerrar', { duration: 3000 });
+              },
+              error: () => this.snackBar.open('Error al actualizar', 'Cerrar', { duration: 4000 }),
+            });
+        });
+      }
+    );
   }
 
   openAttachment(att: TrainingSessionAttachment): void {
