@@ -8,9 +8,14 @@ import {
   Param,
   Query,
   Req,
+  Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { File as MulterFile } from 'multer';
+import { Request, Response } from 'express';
 import { TrainingSessionsService } from './training-sessions.service';
 import { PaginationDto } from '../../shared/pagination.dto';
 import { TrainingSessionFiltersDto } from './training-session-filter.dto';
@@ -152,6 +157,61 @@ export class TrainingSessionsController {
   ) {
     await this.sessionsService.checkin(id, dto.token, (req as any).user);
     return { message: 'Asistencia confirmada' };
+  }
+
+  @Post(':id/attachments')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.ANALYST, RoleEnum.TRAINER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  async addAttachment(
+    @Param('id') id: string,
+    @UploadedFile() file: MulterFile,
+    @Body('name') name?: string,
+    @Body('visibility') visibility?: string,
+    @Body('targetPlayers') targetPlayers?: string | string[]
+  ) {
+    const players = targetPlayers
+      ? Array.isArray(targetPlayers)
+        ? targetPlayers
+        : JSON.parse(targetPlayers)
+      : undefined;
+    return this.sessionsService.addAttachment(id, file, name, visibility as any, players);
+  }
+
+  @Get(':id/attachments/:fileId')
+  @UseGuards(JwtAuthGuard)
+  async getAttachment(
+    @Param('id') id: string,
+    @Param('fileId') fileId: string,
+    @Res() res: Response
+  ) {
+    const { stream, mimeType, filename } = await this.sessionsService.getAttachmentStream(id, fileId);
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`
+    );
+    stream.pipe(res);
+  }
+
+  @Patch(':id/attachments/:fileId')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.ANALYST, RoleEnum.TRAINER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async updateAttachment(
+    @Param('id') id: string,
+    @Param('fileId') fileId: string,
+    @Body('name') name: string,
+    @Body('visibility') visibility: string,
+    @Body('targetPlayers') targetPlayers?: string[]
+  ) {
+    return this.sessionsService.updateAttachment(id, fileId, name, visibility as any, targetPlayers);
+  }
+
+  @Delete(':id/attachments/:fileId')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.ANALYST)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async deleteAttachment(@Param('id') id: string, @Param('fileId') fileId: string) {
+    return this.sessionsService.deleteAttachment(id, fileId);
   }
 
   @Patch(':id/attendance')

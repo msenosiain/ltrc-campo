@@ -30,6 +30,14 @@ export class TrainingSessionEntity extends Document {
     markedAt?: Date;
     markedBy?: string;
   }[];
+  attachments: {
+    fileId: string;
+    filename: string;
+    mimeType: string;
+    name?: string;
+    visibility?: 'all' | 'staff' | 'players';
+    targetPlayers?: Types.ObjectId[];
+  }[];
   notes?: string;
   createdBy?: Types.ObjectId;
   updatedBy?: Types.ObjectId;

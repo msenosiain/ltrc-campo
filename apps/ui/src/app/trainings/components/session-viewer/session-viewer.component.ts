@@ -15,6 +15,7 @@ import {
   RugbyPositions,
   SportEnum,
   TrainingSession,
+  TrainingSessionAttachment,
   TrainingSessionStatusEnum,
 } from '@ltrc-campo/shared-api-model';
 import { TrainingSessionsService } from '../../services/training-sessions.service';
@@ -37,6 +38,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SessionEditDialogComponent, SessionEditDialogResult } from '../session-edit-dialog/session-edit-dialog.component';
+import {
+  UploadAttachmentDialogComponent,
+  UploadAttachmentResult,
+} from '../../../matches/components/upload-attachment-dialog/upload-attachment-dialog.component';
 
 @Component({
   selector: 'ltrc-session-viewer',
@@ -214,6 +219,91 @@ export class SessionViewerComponent implements OnInit {
         error: () => this.snackBar.open('Error al actualizar', 'Cerrar', { duration: 4000 }),
       });
     });
+  }
+
+  get attendanceSquad() {
+    return (this.session?.attendance ?? [])
+      .filter((a) => !a.isStaff && a.player)
+      .map((a) => ({
+        shirtNumber: 0,
+        player: a.player as any,
+      }));
+  }
+
+  openUploadDialog(): void {
+    const ref = this.dialog.open(UploadAttachmentDialogComponent, {
+      width: '420px',
+      data: { squad: this.attendanceSquad },
+    });
+    ref.afterClosed().subscribe((result: UploadAttachmentResult | undefined) => {
+      if (!result?.file) return;
+      this.sessionsService
+        .uploadAttachment(this.session!.id!, result.file, result.name, result.visibility, result.targetPlayers)
+        .subscribe({
+          next: (att) => {
+            (this.session as any).attachments = [...(this.session!.attachments ?? []), att];
+            this.snackBar.open('Archivo adjuntado', 'Cerrar', { duration: 3000 });
+          },
+          error: () => this.snackBar.open('Error al subir el archivo', 'Cerrar', { duration: 4000 }),
+        });
+    });
+  }
+
+  openEditAttachmentDialog(att: TrainingSessionAttachment): void {
+    const ref = this.dialog.open(UploadAttachmentDialogComponent, {
+      width: '420px',
+      data: { attachment: att, squad: this.attendanceSquad },
+    });
+    ref.afterClosed().subscribe((result: UploadAttachmentResult | undefined) => {
+      if (!result) return;
+      this.sessionsService
+        .updateAttachment(this.session!.id!, att.fileId, result.name, result.visibility, result.targetPlayers)
+        .subscribe({
+          next: (updated) => {
+            const idx = (this.session!.attachments ?? []).findIndex((a) => a.fileId === att.fileId);
+            if (idx !== -1) (this.session!.attachments as any)[idx] = updated;
+            this.snackBar.open('Adjunto actualizado', 'Cerrar', { duration: 3000 });
+          },
+          error: () => this.snackBar.open('Error al actualizar', 'Cerrar', { duration: 4000 }),
+        });
+    });
+  }
+
+  openAttachment(att: TrainingSessionAttachment): void {
+    this.sessionsService.fetchAttachmentBlob(this.session!.id!, att.fileId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        if (att.mimeType.startsWith('image/') || att.mimeType === 'application/pdf') {
+          window.open(url, '_blank');
+        } else {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = att.filename;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      },
+      error: () => this.snackBar.open('Error al abrir el archivo', 'Cerrar', { duration: 4000 }),
+    });
+  }
+
+  deleteAttachment(fileId: string): void {
+    this.sessionsService.deleteAttachment(this.session!.id!, fileId).subscribe({
+      next: () => {
+        (this.session as any).attachments = (this.session!.attachments ?? []).filter((a) => a.fileId !== fileId);
+        this.snackBar.open('Adjunto eliminado', 'Cerrar', { duration: 3000 });
+      },
+      error: () => this.snackBar.open('Error al eliminar', 'Cerrar', { duration: 4000 }),
+    });
+  }
+
+  getAttachmentIcon(mimeType: string): string {
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType === 'application/pdf') return 'picture_as_pdf';
+    if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'table_chart';
+    if (mimeType.includes('word') || mimeType.includes('document')) return 'description';
+    if (mimeType.includes('video/')) return 'videocam';
+    return 'attach_file';
   }
 
   @HostListener('document:keydown.escape')

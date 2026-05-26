@@ -17,6 +17,10 @@ const mockService = {
   getStaffForSession: jest.fn().mockResolvedValue([]),
   recordAttendance: jest.fn().mockResolvedValue({}),
   getAttendanceStats: jest.fn().mockResolvedValue(mockStatsResult),
+  addAttachment: jest.fn().mockResolvedValue({ fileId: 'fid', filename: 'f.pdf', mimeType: 'application/pdf' }),
+  getAttachmentStream: jest.fn(),
+  updateAttachment: jest.fn().mockResolvedValue({ fileId: 'fid', name: 'updated' }),
+  deleteAttachment: jest.fn().mockResolvedValue(undefined),
 };
 
 describe('TrainingSessionsController', () => {
@@ -81,6 +85,73 @@ describe('TrainingSessionsController', () => {
         mockReq.user,
         { sport: SportEnum.HOCKEY, category: CategoryEnum.QUINTA }
       );
+    });
+  });
+
+  // ── attachment endpoints ──────────────────────────────────────────────────
+
+  describe('addAttachment()', () => {
+    it('should call service with parsed targetPlayers and return attachment', async () => {
+      const file = { originalname: 'plan.pdf', buffer: Buffer.from('x'), mimetype: 'application/pdf' } as any;
+      const playerIds = ['aaaaaaaaaaaaaaaaaaaaaaaa', 'bbbbbbbbbbbbbbbbbbbbbbbb'];
+
+      const result = await controller.addAttachment('session-1', file, 'Plan', 'players', JSON.stringify(playerIds));
+
+      expect(mockService.addAttachment).toHaveBeenCalledWith('session-1', file, 'Plan', 'players', playerIds);
+      expect(result).toMatchObject({ fileId: 'fid' });
+    });
+
+    it('should handle array targetPlayers without parsing', async () => {
+      const file = { originalname: 'f.pdf', buffer: Buffer.from('x'), mimetype: 'application/pdf' } as any;
+      const playerIds = ['aaa', 'bbb'];
+
+      await controller.addAttachment('session-1', file, undefined, 'all', playerIds);
+
+      expect(mockService.addAttachment).toHaveBeenCalledWith('session-1', file, undefined, 'all', playerIds);
+    });
+
+    it('should pass undefined targetPlayers when not provided', async () => {
+      const file = { originalname: 'f.pdf', buffer: Buffer.from('x'), mimetype: 'application/pdf' } as any;
+
+      await controller.addAttachment('session-1', file, 'Doc', 'staff', undefined);
+
+      expect(mockService.addAttachment).toHaveBeenCalledWith('session-1', file, 'Doc', 'staff', undefined);
+    });
+  });
+
+  describe('getAttachment()', () => {
+    it('should pipe stream to response with correct headers', async () => {
+      const fakeStream = { pipe: jest.fn() };
+      mockService.getAttachmentStream.mockResolvedValue({
+        stream: fakeStream,
+        mimeType: 'application/pdf',
+        filename: 'plan.pdf',
+      });
+      const res = { setHeader: jest.fn() } as any;
+
+      await controller.getAttachment('session-1', 'fid', res);
+
+      expect(mockService.getAttachmentStream).toHaveBeenCalledWith('session-1', 'fid');
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', expect.stringContaining('plan.pdf'));
+      expect(fakeStream.pipe).toHaveBeenCalledWith(res);
+    });
+  });
+
+  describe('updateAttachment()', () => {
+    it('should call service and return updated attachment', async () => {
+      const playerIds = ['aaa'];
+      const result = await controller.updateAttachment('session-1', 'fid', 'Nuevo', 'staff', playerIds);
+
+      expect(mockService.updateAttachment).toHaveBeenCalledWith('session-1', 'fid', 'Nuevo', 'staff', playerIds);
+      expect(result).toMatchObject({ name: 'updated' });
+    });
+  });
+
+  describe('deleteAttachment()', () => {
+    it('should call service deleteAttachment', async () => {
+      await controller.deleteAttachment('session-1', 'fid');
+      expect(mockService.deleteAttachment).toHaveBeenCalledWith('session-1', 'fid');
     });
   });
 });

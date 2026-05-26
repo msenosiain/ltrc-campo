@@ -165,5 +165,63 @@
   </mat-card>
   }
 
+  <!-- ADJUNTOS -->
+  <mat-card>
+    <mat-card-content>
+      <div class="section-header">
+        <p class="section-title">Adjuntos</p>
+        <button
+          *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.ANALYST, RoleEnum.TRAINER]"
+          mat-stroked-button
+          type="button"
+          (click)="openUploadDialog()"
+        >
+          <mat-icon>attach_file</mat-icon>
+          Adjuntar archivo
+        </button>
+      </div>
+
+      @if (!(session.attachments ?? []).length) {
+      <p class="empty-attachments">Sin archivos adjuntos</p>
+      }
+
+      @for (att of session.attachments ?? []; track att.fileId) {
+      <div class="attachment-entry">
+        <button mat-icon-button type="button" (click)="openAttachment(att)" matTooltip="Abrir">
+          <mat-icon>{{ getAttachmentIcon(att.mimeType) }}</mat-icon>
+        </button>
+        <div class="attachment-info" (click)="openAttachment(att)">
+          <span class="attachment-name">{{ att.name || att.filename }}</span>
+          <span class="attachment-visibility">
+            @if (att.visibility === 'all') { Todos }
+            @else if (att.visibility === 'staff') { Solo staff }
+            @else { Jugadores específicos }
+          </span>
+        </div>
+        <div class="attachment-actions">
+          <button
+            *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.ANALYST, RoleEnum.TRAINER]"
+            mat-icon-button
+            type="button"
+            matTooltip="Editar"
+            (click)="openEditAttachmentDialog(att)"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.ANALYST]"
+            mat-icon-button
+            type="button"
+            matTooltip="Eliminar"
+            (click)="deleteAttachment(att.fileId)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
   }
 </div>

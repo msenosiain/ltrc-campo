@@ -10,6 +10,7 @@ import { TrainingScheduleEntity } from '../schedules/schemas/training-schedule.e
 import { PlayerEntity } from '../../players/schemas/player.entity';
 import { User } from '../../users/schemas/user.schema';
 import { MatchEntity } from '../../matches/schemas/match.entity';
+import { GridFsService } from '../../shared/gridfs/gridfs.service';
 import { RoleEnum, TrainingSessionStatusEnum } from '@ltrc-campo/shared-api-model';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -26,9 +27,11 @@ const makeSession = (overrides: any = {}) => ({
   category: 'plantel_superior',
   status: TrainingSessionStatusEnum.SCHEDULED,
   attendance: [],
+  attachments: [],
   save: jest.fn().mockResolvedValue(undefined),
   deleteOne: jest.fn().mockResolvedValue(undefined),
   populate: jest.fn().mockResolvedValue(undefined),
+  markModified: jest.fn(),
   set: jest.fn(),
   ...overrides,
 });
@@ -68,6 +71,12 @@ const mockPlayerModel = { findOne: jest.fn(), find: jest.fn() };
 const mockUserModel = { findOne: jest.fn() };
 const mockMatchModel = { find: jest.fn(), findById: jest.fn() };
 
+const mockGridFsService = {
+  uploadFile: jest.fn(),
+  getFileStream: jest.fn(),
+  deleteFile: jest.fn(),
+};
+
 const mockJwtService = {
   sign: jest.fn().mockReturnValue('mock-token'),
   verify: jest.fn(),
@@ -90,6 +99,7 @@ describe('TrainingSessionsService', () => {
         { provide: getModelToken(User.name), useValue: mockUserModel },
         { provide: getModelToken(MatchEntity.name), useValue: mockMatchModel },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: GridFsService, useValue: mockGridFsService },
         {
           provide: ConfigService,
           useValue: {
@@ -452,6 +462,147 @@ describe('TrainingSessionsService', () => {
       mockSessionModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
       await service.getAttendanceStats(caller);
       expect(mockSessionModel.find).toHaveBeenCalledWith(expect.objectContaining({ sport: { $in: ['rugby'] } }));
+    });
+  });
+
+  // ── addAttachment ─────────────────────────────────────────────────────────
+
+  describe('addAttachment()', () => {
+    const file = { originalname: 'plan.pdf', buffer: Buffer.from('x'), mimetype: 'application/pdf' } as any;
+
+    it('should upload file to GridFS and push to session attachments', async () => {
+      const session = makeSession({ attachments: [] });
+      mockSessionModel.findById.mockResolvedValue(session);
+      mockGridFsService.uploadFile.mockResolvedValue('file-id-1');
+
+      const result = await service.addAttachment('session-1', file, 'Plan físico', 'all');
+
+      expect(mockGridFsService.uploadFile).toHaveBeenCalledWith(
+        'trainingAttachments',
+        'plan.pdf',
+        file.buffer,
+        'application/pdf'
+      );
+      expect(session.attachments).toHaveLength(1);
+      expect(session.attachments[0].fileId).toBe('file-id-1');
+      expect(session.attachments[0].name).toBe('Plan físico');
+      expect(session.save).toHaveBeenCalled();
+      expect(result.fileId).toBe('file-id-1');
+    });
+
+    it('should store targetPlayers as ObjectIds when visibility is players', async () => {
+      const session = makeSession({ attachments: [] });
+      mockSessionModel.findById.mockResolvedValue(session);
+      mockGridFsService.uploadFile.mockResolvedValue('file-id-2');
+      const playerId = oid().toString();
+
+      await service.addAttachment('session-1', file, 'Ejercicios', 'players', [playerId]);
+
+      expect(session.attachments[0].targetPlayers).toHaveLength(1);
+    });
+
+    it('should throw NotFoundException when session not found', async () => {
+      mockSessionModel.findById.mockResolvedValue(null);
+      await expect(service.addAttachment('bad-id', file)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── updateAttachment ──────────────────────────────────────────────────────
+
+  describe('updateAttachment()', () => {
+    it('should update name, visibility and targetPlayers', async () => {
+      const att = { fileId: 'fid', filename: 'f.pdf', mimeType: 'application/pdf', name: 'old', visibility: 'all', targetPlayers: [] };
+      const session = makeSession({ attachments: [att] });
+      mockSessionModel.findById.mockResolvedValue(session);
+
+      await service.updateAttachment('session-1', 'fid', 'Nuevo nombre', 'staff');
+
+      expect(att.name).toBe('Nuevo nombre');
+      expect(att.visibility).toBe('staff');
+      expect(session.markModified).toHaveBeenCalledWith('attachments');
+      expect(session.save).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when session not found', async () => {
+      mockSessionModel.findById.mockResolvedValue(null);
+      await expect(service.updateAttachment('bad-id', 'fid', 'n', 'all')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when attachment not found', async () => {
+      const session = makeSession({ attachments: [] });
+      mockSessionModel.findById.mockResolvedValue(session);
+      await expect(service.updateAttachment('session-1', 'missing-fid', 'n', 'all')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── getAttachmentStream ───────────────────────────────────────────────────
+
+  describe('getAttachmentStream()', () => {
+    it('should return stream, mimeType and filename', async () => {
+      const att = { fileId: 'fid', filename: 'plan.pdf', mimeType: 'application/pdf' };
+      const session = makeSession({ attachments: [att] });
+      mockSessionModel.findById.mockResolvedValue(session);
+      const fakeStream = {};
+      mockGridFsService.getFileStream.mockReturnValue(fakeStream);
+
+      const result = await service.getAttachmentStream('session-1', 'fid');
+
+      expect(mockGridFsService.getFileStream).toHaveBeenCalledWith('trainingAttachments', 'fid');
+      expect(result.stream).toBe(fakeStream);
+      expect(result.mimeType).toBe('application/pdf');
+      expect(result.filename).toBe('plan.pdf');
+    });
+
+    it('should throw NotFoundException when session not found', async () => {
+      mockSessionModel.findById.mockResolvedValue(null);
+      await expect(service.getAttachmentStream('bad-id', 'fid')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when attachment not found', async () => {
+      const session = makeSession({ attachments: [] });
+      mockSessionModel.findById.mockResolvedValue(session);
+      await expect(service.getAttachmentStream('session-1', 'missing')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── deleteAttachment ──────────────────────────────────────────────────────
+
+  describe('deleteAttachment()', () => {
+    it('should delete from GridFS and remove from attachments array', async () => {
+      const att = { fileId: 'fid', filename: 'f.pdf', mimeType: 'application/pdf' };
+      const session = makeSession({ attachments: [att] });
+      mockSessionModel.findById.mockResolvedValue(session);
+      mockGridFsService.deleteFile.mockResolvedValue(undefined);
+
+      await service.deleteAttachment('session-1', 'fid');
+
+      expect(mockGridFsService.deleteFile).toHaveBeenCalledWith('trainingAttachments', 'fid');
+      expect(session.attachments).toHaveLength(0);
+      expect(session.save).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when session not found', async () => {
+      mockSessionModel.findById.mockResolvedValue(null);
+      await expect(service.deleteAttachment('bad-id', 'fid')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when attachment not found', async () => {
+      const session = makeSession({ attachments: [] });
+      mockSessionModel.findById.mockResolvedValue(session);
+      await expect(service.deleteAttachment('session-1', 'missing')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should delete GridFS file before removing from array (correct order)', async () => {
+      const calls: string[] = [];
+      const att = { fileId: 'fid', filename: 'f.pdf', mimeType: 'application/pdf' };
+      const session = makeSession({ attachments: [att] });
+      session.save = jest.fn().mockImplementation(() => { calls.push('save'); return Promise.resolve(); });
+      mockSessionModel.findById.mockResolvedValue(session);
+      mockGridFsService.deleteFile.mockImplementation(() => { calls.push('gridfs'); return Promise.resolve(); });
+
+      await service.deleteAttachment('session-1', 'fid');
+
+      expect(calls).toEqual(['gridfs', 'save']);
     });
   });
 

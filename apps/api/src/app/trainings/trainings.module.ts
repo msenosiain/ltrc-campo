@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { GridFsModule } from '../shared/gridfs/gridfs.module';
 import { TrainingScheduleEntity } from './schedules/schemas/training-schedule.entity';
 import { TrainingScheduleSchema } from './schedules/schemas/training-schedule.schema';
 import { TrainingSessionEntity } from './sessions/schemas/training-session.entity';
@@ -21,6 +22,7 @@ import { MatchSchema } from '../matches/schemas/match.schema';
 
 @Module({
   imports: [
+    GridFsModule,
     ScheduleModule.forRoot(),
     JwtModule.registerAsync({
       imports: [ConfigModule],

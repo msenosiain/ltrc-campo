@@ -5,7 +5,9 @@ import {
   PaginatedResponse,
   PaginationQuery,
   TrainingSession,
+  TrainingSessionAttachment,
   UpcomingTraining,
+  VideoVisibility,
 } from '@ltrc-campo/shared-api-model';
 import { API_CONFIG_TOKEN } from '../../app.config';
 
@@ -115,6 +117,53 @@ export class TrainingSessionsService {
   getCheckinToken(sessionId: string): Observable<{ token: string; validFrom: string; validUntil: string }> {
     return this.httpClient.get<{ token: string; validFrom: string; validUntil: string }>(
       `${this.apiUrl}/${sessionId}/checkin-token`
+    );
+  }
+
+  getAttachmentUrl(sessionId: string, fileId: string): string {
+    return `${this.apiUrl}/${sessionId}/attachments/${fileId}`;
+  }
+
+  fetchAttachmentBlob(sessionId: string, fileId: string): Observable<Blob> {
+    return this.httpClient.get(`${this.apiUrl}/${sessionId}/attachments/${fileId}`, {
+      responseType: 'blob',
+    });
+  }
+
+  uploadAttachment(
+    sessionId: string,
+    file: File,
+    name?: string,
+    visibility: VideoVisibility = 'all',
+    targetPlayers?: string[]
+  ): Observable<TrainingSessionAttachment> {
+    const form = new FormData();
+    form.append('file', file);
+    if (name) form.append('name', name);
+    form.append('visibility', visibility);
+    if (targetPlayers?.length) form.append('targetPlayers', JSON.stringify(targetPlayers));
+    return this.httpClient.post<TrainingSessionAttachment>(
+      `${this.apiUrl}/${sessionId}/attachments`,
+      form
+    );
+  }
+
+  updateAttachment(
+    sessionId: string,
+    fileId: string,
+    name: string,
+    visibility: VideoVisibility,
+    targetPlayers?: string[]
+  ): Observable<TrainingSessionAttachment> {
+    return this.httpClient.patch<TrainingSessionAttachment>(
+      `${this.apiUrl}/${sessionId}/attachments/${fileId}`,
+      { name, visibility, targetPlayers: targetPlayers ?? [] }
+    );
+  }
+
+  deleteAttachment(sessionId: string, fileId: string): Observable<void> {
+    return this.httpClient.delete<void>(
+      `${this.apiUrl}/${sessionId}/attachments/${fileId}`
     );
   }
 }

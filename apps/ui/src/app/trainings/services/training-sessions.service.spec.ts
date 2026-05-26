@@ -151,4 +151,87 @@ describe('TrainingSessionsService', () => {
     expect(req.request.method).toBe('PATCH');
     req.flush({});
   });
+
+  // ── attachments ───────────────────────────────────────────────────────────
+
+  describe('getAttachmentUrl()', () => {
+    it('should return the correct URL string', () => {
+      const url = service.getAttachmentUrl('s1', 'fid');
+      expect(url).toBe(`${API_BASE}/training-sessions/s1/attachments/fid`);
+    });
+  });
+
+  describe('fetchAttachmentBlob()', () => {
+    it('should make GET with responseType blob', () => {
+      service.fetchAttachmentBlob('s1', 'fid').subscribe();
+      const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/attachments/fid`);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.responseType).toBe('blob');
+      req.flush(new Blob());
+    });
+  });
+
+  describe('uploadAttachment()', () => {
+    it('should POST FormData with file, name and visibility', () => {
+      const file = new File(['content'], 'plan.pdf', { type: 'application/pdf' });
+      service.uploadAttachment('s1', file, 'Plan físico', 'staff').subscribe();
+
+      const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/attachments`);
+      expect(req.request.method).toBe('POST');
+      const body = req.request.body as FormData;
+      expect(body.get('name')).toBe('Plan físico');
+      expect(body.get('visibility')).toBe('staff');
+      expect(body.get('file')).toBeTruthy();
+      req.flush({ fileId: 'fid', filename: 'plan.pdf', mimeType: 'application/pdf' });
+    });
+
+    it('should include targetPlayers JSON when provided', () => {
+      const file = new File(['x'], 'f.pdf', { type: 'application/pdf' });
+      service.uploadAttachment('s1', file, undefined, 'players', ['p1', 'p2']).subscribe();
+
+      const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/attachments`);
+      const body = req.request.body as FormData;
+      expect(JSON.parse(body.get('targetPlayers') as string)).toEqual(['p1', 'p2']);
+      req.flush({ fileId: 'fid', filename: 'f.pdf', mimeType: 'application/pdf' });
+    });
+
+    it('should not include targetPlayers when array is empty', () => {
+      const file = new File(['x'], 'f.pdf', { type: 'application/pdf' });
+      service.uploadAttachment('s1', file, 'Doc', 'all', []).subscribe();
+
+      const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/attachments`);
+      const body = req.request.body as FormData;
+      expect(body.has('targetPlayers')).toBe(false);
+      req.flush({ fileId: 'fid', filename: 'f.pdf', mimeType: 'application/pdf' });
+    });
+  });
+
+  describe('updateAttachment()', () => {
+    it('should PATCH with name, visibility and targetPlayers', () => {
+      service.updateAttachment('s1', 'fid', 'Nuevo nombre', 'staff', ['p1']).subscribe();
+
+      const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/attachments/fid`);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ name: 'Nuevo nombre', visibility: 'staff', targetPlayers: ['p1'] });
+      req.flush({ fileId: 'fid', name: 'Nuevo nombre', filename: 'f.pdf', mimeType: 'application/pdf' });
+    });
+
+    it('should send empty targetPlayers array when not provided', () => {
+      service.updateAttachment('s1', 'fid', 'Doc', 'all').subscribe();
+
+      const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/attachments/fid`);
+      expect(req.request.body.targetPlayers).toEqual([]);
+      req.flush({ fileId: 'fid', filename: 'f.pdf', mimeType: 'application/pdf' });
+    });
+  });
+
+  describe('deleteAttachment()', () => {
+    it('should make DELETE to /:id/attachments/:fileId', () => {
+      service.deleteAttachment('s1', 'fid').subscribe();
+
+      const req = httpMock.expectOne(`${API_BASE}/training-sessions/s1/attachments/fid`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null);
+    });
+  });
 });

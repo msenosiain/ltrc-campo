@@ -6,8 +6,19 @@ import {
 } from '../enums';
 import { AttendanceEntry } from './attendance-entry.interface';
 import { TrainingSchedule } from './training-schedule.interface';
+import { VideoVisibility } from './match.interface';
 
 export { AttendanceEntry };
+
+export interface TrainingSessionAttachment {
+  fileId: string;
+  filename: string;
+  mimeType: string;
+  name?: string;
+  visibility?: VideoVisibility;
+  /** Solo relevante cuando visibility === 'players'. Staff siempre ve todos los adjuntos. */
+  targetPlayers?: string[];
+}
 
 export interface TrainingSession extends Document {
   readonly id?: string;
@@ -21,6 +32,7 @@ export interface TrainingSession extends Document {
   readonly location?: string;
   readonly status: TrainingSessionStatusEnum;
   readonly attendance: AttendanceEntry[];
+  readonly attachments?: TrainingSessionAttachment[];
   readonly notes?: string;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;

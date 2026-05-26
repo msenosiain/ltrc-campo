@@ -28,6 +28,19 @@ export const TrainingSessionSchema = new Schema<TrainingSessionEntity>(
       default: TrainingSessionStatusEnum.SCHEDULED,
     },
     attendance: [AttendanceEntrySchema],
+    attachments: [
+      new Schema(
+        {
+          fileId: { type: String, required: true },
+          filename: { type: String, required: true },
+          mimeType: { type: String, required: true },
+          name: { type: String },
+          visibility: { type: String, enum: ['all', 'staff', 'players'], default: 'all' },
+          targetPlayers: [{ type: Types.ObjectId, ref: 'PlayerEntity', default: [] }],
+        },
+        { _id: false }
+      ),
+    ],
     notes: { type: String },
     createdBy: { type: Types.ObjectId, ref: 'User' },
     updatedBy: { type: Types.ObjectId, ref: 'User' },

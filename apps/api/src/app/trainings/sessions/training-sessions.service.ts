@@ -7,7 +7,9 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+import type { File as MulterFile } from 'multer';
+import { GridFsService } from '../../shared/gridfs/gridfs.service';
 import { TrainingSessionEntity } from './schemas/training-session.entity';
 import { TrainingScheduleEntity } from '../schedules/schemas/training-schedule.entity';
 import { MatchEntity } from '../../matches/schemas/match.entity';
@@ -69,6 +71,7 @@ export class TrainingSessionsService {
     private readonly matchModel: Model<MatchEntity>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly gridFsService: GridFsService,
   ) {}
 
   private get checkinSecret(): string {
@@ -926,6 +929,84 @@ export class TrainingSessionsService {
     });
 
     return { categories: result };
+  }
+
+  async addAttachment(
+    sessionId: string,
+    file: MulterFile,
+    name?: string,
+    visibility: 'all' | 'staff' | 'players' = 'all',
+    targetPlayers?: string[]
+  ) {
+    const session = await this.sessionModel.findById(sessionId);
+    if (!session) throw new NotFoundException('Training session not found');
+
+    const fileId = await this.gridFsService.uploadFile(
+      'trainingAttachments',
+      file.originalname,
+      file.buffer,
+      file.mimetype
+    );
+
+    const attachment = {
+      fileId,
+      filename: file.originalname,
+      mimeType: file.mimetype,
+      visibility,
+      ...(name ? { name } : {}),
+      targetPlayers: targetPlayers?.map((id) => new Types.ObjectId(id)) ?? [],
+    };
+    session.attachments = session.attachments ?? [];
+    session.attachments.push(attachment as any);
+    await session.save();
+
+    return attachment;
+  }
+
+  async updateAttachment(
+    sessionId: string,
+    fileId: string,
+    name: string,
+    visibility: 'all' | 'staff' | 'players',
+    targetPlayers?: string[]
+  ) {
+    const session = await this.sessionModel.findById(sessionId);
+    if (!session) throw new NotFoundException('Training session not found');
+
+    const idx = (session.attachments ?? []).findIndex((a) => a.fileId === fileId);
+    if (idx === -1) throw new NotFoundException('Attachment not found');
+
+    (session.attachments![idx] as any).name = name;
+    (session.attachments![idx] as any).visibility = visibility;
+    (session.attachments![idx] as any).targetPlayers =
+      targetPlayers?.map((id) => new Types.ObjectId(id)) ?? [];
+    session.markModified('attachments');
+    await session.save();
+
+    return session.attachments![idx];
+  }
+
+  async getAttachmentStream(sessionId: string, fileId: string) {
+    const session = await this.sessionModel.findById(sessionId);
+    if (!session) throw new NotFoundException('Training session not found');
+    const att = session.attachments?.find((a) => a.fileId === fileId);
+    if (!att) throw new NotFoundException('Attachment not found');
+    return {
+      stream: this.gridFsService.getFileStream('trainingAttachments', fileId),
+      mimeType: att.mimeType,
+      filename: att.filename,
+    };
+  }
+
+  async deleteAttachment(sessionId: string, fileId: string) {
+    const session = await this.sessionModel.findById(sessionId);
+    if (!session) throw new NotFoundException('Training session not found');
+    const idx = session.attachments?.findIndex((a) => a.fileId === fileId) ?? -1;
+    if (idx === -1) throw new NotFoundException('Attachment not found');
+
+    await this.gridFsService.deleteFile('trainingAttachments', fileId);
+    session.attachments.splice(idx, 1);
+    await session.save();
   }
 
   /**
