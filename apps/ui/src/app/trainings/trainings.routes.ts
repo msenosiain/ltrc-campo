@@ -35,73 +35,72 @@ export const TRAININGS_ROUTES: Routes = [
           allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER],
         },
       },
+      {
+        path: 'schedules/create',
+        component: ScheduleEditorComponent,
+        canActivate: [hasRoleGuard],
+        data: {
+          title: 'Crear horario',
+          allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+        },
+      },
+      {
+        path: 'schedules/:id',
+        component: ScheduleViewerComponent,
+        data: { title: 'Detalle del horario' },
+      },
+      {
+        path: 'schedules/:id/edit',
+        component: ScheduleEditorComponent,
+        canActivate: [hasRoleGuard],
+        data: {
+          title: 'Editar horario',
+          allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+        },
+      },
+      {
+        path: 'sessions/:id',
+        component: SessionViewerComponent,
+        data: { title: 'Detalle de sesión' },
+      },
+      {
+        path: 'sessions/:id/qr',
+        component: QrDisplayPageComponent,
+        canActivate: [hasRoleGuard],
+        data: {
+          title: 'QR Asistencia',
+          allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH, RoleEnum.TRAINER],
+        },
+      },
+      {
+        path: 'sessions/:id/attendance',
+        component: AttendanceRollCallComponent,
+        canActivate: [hasRoleGuard],
+        data: {
+          title: 'Asistencia',
+          allowedRoles: [
+            RoleEnum.ADMIN,
+            RoleEnum.MANAGER,
+            RoleEnum.COACH,
+            RoleEnum.TRAINER,
+          ],
+        },
+      },
+      {
+        path: 'sessions/:id/evaluate',
+        component: SessionEvaluateComponent,
+        canActivate: [hasRoleGuard],
+        data: {
+          title: 'Evaluar jugadores',
+          allowedRoles: [
+            RoleEnum.ADMIN,
+            RoleEnum.MANAGER,
+            RoleEnum.COORDINATOR,
+            RoleEnum.COACH,
+            RoleEnum.TRAINER,
+          ],
+        },
+      },
     ],
-  },
-  // Detail routes outside the tab layout
-  {
-    path: 'schedules/create',
-    component: ScheduleEditorComponent,
-    canActivate: [hasRoleGuard],
-    data: {
-      title: 'Crear horario',
-      allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
-    },
-  },
-  {
-    path: 'schedules/:id',
-    component: ScheduleViewerComponent,
-    data: { title: 'Detalle del horario' },
-  },
-  {
-    path: 'schedules/:id/edit',
-    component: ScheduleEditorComponent,
-    canActivate: [hasRoleGuard],
-    data: {
-      title: 'Editar horario',
-      allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
-    },
-  },
-  {
-    path: 'sessions/:id',
-    component: SessionViewerComponent,
-    data: { title: 'Detalle de sesión' },
-  },
-  {
-    path: 'sessions/:id/qr',
-    component: QrDisplayPageComponent,
-    canActivate: [hasRoleGuard],
-    data: {
-      title: 'QR Asistencia',
-      allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH, RoleEnum.TRAINER],
-    },
-  },
-  {
-    path: 'sessions/:id/attendance',
-    component: AttendanceRollCallComponent,
-    canActivate: [hasRoleGuard],
-    data: {
-      title: 'Asistencia',
-      allowedRoles: [
-        RoleEnum.ADMIN,
-        RoleEnum.MANAGER,
-        RoleEnum.COACH,
-        RoleEnum.TRAINER,
-      ],
-    },
-  },
-  {
-    path: 'sessions/:id/evaluate',
-    component: SessionEvaluateComponent,
-    canActivate: [hasRoleGuard],
-    data: {
-      title: 'Evaluar jugadores',
-      allowedRoles: [
-        RoleEnum.ADMIN,
-        RoleEnum.MANAGER,
-        RoleEnum.COORDINATOR,
-        RoleEnum.COACH,
-        RoleEnum.TRAINER,
-      ],
-    },
   },
 ];
