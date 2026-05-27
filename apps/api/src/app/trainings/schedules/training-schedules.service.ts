@@ -75,7 +75,7 @@ export class TrainingSchedulesService {
 
     return this.scheduleModel.aggregate([
       { $match: queryFilters },
-      { $addFields: { _categoryRank: categoryRankSwitch } },
+      { $addFields: { _categoryRank: categoryRankSwitch, id: { $toString: '$_id' } } },
       { $sort: { sport: 1, _categoryRank: 1 } },
       { $skip: skip },
       { $limit: size },
