@@ -1,0 +1,213 @@
+<div class="ivote-page">
+  <div class="ivote-page__header">
+    <div class="ivote-page__shields">
+      <img src="escudo.png" alt="Escudo Los Tordos RC" class="ivote-page__shield" />
+      <img src="escudo-aniversario.png" alt="Escudo Aniversario" class="ivote-page__shield" />
+    </div>
+    <h1 class="ivote-page__title">Votación Interna</h1>
+  </div>
+
+  <div class="ivote-page__content">
+    @switch (state()) {
+
+      @case ('loading') {
+        <div class="ivote-page__center">
+          <mat-spinner diameter="48" />
+        </div>
+      }
+
+      @case ('error') {
+        <div class="ivote-page__message ivote-page__message--error">
+          <mat-icon>error_outline</mat-icon>
+          <p>{{ errorMessage }}</p>
+        </div>
+      }
+
+      @case ('not-eligible') {
+        <div class="ivote-page__message">
+          <mat-icon>lock</mat-icon>
+          <p>No estás habilitado para votar en este partido.</p>
+        </div>
+      }
+
+      @case ('not-started') {
+        <div class="ivote-page__message">
+          <mat-icon>schedule</mat-icon>
+          <p>La votación comienza el</p>
+          <strong>{{ info()!.startsAt | date:'dd/MM/yyyy \'a las\' HH:mm' }}</strong>
+        </div>
+      }
+
+      @case ('closed') {
+        <div class="ivote-page__results">
+          <p class="ivote-page__results-title">
+            <mat-icon>emoji_events</mat-icon>
+            Resultados finales
+          </p>
+          @if (results()) {
+            <p class="ivote-page__total">{{ results()!.totalVoted }}/{{ results()!.totalVoters }} votantes</p>
+            @for (award of results()!.awards; track award.awardId) {
+              <div class="ivote-page__award-result">
+                <p class="ivote-page__award-title">🏆 {{ award.awardName }}</p>
+                @if (award.top.length === 0) {
+                  <p class="ivote-page__empty">Sin votos registrados.</p>
+                } @else {
+                  @for (r of award.top; track r.playerId; let i = $index) {
+                    <div class="ivote-page__result-item">
+                      <span class="ivote-page__podium">{{ podiumEmoji[i] }}</span>
+                      <div class="ivote-page__result-info">
+                        <div class="ivote-page__result-header">
+                          <span class="ivote-page__shirt">#{{ r.shirtNumber }}</span>
+                          <span class="ivote-page__name">{{ r.playerName }}</span>
+                          <span class="ivote-page__pct">{{ r.percentage }}%</span>
+                        </div>
+                        <div class="ivote-page__bar-track">
+                          <div class="ivote-page__bar" [style.width]="r.percentage + '%'"></div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            }
+          } @else {
+            <mat-spinner diameter="32" />
+          }
+        </div>
+      }
+
+      @case ('voted') {
+        <div class="ivote-page__results">
+          <div class="ivote-page__voted-badge">
+            <mat-icon>check_circle</mat-icon>
+            ¡Gracias por votar!
+          </div>
+          <div class="ivote-page__my-votes">
+            <p class="ivote-page__my-votes-title">Tus votos:</p>
+            @for (award of info()!.awards; track award.id) {
+              <div class="ivote-page__my-vote-row">
+                <span class="ivote-page__my-vote-award">{{ award.name }}</span>
+                <span class="ivote-page__my-vote-player">{{ selectedPlayerName(award.id) }}</span>
+              </div>
+            }
+          </div>
+          @if (results()) {
+            <p class="ivote-page__results-title">
+              <mat-icon>bar_chart</mat-icon>
+              Resultados parciales
+            </p>
+            <p class="ivote-page__total">{{ results()!.totalVoted }}/{{ results()!.totalVoters }} votaron</p>
+            @for (award of results()!.awards; track award.awardId) {
+              <div class="ivote-page__award-result">
+                <p class="ivote-page__award-title">🏆 {{ award.awardName }}</p>
+                @if (award.top.length === 0) {
+                  <p class="ivote-page__empty">Sin votos aún.</p>
+                } @else {
+                  @for (r of award.top; track r.playerId; let i = $index) {
+                    <div class="ivote-page__result-item">
+                      <span class="ivote-page__podium">{{ podiumEmoji[i] }}</span>
+                      <div class="ivote-page__result-info">
+                        <div class="ivote-page__result-header">
+                          <span class="ivote-page__shirt">#{{ r.shirtNumber }}</span>
+                          <span class="ivote-page__name">{{ r.playerName }}</span>
+                          <span class="ivote-page__pct">{{ r.percentage }}%</span>
+                        </div>
+                        <div class="ivote-page__bar-track">
+                          <div class="ivote-page__bar" [style.width]="r.percentage + '%'"></div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            }
+            @if (info()?.isActive) {
+              <p class="ivote-page__closes">
+                Cierra el {{ info()!.endsAt | date:'dd/MM/yyyy \'a las\' HH:mm' }}
+              </p>
+            }
+          } @else {
+            <mat-spinner diameter="32" />
+          }
+        </div>
+      }
+
+      @case ('voting') {
+        <div class="ivote-page__voting">
+          <!-- Wizard por premio -->
+          <div class="ivote-page__award-nav">
+            <span class="ivote-page__award-counter">Premio {{ currentAwardIndex() + 1 }} de {{ totalAwards }}</span>
+            <h2 class="ivote-page__award-name">🏆 {{ currentAward?.name }}</h2>
+          </div>
+
+          <!-- Resumen de selecciones previas -->
+          @if (info()!.awards.length > 1) {
+            <div class="ivote-page__summary">
+              @for (award of info()!.awards; track award.id; let i = $index) {
+                <div class="ivote-page__summary-row" [class.active]="i === currentAwardIndex()">
+                  <span class="ivote-page__summary-award">{{ award.name }}</span>
+                  <span class="ivote-page__summary-player">
+                    {{ selectedPlayerName(award.id) || '—' }}
+                  </span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Grilla de jugadores -->
+          <div class="ivote-page__grid">
+            @for (player of info()!.squad; track player.playerId) {
+              <button
+                class="ivote-page__player-card"
+                [class.selected]="isSelected(player)"
+                (click)="selectPlayer(player)"
+              >
+                <span class="ivote-page__shirt">#{{ player.shirtNumber }}</span>
+                <span class="ivote-page__name">{{ player.playerName }}</span>
+              </button>
+            }
+          </div>
+
+          <!-- Navegación entre premios -->
+          <div class="ivote-page__nav-actions">
+            @if (currentAwardIndex() > 0) {
+              <button mat-stroked-button (click)="prevAward()">
+                <mat-icon>chevron_left</mat-icon>
+                Anterior
+              </button>
+            } @else {
+              <span></span>
+            }
+            @if (currentAwardIndex() < totalAwards - 1) {
+              <button mat-flat-button color="primary"
+                      [disabled]="!selections()[currentAward!.id]"
+                      (click)="nextAward()">
+                Siguiente
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            } @else {
+              <button mat-flat-button color="primary"
+                      class="ivote-page__confirm-btn"
+                      [disabled]="!allSelected"
+                      (click)="confirmVotes()">
+                Confirmar votos
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @case ('submitting') {
+        <div class="ivote-page__center">
+          <mat-spinner diameter="48" />
+          <p>Registrando tus votos…</p>
+        </div>
+      }
+
+    }
+  </div>
+
+  <div class="ivote-page__footer">
+    <img src="ISO-LTRC-TV.png" alt="Los Tordos RC" class="ivote-page__footer-logo" />
+  </div>
+</div>
