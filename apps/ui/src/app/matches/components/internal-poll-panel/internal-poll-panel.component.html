@@ -1,0 +1,214 @@
+<div class="ipoll-panel">
+
+  @if (!hasSquad) {
+    <div class="ipoll-panel__no-squad">
+      <mat-icon>group_off</mat-icon>
+      <p>Para crear una votación interna, primero debés convocar jugadores al partido.</p>
+    </div>
+  } @else if (loading()) {
+    <div class="ipoll-panel__loading">
+      <mat-spinner diameter="32" />
+    </div>
+
+  } @else if (!poll() && !editing()) {
+    <div class="ipoll-panel__empty">
+      <mat-icon class="ipoll-panel__empty-icon">poll</mat-icon>
+      <p>No hay votación interna creada para este partido.</p>
+      <button mat-flat-button color="primary" (click)="startCreate()">
+        <mat-icon>add</mat-icon>
+        Crear votación interna
+      </button>
+    </div>
+
+  } @else if (editing()) {
+    <form [formGroup]="form" class="ipoll-panel__form" (ngSubmit)="save()">
+      <h3 class="ipoll-panel__form-title">{{ poll() ? 'Editar votación interna' : 'Nueva votación interna' }}</h3>
+
+      <!-- Premios -->
+      <div class="ipoll-panel__section-label">Tipos de premio</div>
+      <div class="ipoll-panel__award-input">
+        <mat-form-field appearance="outline" class="ipoll-panel__award-field">
+          <mat-label>Nombre del premio</mat-label>
+          <input matInput [(ngModel)]="newAwardName" [ngModelOptions]="{standalone: true}"
+                 placeholder="Ej: Tryman, Más penalero…"
+                 (keydown.enter)="$event.preventDefault(); addAward()" />
+        </mat-form-field>
+        <button mat-icon-button type="button" color="primary" (click)="addAward()" matTooltip="Agregar premio">
+          <mat-icon>add_circle</mat-icon>
+        </button>
+      </div>
+      @if (awards().length > 0) {
+        <mat-chip-set class="ipoll-panel__chips">
+          @for (award of awards(); track award) {
+            <mat-chip (removed)="removeAward(award)">
+              {{ award }}
+              <button matChipRemove type="button"><mat-icon>cancel</mat-icon></button>
+            </mat-chip>
+          }
+        </mat-chip-set>
+      }
+
+      <!-- Fechas -->
+      <div class="ipoll-panel__row">
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de inicio</mat-label>
+          <input matInput [matDatepicker]="pickerStart" formControlName="startsAt" />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerStart" />
+          <mat-datepicker #pickerStart />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hora de inicio</mat-label>
+          <input matInput type="time" formControlName="startsAtTime" />
+        </mat-form-field>
+      </div>
+
+      <div class="ipoll-panel__row">
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de cierre</mat-label>
+          <input matInput [matDatepicker]="pickerEnd" formControlName="endsAt" />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerEnd" />
+          <mat-datepicker #pickerEnd />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hora de cierre</mat-label>
+          <input matInput type="time" formControlName="endsAtTime" />
+        </mat-form-field>
+      </div>
+
+      <!-- Cuerpo técnico -->
+      <div class="ipoll-panel__section-label">
+        Cuerpo técnico (votos x2)
+        <span class="ipoll-panel__section-hint">Los jugadores del plantel se agregan automáticamente.</span>
+      </div>
+      <mat-form-field appearance="outline" class="ipoll-panel__staff-field">
+        <mat-label>Buscar entrenador / cuerpo técnico</mat-label>
+        <input matInput formControlName="staffSearchInput" [matAutocomplete]="autoStaff" placeholder="Escribí el nombre…" />
+        <mat-autocomplete #autoStaff="matAutocomplete" (optionSelected)="selectStaff($event.option.value)">
+          @for (user of staffSearch(); track user.id) {
+            <mat-option [value]="user">{{ user.name }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+      @if (selectedStaff().length > 0) {
+        <mat-chip-set class="ipoll-panel__chips">
+          @for (staff of selectedStaff(); track staff.id) {
+            <mat-chip (removed)="removeStaff(staff.id)">
+              {{ staff.name }}
+              <button matChipRemove type="button"><mat-icon>cancel</mat-icon></button>
+            </mat-chip>
+          }
+        </mat-chip-set>
+      }
+
+      <div class="ipoll-panel__form-actions">
+        <button mat-stroked-button type="button" (click)="cancelEdit()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+          @if (saving()) { <mat-spinner diameter="18" /> } @else { Guardar }
+        </button>
+      </div>
+    </form>
+
+  } @else if (poll()) {
+    <div class="ipoll-panel__info">
+      <!-- Estado -->
+      <div class="ipoll-panel__status">
+        @if (poll()!.isActive) {
+          <span class="ipoll-panel__badge ipoll-panel__badge--active">Votación activa</span>
+        } @else if (poll()!.isClosed) {
+          <span class="ipoll-panel__badge ipoll-panel__badge--closed">Votación cerrada</span>
+        } @else {
+          <span class="ipoll-panel__badge ipoll-panel__badge--pending">Votación pendiente</span>
+        }
+        <span class="ipoll-panel__votes">{{ poll()!.totalVoted }}/{{ poll()!.totalVoters }} votaron</span>
+      </div>
+
+      <!-- Premios -->
+      <div class="ipoll-panel__award-list">
+        @for (award of poll()!.awards; track award.id) {
+          <span class="ipoll-panel__award-tag">🏆 {{ award.name }}</span>
+        }
+      </div>
+
+      <div class="ipoll-panel__dates">
+        <span><strong>Inicio:</strong> {{ poll()!.startsAt | date:'dd/MM/yyyy HH:mm' }}</span>
+        <span><strong>Cierre:</strong> {{ poll()!.endsAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+
+      <mat-divider />
+
+      <!-- QR y link -->
+      <div class="ipoll-panel__qr-block">
+        @if (qrDataUrl()) {
+          <img [src]="qrDataUrl()!" alt="QR votación interna" class="ipoll-panel__qr" />
+        }
+        <div class="ipoll-panel__link-group">
+          <span class="ipoll-panel__link-label">Link de votación (requiere login)</span>
+          <div class="ipoll-panel__link-row">
+            <code class="ipoll-panel__link-url">{{ votingUrl }}</code>
+            <button mat-icon-button (click)="copyToClipboard(votingUrl)" matTooltip="Copiar">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <mat-divider />
+
+      <!-- Resultados por premio -->
+      <div class="ipoll-panel__results">
+        <div class="ipoll-panel__results-header">
+          <span class="ipoll-panel__link-label">Resultados</span>
+          <div class="ipoll-panel__results-actions">
+            <button mat-icon-button matTooltip="Actualizar" (click)="loadResults()">
+              <mat-icon>refresh</mat-icon>
+            </button>
+            @if (results()?.awards?.length) {
+              <button mat-icon-button matTooltip="Copiar resultados" (click)="copyResults()">
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (!results()) {
+          <p class="ipoll-panel__results-empty">Sin datos aún.</p>
+        } @else {
+          <p class="ipoll-panel__results-total">
+            {{ results()!.totalVoted }}/{{ results()!.totalVoters }} votaron
+          </p>
+          @for (award of results()!.awards; track award.awardId) {
+            <div class="ipoll-panel__award-result">
+              <p class="ipoll-panel__award-result-title">🏆 {{ award.awardName }}</p>
+              @if (award.top.length === 0) {
+                <p class="ipoll-panel__results-empty">Sin votos aún.</p>
+              } @else {
+                @for (r of award.top; track r.playerId; let i = $index) {
+                  <div class="ipoll-panel__result-row">
+                    <span class="ipoll-panel__podium">{{ podiumEmoji[i] }}</span>
+                    <span class="ipoll-panel__result-shirt">#{{ r.shirtNumber }}</span>
+                    <span class="ipoll-panel__result-name">{{ r.playerName }}</span>
+                    <span class="ipoll-panel__result-pct">{{ r.percentage }}%</span>
+                    <span class="ipoll-panel__result-pts">({{ r.points }} pts)</span>
+                  </div>
+                }
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <mat-divider />
+
+      <div class="ipoll-panel__actions">
+        <button mat-stroked-button color="warn" [disabled]="deleting()" (click)="deletePoll()">
+          @if (deleting()) { <mat-spinner diameter="18" /> } @else {
+            <ng-container><mat-icon>delete</mat-icon> Eliminar</ng-container>
+          }
+        </button>
+        <button mat-stroked-button (click)="editPoll()">
+          <mat-icon>edit</mat-icon> Editar
+        </button>
+      </div>
+    </div>
+  }
+</div>

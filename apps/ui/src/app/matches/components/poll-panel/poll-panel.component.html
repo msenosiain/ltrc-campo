@@ -1,4 +1,19 @@
 <div class="poll-panel">
+  <mat-button-toggle-group [(ngModel)]="pollMode" class="poll-panel__mode-toggle" aria-label="Tipo de votación">
+    <mat-button-toggle value="external">
+      <mat-icon>public</mat-icon>
+      Externa
+    </mat-button-toggle>
+    <mat-button-toggle value="internal">
+      <mat-icon>lock</mat-icon>
+      Interna
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+
+  @if (pollMode === 'internal') {
+    <ltrc-internal-poll-panel [matchId]="matchId" [squad]="squad" />
+  } @else {
+
   @if (loading()) {
     <div class="poll-panel__loading">
       <mat-spinner diameter="32" />
@@ -139,4 +154,6 @@
       </div>
     </div>
   }
+
+  } <!-- end @else (external mode) -->
 </div>

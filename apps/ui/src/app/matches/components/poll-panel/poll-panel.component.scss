@@ -1,6 +1,15 @@
 .poll-panel {
   padding: 16px 0;
 
+  &__mode-toggle {
+    margin-bottom: 16px;
+    width: 100%;
+
+    mat-button-toggle {
+      flex: 1;
+    }
+  }
+
   &__loading {
     display: flex;
     justify-content: center;
