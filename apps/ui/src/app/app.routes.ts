@@ -53,6 +53,27 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'votar/:token/obs',
+    loadComponent: () =>
+      import('./polls/pages/obs-voting/obs-voting.component').then(
+        (m) => m.ObsVotingComponent
+      ),
+  },
+  {
+    path: 'votar/:token/resultados',
+    loadComponent: () =>
+      import('./polls/pages/obs-results/obs-results.component').then(
+        (m) => m.ObsResultsComponent
+      ),
+  },
+  {
+    path: 'votar/:token',
+    loadComponent: () =>
+      import('./polls/pages/voting-page/voting-page.component').then(
+        (m) => m.VotingPageComponent
+      ),
+  },
+  {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [authGuard],

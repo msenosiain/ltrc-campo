@@ -7,7 +7,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { concat, EMPTY, of, Subject } from 'rxjs';
@@ -78,7 +78,6 @@ import { AddAllPlayersDialogComponent, AddAllPlayersDialogData, AddAllPlayersDia
   imports: [
     CurrencyPipe,
     DatePipe,
-    NgTemplateOutlet,
     ReactiveFormsModule,
     MatAutocompleteModule,
     MatButtonModule,

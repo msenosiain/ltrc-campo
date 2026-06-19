@@ -15,3 +15,4 @@ export * from './workout-log.interface';
 export * from './payment.interface';
 export * from './evaluation.interface';
 export * from './player-fee.interface';
+export * from './match-poll.interface';

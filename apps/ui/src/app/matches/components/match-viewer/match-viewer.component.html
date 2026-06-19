@@ -438,5 +438,18 @@
     </mat-card-content>
   </mat-card>
 
+  <!-- Sección Votación -->
+  <mat-card class="section-card" *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]">
+    <mat-card-content>
+      <div class="section-header collapsible-header" [class.expanded]="showPollPanel" (click)="showPollPanel = !showPollPanel">
+        <p class="section-title">Votación jugador del partido</p>
+        <mat-icon>{{ showPollPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
+      </div>
+      @if (showPollPanel) {
+        <ltrc-poll-panel [matchId]="match!.id!" />
+      }
+    </mat-card-content>
+  </mat-card>
+
   }
 </div>

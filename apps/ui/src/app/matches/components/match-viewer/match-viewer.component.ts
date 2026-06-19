@@ -50,6 +50,7 @@ import { VideoDialogComponent, VideoDialogData, VideoDialogResult } from '../vid
 import { PaymentLinksPanelComponent } from '../../../payments/components/payment-links-panel/payment-links-panel.component';
 import { PaymentsService } from '../../../payments/services/payments.service';
 import { PaymentEntityTypeEnum } from '@ltrc-campo/shared-api-model';
+import { PollPanelComponent } from '../poll-panel/poll-panel.component';
 
 @Component({
   selector: 'ltrc-match-viewer',
@@ -67,6 +68,7 @@ import { PaymentEntityTypeEnum } from '@ltrc-campo/shared-api-model';
     DatePipe,
     AllowedRolesDirective,
     PaymentLinksPanelComponent,
+    PollPanelComponent,
   ],
   templateUrl: './match-viewer.component.html',
   styleUrl: './match-viewer.component.scss',
@@ -96,6 +98,7 @@ export class MatchViewerComponent implements OnInit {
   readonly PlayerStatusEnum = PlayerStatusEnum;
   readonly RoleEnum = RoleEnum;
   showPaymentsPanel = false;
+  showPollPanel = false;
 
   get matchPaymentLabel(): string {
     if (!this.match) return '';

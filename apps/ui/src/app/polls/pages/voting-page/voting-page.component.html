@@ -1,0 +1,151 @@
+<div class="voting-page">
+  <div class="voting-page__header">
+    <div class="voting-page__shields">
+      <img src="escudo.png" alt="Escudo Los Tordos RC" class="voting-page__shield" />
+      <img src="escudo-aniversario.png" alt="Escudo Aniversario" class="voting-page__shield" />
+    </div>
+  </div>
+
+  <div class="voting-page__content">
+    @switch (state()) {
+      @case ('loading') {
+        <div class="voting-page__center">
+          <mat-spinner diameter="48" />
+        </div>
+      }
+
+      @case ('error') {
+        <div class="voting-page__message voting-page__message--error">
+          <mat-icon>error_outline</mat-icon>
+          <p>{{ errorMessage }}</p>
+        </div>
+      }
+
+      @case ('not-started') {
+        <div class="voting-page__message">
+          <mat-icon>schedule</mat-icon>
+          <p>La votación comienza el</p>
+          <strong>{{ info()!.startsAt | date:'dd/MM/yyyy \'a las\' HH:mm' }}</strong>
+        </div>
+      }
+
+      @case ('closed') {
+        <div class="voting-page__results">
+          <p class="voting-page__results-title">
+            <mat-icon>emoji_events</mat-icon>
+            Resultado final
+          </p>
+          @if (results()) {
+            <p class="voting-page__total">{{ results()!.totalVotes }} votos totales</p>
+            @if (results()!.top3.length === 0) {
+              <p class="voting-page__empty">Sin votos registrados.</p>
+            } @else {
+              @for (result of results()!.top3; track result.playerId; let i = $index) {
+                <div class="voting-page__result-item">
+                  <span class="voting-page__podium">{{ podiumEmoji[i] }}</span>
+                  <div class="voting-page__result-info">
+                    <div class="voting-page__result-header">
+                      <span class="voting-page__shirt">#{{ result.shirtNumber }}</span>
+                      <span class="voting-page__name">{{ result.playerName }}</span>
+                      <span class="voting-page__pct">{{ result.percentage }}%</span>
+                    </div>
+                    <div class="voting-page__bar-track">
+                      <div class="voting-page__bar" [style.width]="getBarWidth(result)"></div>
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          } @else {
+            <mat-spinner diameter="32" />
+          }
+        </div>
+      }
+
+      @case ('voted') {
+        <div class="voting-page__results">
+          <div class="voting-page__voted-badge">
+            <mat-icon>check_circle</mat-icon>
+            ¡Gracias por votar!
+          </div>
+          <p class="voting-page__results-title">Top 3 parcial</p>
+          @if (results()) {
+            <p class="voting-page__total">{{ results()!.totalVotes }} votos hasta ahora</p>
+            @if (results()!.top3.length === 0) {
+              <p class="voting-page__empty">Sé el primero en votar.</p>
+            } @else {
+              @for (result of results()!.top3; track result.playerId; let i = $index) {
+                <div class="voting-page__result-item">
+                  <span class="voting-page__podium">{{ podiumEmoji[i] }}</span>
+                  <div class="voting-page__result-info">
+                    <div class="voting-page__result-header">
+                      <span class="voting-page__shirt">#{{ result.shirtNumber }}</span>
+                      <span class="voting-page__name">{{ result.playerName }}</span>
+                      <span class="voting-page__pct">{{ result.percentage }}%</span>
+                    </div>
+                    <div class="voting-page__bar-track">
+                      <div class="voting-page__bar" [style.width]="getBarWidth(result)"></div>
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          } @else {
+            <mat-spinner diameter="32" />
+          }
+          @if (info()?.isActive) {
+            <p class="voting-page__closes">
+              Cierra el {{ info()!.endsAt | date:'dd/MM/yyyy \'a las\' HH:mm' }}
+            </p>
+          }
+        </div>
+      }
+
+      @case ('ready') {
+        <div class="voting-page__squad">
+          <h2 class="voting-page__instruction">
+            Elegí al jugador del partido {{ info()?.matchTitle }}
+          </h2>
+          <div class="voting-page__grid">
+            @for (player of info()!.squad; track player.playerId) {
+              <button
+                class="voting-page__player-card"
+                [class.selected]="selectedPlayer()?.playerId === player.playerId"
+                (click)="select(player)"
+              >
+                <span class="voting-page__shirt">#{{ player.shirtNumber }}</span>
+                <span class="voting-page__name">{{ player.playerName }}</span>
+              </button>
+            }
+          </div>
+          <div class="voting-page__confirm-area">
+            @if (selectedPlayer()) {
+              <p class="voting-page__selected-hint">
+                Votaste por <strong>#{{ selectedPlayer()!.shirtNumber }} {{ selectedPlayer()!.playerName }}</strong>
+              </p>
+            }
+            <button
+              mat-flat-button
+              class="voting-page__confirm-btn"
+              [disabled]="!selectedPlayer()"
+              (click)="confirmVote()"
+            >
+              Confirmar voto
+            </button>
+          </div>
+        </div>
+      }
+
+      @case ('voting') {
+        <div class="voting-page__center">
+          <mat-spinner diameter="48" />
+          <p>Registrando tu voto…</p>
+        </div>
+      }
+    }
+  </div>
+
+  <div class="voting-page__footer">
+    <img src="ISO-LTRC-TV.png" alt="Los Tordos TV" class="voting-page__footer-logo" />
+  </div>
+</div>

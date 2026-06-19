@@ -1,0 +1,35 @@
+<div class="obs-results">
+  @if (results()) {
+    <div class="obs-results__card">
+      <p class="obs-results__title">Jugador del partido</p>
+
+      @if (results()!.totalVotes === 0) {
+        <p class="obs-results__empty">Esperando votos…</p>
+      } @else {
+        <p class="obs-results__total">{{ results()!.totalVotes }} votos</p>
+
+        @for (result of results()!.top3; track result.playerId; let i = $index) {
+          <div class="obs-results__row">
+            <span class="obs-results__medal">{{ MEDALS[i] }}</span>
+            <div class="obs-results__info">
+              <div class="obs-results__header">
+                <span class="obs-results__shirt">#{{ result.shirtNumber }}</span>
+                <span class="obs-results__name">{{ result.playerName }}</span>
+                <span class="obs-results__pct">{{ result.percentage }}%</span>
+              </div>
+              <div class="obs-results__track">
+                <div class="obs-results__bar" [style.width]="barWidth(result.percentage)"></div>
+              </div>
+            </div>
+          </div>
+        }
+      }
+
+      @if (results()!.isActive) {
+        <p class="obs-results__live">● EN VIVO</p>
+      } @else if (results()!.isClosed) {
+        <p class="obs-results__final">RESULTADO FINAL</p>
+      }
+    </div>
+  }
+</div>

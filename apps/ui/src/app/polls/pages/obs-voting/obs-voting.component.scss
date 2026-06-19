@@ -1,0 +1,90 @@
+:host {
+  display: block;
+  background: transparent;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.obs-voting {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Roboto', sans-serif;
+
+  &__card {
+    background: rgba(10, 20, 35, 0.92);
+    border: 2px solid rgba(76, 175, 80, 0.6);
+    border-radius: 20px;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  &__eyebrow {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #81c784;
+    margin: 0;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  &__qr {
+    width: 180px;
+    height: 180px;
+    border-radius: 12px;
+  }
+
+  &__url {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0;
+    word-break: break-all;
+    text-align: center;
+  }
+
+  &__closes {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 0;
+  }
+
+  &__closed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: rgba(10, 20, 35, 0.85);
+    border-radius: 16px;
+    padding: 24px 32px;
+    border: 2px solid rgba(255, 193, 7, 0.5);
+  }
+
+  &__closed-icon {
+    font-size: 3rem;
+  }
+
+  &__closed-text {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+}

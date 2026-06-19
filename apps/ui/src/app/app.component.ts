@@ -26,7 +26,14 @@ export class AppComponent {
   private readonly router = inject(Router);
 
   private isPublicRoute(url: string): boolean {
-    return url.startsWith('/auth') || url.startsWith('/login') || url.startsWith('/pay');
+    return (
+      url.startsWith('/auth') ||
+      url.startsWith('/login') ||
+      url.startsWith('/pay') ||
+      url.startsWith('/votar') ||
+      url.startsWith('/player-fee') ||
+      url.startsWith('/authorization')
+    );
   }
 
   readonly showToolbar = toSignal(
