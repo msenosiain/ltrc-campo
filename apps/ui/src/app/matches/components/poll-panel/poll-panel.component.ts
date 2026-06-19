@@ -84,7 +84,8 @@ export class PollPanelComponent implements OnInit, OnChanges {
   }
 
   get votingUrl(): string {
-    return `https://tv.lostordos.com.ar/votar/${this.pollKey}`;
+    const path = this.poll()?.votingPath ?? this.pollKey;
+    return `https://tv.lostordos.com.ar/votar/${path}`;
   }
 
   private loadPoll(): void {

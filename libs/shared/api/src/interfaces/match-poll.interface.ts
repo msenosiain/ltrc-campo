@@ -18,6 +18,7 @@ export interface MatchPoll {
   matchId: string;
   token: string;
   slug: string;
+  votingPath: string;
   startsAt: Date;
   endsAt: Date;
   totalVotes: number;

@@ -39,7 +39,7 @@ export class PollsService {
     const endsAt = new Date(dto.endsAt);
     if (endsAt <= startsAt) throw new BadRequestException('La fecha de cierre debe ser posterior a la de inicio');
 
-    const slug = await this.generateSlug(new Date((match as any).date));
+    const slug = await this.generateSlug(match);
 
     const poll = await this.pollModel.create({
       matchId: new Types.ObjectId(matchId),
@@ -179,21 +179,38 @@ export class PollsService {
     return { totalVotes, top3, isActive, isClosed };
   }
 
-  private async generateSlug(matchDate: Date): Promise<string> {
-    const d = String(matchDate.getUTCDate()).padStart(2, '0');
-    const m = String(matchDate.getUTCMonth() + 1).padStart(2, '0');
-    const y = matchDate.getUTCFullYear();
-    const base = `${d}-${m}-${y}`;
+  private async generateSlug(match: any): Promise<string> {
+    const date = new Date(match.date);
+    const d = String(date.getUTCDate()).padStart(2, '0');
+    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const y = date.getUTCFullYear();
+    const datePart = `${d}-${m}-${y}`;
 
-    const exists = await this.pollModel.findOne({ slug: base });
-    if (!exists) return base;
+    const qualifier = this.buildQualifier(match);
+    const base = qualifier ? `${qualifier}-${datePart}` : datePart;
 
+    if (!await this.pollModel.findOne({ slug: base })) return base;
+
+    // Insert counter before the date so date stays as last 10 chars (invariant for votingPath)
     for (let i = 2; i <= 9; i++) {
-      const candidate = `${base}-${i}`;
-      const conflict = await this.pollModel.findOne({ slug: candidate });
-      if (!conflict) return candidate;
+      const candidate = qualifier ? `${qualifier}-${i}-${datePart}` : `${i}-${datePart}`;
+      if (!await this.pollModel.findOne({ slug: candidate })) return candidate;
     }
-    return `${base}-${randomUUID().slice(0, 6)}`;
+    const rand = randomUUID().slice(0, 6);
+    return qualifier ? `${qualifier}-${rand}-${datePart}` : `${rand}-${datePart}`;
+  }
+
+  private buildQualifier(match: any): string {
+    const parts: string[] = [];
+    if (match.branch) parts.push(`rama-${String(match.branch).toLowerCase()}`);
+    if (match.division) parts.push(String(match.division).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+    return parts.join('-');
+  }
+
+  private slugToVotingPath(slug: string): string {
+    if (!slug || slug.length <= 10) return slug ?? '';
+    // Date is always the last 10 chars (DD-MM-YYYY); everything before is the qualifier
+    return `${slug.slice(0, -11)}/${slug.slice(-10)}`;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -210,6 +227,7 @@ export class PollsService {
       matchId: poll.matchId.toHexString(),
       token: poll.token,
       slug: poll.slug ?? poll.token,
+      votingPath: this.slugToVotingPath(poll.slug ?? poll.token),
       startsAt: poll.startsAt,
       endsAt: poll.endsAt,
       totalVotes: poll.votes.length,

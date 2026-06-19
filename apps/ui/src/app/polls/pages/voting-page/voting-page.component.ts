@@ -43,7 +43,9 @@ export class VotingPageComponent implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
-    this.token = this.route.snapshot.paramMap.get('token') ?? '';
+    const qualifier = this.route.snapshot.paramMap.get('qualifier');
+    const token = this.route.snapshot.paramMap.get('token') ?? '';
+    this.token = qualifier ? `${qualifier}-${token}` : token;
     this.loadInfo();
   }
 
