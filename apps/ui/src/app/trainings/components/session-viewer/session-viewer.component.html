@@ -170,15 +170,47 @@
     <mat-card-content>
       <div class="section-header">
         <p class="section-title">Adjuntos</p>
-        <button
-          *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.ANALYST, RoleEnum.TRAINER]"
-          mat-stroked-button
-          type="button"
-          (click)="openUploadDialog()"
-        >
-          <mat-icon>attach_file</mat-icon>
-          Adjuntar archivo
-        </button>
+        <div class="section-header__actions">
+          <button
+            *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.ANALYST, RoleEnum.TRAINER]"
+            mat-stroked-button
+            type="button"
+            [disabled]="generatingReport !== null"
+            (click)="openForcedeckPicker('cmj')"
+            matTooltip="Importar CSV de ForceDecks CMJ y generar reporte PDF"
+          >
+            @if (generatingReport === 'cmj') {
+              <mat-spinner diameter="18" />
+            } @else {
+              <mat-icon>fitness_center</mat-icon>
+            }
+            Reporte CMJ
+          </button>
+          <button
+            *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.ANALYST, RoleEnum.TRAINER]"
+            mat-stroked-button
+            type="button"
+            [disabled]="generatingReport !== null"
+            (click)="openForcedeckPicker('cmrj')"
+            matTooltip="Importar CSV de ForceDecks CMRJ y generar reporte PDF"
+          >
+            @if (generatingReport === 'cmrj') {
+              <mat-spinner diameter="18" />
+            } @else {
+              <mat-icon>fitness_center</mat-icon>
+            }
+            Reporte CMRJ
+          </button>
+          <button
+            *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH, RoleEnum.ANALYST, RoleEnum.TRAINER]"
+            mat-stroked-button
+            type="button"
+            (click)="openUploadDialog()"
+          >
+            <mat-icon>attach_file</mat-icon>
+            Adjuntar archivo
+          </button>
+        </div>
       </div>
 
       @if (!(session.attachments ?? []).length) {
