@@ -167,6 +167,13 @@
   .section-title {
     margin: 0;
   }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
 }
 
 .empty-attachments {

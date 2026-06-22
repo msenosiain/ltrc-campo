@@ -166,4 +166,17 @@ export class TrainingSessionsService {
       `${this.apiUrl}/${sessionId}/attachments/${fileId}`
     );
   }
+
+  generateForcedeckReport(
+    sessionId: string,
+    testType: 'cmj' | 'cmrj',
+    file: File
+  ): Observable<TrainingSessionAttachment> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.httpClient.post<TrainingSessionAttachment>(
+      `${this.apiUrl}/${sessionId}/forcedeck/${testType}`,
+      form
+    );
+  }
 }
