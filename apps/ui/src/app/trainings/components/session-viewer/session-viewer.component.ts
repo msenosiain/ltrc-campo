@@ -34,6 +34,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -49,6 +50,7 @@ import type { UploadAttachmentResult } from '../../../matches/components/upload-
     MatIconModule,
     MatChipsModule,
     MatProgressBarModule,
+    MatProgressSpinnerModule,
     MatSnackBarModule,
     MatTooltipModule,
     DatePipe,
@@ -309,6 +311,44 @@ export class SessionViewerComponent implements OnInit {
     if (mimeType.includes('word') || mimeType.includes('document')) return 'description';
     if (mimeType.includes('video/')) return 'videocam';
     return 'attach_file';
+  }
+
+  generatingReport: 'cmj' | 'cmrj' | null = null;
+
+  openForcedeckPicker(testType: 'cmj' | 'cmrj'): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,text/csv';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (file) this.uploadForcedeckCsv(testType, file);
+    };
+    input.click();
+  }
+
+  private uploadForcedeckCsv(testType: 'cmj' | 'cmrj', file: File): void {
+    this.generatingReport = testType;
+    this.sessionsService
+      .generateForcedeckReport(this.session!.id!, testType, file)
+      .subscribe({
+        next: (att) => {
+          (this.session as any).attachments = [
+            ...(this.session!.attachments ?? []),
+            att,
+          ];
+          this.generatingReport = null;
+          this.snackBar.open(
+            `Reporte ${testType.toUpperCase()} generado y adjuntado`,
+            'Cerrar',
+            { duration: 4000 }
+          );
+        },
+        error: (err) => {
+          this.generatingReport = null;
+          const msg = err?.error?.message ?? 'Error al generar el reporte';
+          this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
+        },
+      });
   }
 
   @HostListener('document:keydown.escape')
