@@ -735,7 +735,74 @@
                   </span>
                 </ng-template>
                 <div class="transport-tab-content">
-                  <table mat-table [dataSource]="getUnassignedParticipants()" class="transport-participants-table">
+
+                  <!-- Búsqueda -->
+                  <div class="participant-filters">
+                    <mat-form-field appearance="outline" class="pfilter-search">
+                      <mat-label>Buscar</mat-label>
+                      <input matInput [value]="unassignedSearch" (input)="onUnassignedSearchChange($any($event.target).value)" placeholder="Nombre" />
+                      @if (unassignedSearch) {
+                        <button mat-icon-button matSuffix type="button" (click)="onUnassignedSearchChange('')"><mat-icon>close</mat-icon></button>
+                      } @else {
+                        <mat-icon matSuffix>search</mat-icon>
+                      }
+                    </mat-form-field>
+                  </div>
+
+                  <!-- Barra bulk -->
+                  @if (unassignedSelectedIds.size > 0) {
+                    <div class="bulk-action-bar" *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
+                      <span class="bulk-action-bar__count">{{ unassignedSelectedIds.size }} seleccionado{{ unassignedSelectedIds.size !== 1 ? 's' : '' }}</span>
+                      <span class="bulk-action-bar__sep">·</span>
+                      <span class="bulk-action-bar__label">Asignar a:</span>
+                      <mat-select placeholder="Transporte…" class="move-select" [disabled]="bulkAssigning" (selectionChange)="bulkAssignToTransport($event.value)">
+                        @for (transport of trip.transports; track transport.id) {
+                          <mat-option [value]="transport.id" [disabled]="isTransportFull(transport)">
+                            {{ transport.name }}
+                            @if (isTransportFull(transport)) { (lleno) }
+                          </mat-option>
+                        }
+                      </mat-select>
+                      <button mat-icon-button matTooltip="Deseleccionar todos" [disabled]="bulkAssigning" (click)="clearUnassignedSelection()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+                  }
+
+                  <!-- Paginación -->
+                  @if (filteredUnassignedParticipants.length > 0) {
+                    <div class="participant-paginator">
+                      <span class="participant-paginator__label">{{ unassignedPaginatorLabel }}</span>
+                      @if (totalUnassignedPages > 1) {
+                        <button mat-icon-button [disabled]="unassignedPage === 0" (click)="unassignedPage = unassignedPage - 1">
+                          <mat-icon>chevron_left</mat-icon>
+                        </button>
+                        <span class="participant-paginator__pages">{{ unassignedPage + 1 }} / {{ totalUnassignedPages }}</span>
+                        <button mat-icon-button [disabled]="unassignedPage >= totalUnassignedPages - 1" (click)="unassignedPage = unassignedPage + 1">
+                          <mat-icon>chevron_right</mat-icon>
+                        </button>
+                      }
+                    </div>
+                  }
+
+                  <table mat-table [dataSource]="pagedUnassignedParticipants" class="transport-participants-table">
+                    <ng-container matColumnDef="select">
+                      <th mat-header-cell *matHeaderCellDef>
+                        <mat-checkbox
+                          *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]"
+                          [checked]="allUnassignedSelected"
+                          [indeterminate]="someUnassignedSelected"
+                          (change)="toggleAllUnassigned()"
+                        />
+                      </th>
+                      <td mat-cell *matCellDef="let p">
+                        <mat-checkbox
+                          *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]"
+                          [checked]="isUnassignedSelected(p)"
+                          (change)="toggleUnassignedSelection(p)"
+                        />
+                      </td>
+                    </ng-container>
                     <ng-container matColumnDef="name">
                       <th mat-header-cell *matHeaderCellDef>Pasajero</th>
                       <td mat-cell *matCellDef="let p">{{ getParticipantName(p) }}</td>
@@ -767,8 +834,8 @@
                         }
                       </td>
                     </ng-container>
-                    <tr mat-header-row *matHeaderRowDef="['name', 'type', 'category', 'move']"></tr>
-                    <tr mat-row *matRowDef="let row; columns: ['name', 'type', 'category', 'move']"></tr>
+                    <tr mat-header-row *matHeaderRowDef="['select', 'name', 'type', 'category', 'move']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['select', 'name', 'type', 'category', 'move']"></tr>
                   </table>
                 </div>
               </mat-tab>

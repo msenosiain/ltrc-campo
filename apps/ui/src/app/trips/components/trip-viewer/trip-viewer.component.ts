@@ -353,6 +353,13 @@ export class TripViewerComponent implements OnInit {
   generatingTransportPdf = false;
   generatingPassengerPdf = false;
 
+  // ── Estado tab Sin Asignar ────────────────────────────────────────────────
+  unassignedSearch = '';
+  unassignedPage = 0;
+  readonly UNASSIGNED_PAGE_SIZE = 15;
+  readonly unassignedSelectedIds = new Set<string>();
+  bulkAssigning = false;
+
   addTransportForm = this.fb.group({
     name: ['', Validators.required],
     type: [TransportTypeEnum.BUS as TransportTypeEnum, Validators.required],
@@ -853,6 +860,92 @@ export class TripViewerComponent implements OnInit {
         (p) => !p.transportId && p.status === TripParticipantStatusEnum.CONFIRMED
       ) ?? []
     );
+  }
+
+  get filteredUnassignedParticipants(): TripParticipant[] {
+    const term = this.unassignedSearch.toLowerCase().trim();
+    return this.getUnassignedParticipants().filter(
+      (p) => !term || this.getParticipantName(p).toLowerCase().includes(term)
+    );
+  }
+
+  get pagedUnassignedParticipants(): TripParticipant[] {
+    const start = this.unassignedPage * this.UNASSIGNED_PAGE_SIZE;
+    return this.filteredUnassignedParticipants.slice(start, start + this.UNASSIGNED_PAGE_SIZE);
+  }
+
+  get totalUnassignedPages(): number {
+    return Math.ceil(this.filteredUnassignedParticipants.length / this.UNASSIGNED_PAGE_SIZE);
+  }
+
+  get unassignedPaginatorLabel(): string {
+    const total = this.filteredUnassignedParticipants.length;
+    if (total === 0) return '0 pasajeros';
+    const start = this.unassignedPage * this.UNASSIGNED_PAGE_SIZE + 1;
+    const end = Math.min(start + this.UNASSIGNED_PAGE_SIZE - 1, total);
+    return `${start}–${end} de ${total}`;
+  }
+
+  onUnassignedSearchChange(term: string): void {
+    this.unassignedSearch = term;
+    this.unassignedPage = 0;
+    this.unassignedSelectedIds.clear();
+  }
+
+  isUnassignedSelected(p: TripParticipant): boolean {
+    return !!p.id && this.unassignedSelectedIds.has(p.id);
+  }
+
+  toggleUnassignedSelection(p: TripParticipant): void {
+    if (!p.id) return;
+    this.unassignedSelectedIds.has(p.id)
+      ? this.unassignedSelectedIds.delete(p.id)
+      : this.unassignedSelectedIds.add(p.id);
+  }
+
+  get allUnassignedSelected(): boolean {
+    const visible = this.pagedUnassignedParticipants;
+    return visible.length > 0 && visible.every((p) => p.id && this.unassignedSelectedIds.has(p.id));
+  }
+
+  get someUnassignedSelected(): boolean {
+    return this.unassignedSelectedIds.size > 0 && !this.allUnassignedSelected;
+  }
+
+  toggleAllUnassigned(): void {
+    if (this.allUnassignedSelected) {
+      this.pagedUnassignedParticipants.forEach((p) => p.id && this.unassignedSelectedIds.delete(p.id));
+    } else {
+      this.pagedUnassignedParticipants.forEach((p) => p.id && this.unassignedSelectedIds.add(p.id));
+    }
+  }
+
+  clearUnassignedSelection(): void {
+    this.unassignedSelectedIds.clear();
+  }
+
+  bulkAssignToTransport(transportId: string): void {
+    if (!this.trip?.id || this.unassignedSelectedIds.size === 0) return;
+    this.bulkAssigning = true;
+    const ids = [...this.unassignedSelectedIds];
+    concat(...ids.map((id) => this.tripsService.moveParticipant(this.trip!.id!, id, transportId)))
+      .pipe(last(), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (trip) => {
+          this.trip = trip;
+          this.unassignedSelectedIds.clear();
+          this.bulkAssigning = false;
+          this.snackBar.open(
+            `${ids.length} pasajero${ids.length !== 1 ? 's' : ''} asignado${ids.length !== 1 ? 's' : ''}`,
+            'Cerrar',
+            { duration: 3000 }
+          );
+        },
+        error: (err) => {
+          this.bulkAssigning = false;
+          this.snackBar.open(getErrorMessage(err, 'Error al asignar transporte'), 'Cerrar', { duration: 4000 });
+        },
+      });
   }
 
   getOccupancy(t: TripTransport): number {
