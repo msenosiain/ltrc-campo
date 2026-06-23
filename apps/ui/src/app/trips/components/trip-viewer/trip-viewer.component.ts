@@ -355,6 +355,7 @@ export class TripViewerComponent implements OnInit {
 
   // ── Estado tab Sin Asignar ────────────────────────────────────────────────
   unassignedSearch = '';
+  unassignedCategoryFilter = '';
   unassignedPage = 0;
   readonly UNASSIGNED_PAGE_SIZE = 15;
   readonly unassignedSelectedIds = new Set<string>();
@@ -862,10 +863,20 @@ export class TripViewerComponent implements OnInit {
     );
   }
 
+  get unassignedCategories(): string[] {
+    const all = this.getUnassignedParticipants()
+      .map((p) => this.getParticipantCategory(p))
+      .filter(Boolean);
+    return [...new Set(all)].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
   get filteredUnassignedParticipants(): TripParticipant[] {
     const term = this.unassignedSearch.toLowerCase().trim();
+    const cat = this.unassignedCategoryFilter;
     return this.getUnassignedParticipants().filter(
-      (p) => !term || this.getParticipantName(p).toLowerCase().includes(term)
+      (p) =>
+        (!term || this.getParticipantName(p).toLowerCase().includes(term)) &&
+        (!cat || this.getParticipantCategory(p) === cat)
     );
   }
 
@@ -888,6 +899,12 @@ export class TripViewerComponent implements OnInit {
 
   onUnassignedSearchChange(term: string): void {
     this.unassignedSearch = term;
+    this.unassignedPage = 0;
+    this.unassignedSelectedIds.clear();
+  }
+
+  onUnassignedCategoryChange(cat: string): void {
+    this.unassignedCategoryFilter = cat;
     this.unassignedPage = 0;
     this.unassignedSelectedIds.clear();
   }
@@ -944,6 +961,48 @@ export class TripViewerComponent implements OnInit {
         error: (err) => {
           this.bulkAssigning = false;
           this.snackBar.open(getErrorMessage(err, 'Error al asignar transporte'), 'Cerrar', { duration: 4000 });
+        },
+      });
+  }
+
+  bulkRemoveFromTrip(): void {
+    if (!this.trip?.id || this.selectedIds.size === 0) return;
+    const ids = [...this.selectedIds];
+    const count = ids.length;
+    this.dialog
+      .open(ConfirmDialogComponent, {
+        data: {
+          title: 'Quitar participantes',
+          message: `¿Quitar ${count} participante${count !== 1 ? 's' : ''} del viaje? Esta acción no se puede deshacer.`,
+          confirmLabel: 'Quitar',
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter((confirmed) => !!confirmed),
+        switchMap(() => {
+          this.bulkUpdating = true;
+          return concat(...ids.map((id) => this.tripsService.removeParticipant(this.trip!.id!, id))).pipe(
+            last(),
+            catchError((err) => {
+              this.bulkUpdating = false;
+              this.snackBar.open(getErrorMessage(err, 'Error al quitar participantes'), 'Cerrar', { duration: 4000 });
+              return EMPTY;
+            })
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: (trip) => {
+          this.trip = trip;
+          this.selectedIds.clear();
+          this.bulkUpdating = false;
+          this.snackBar.open(
+            `${count} participante${count !== 1 ? 's' : ''} quitado${count !== 1 ? 's' : ''} del viaje`,
+            'Cerrar',
+            { duration: 3000 }
+          );
         },
       });
   }

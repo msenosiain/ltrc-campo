@@ -338,6 +338,17 @@
                 {{ opt.label }}
               </button>
             }
+            <span class="bulk-action-bar__sep">·</span>
+            <button
+              *ltrcAllowedRoles="[RoleEnum.ADMIN]"
+              mat-stroked-button
+              color="warn"
+              [disabled]="bulkUpdating"
+              (click)="bulkRemoveFromTrip()"
+            >
+              <mat-icon>person_remove</mat-icon>
+              Quitar del viaje
+            </button>
             <button mat-icon-button matTooltip="Deseleccionar todos" (click)="clearSelection()">
               <mat-icon>close</mat-icon>
             </button>
@@ -736,7 +747,7 @@
                 </ng-template>
                 <div class="transport-tab-content">
 
-                  <!-- Búsqueda -->
+                  <!-- Búsqueda y filtros -->
                   <div class="participant-filters">
                     <mat-form-field appearance="outline" class="pfilter-search">
                       <mat-label>Buscar</mat-label>
@@ -747,6 +758,17 @@
                         <mat-icon matSuffix>search</mat-icon>
                       }
                     </mat-form-field>
+                    @if (unassignedCategories.length > 1) {
+                      <mat-form-field appearance="outline" class="pfilter-category">
+                        <mat-label>Categoría</mat-label>
+                        <mat-select [value]="unassignedCategoryFilter" (selectionChange)="onUnassignedCategoryChange($event.value)">
+                          <mat-option value="">Todas</mat-option>
+                          @for (cat of unassignedCategories; track cat) {
+                            <mat-option [value]="cat">{{ cat }}</mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+                    }
                   </div>
 
                   <!-- Barra bulk -->
