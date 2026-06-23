@@ -76,7 +76,7 @@ export class RecordManualPaymentDialogComponent implements OnInit {
     displayName:     new FormControl(''), // solo para mostrar en pantalla
     concept: new FormControl(this.isTrip ? '' : 'Tercer tiempo', [Validators.required]),
     amount:  new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
-    method:  new FormControl(PaymentMethodEnum.CASH, [Validators.required]),
+    method:  new FormControl(PaymentMethodEnum.TRANSFER, [Validators.required]),
     date:    new FormControl<Date | null>(new Date(), [Validators.required]),
     notes:   new FormControl(''),
   });
