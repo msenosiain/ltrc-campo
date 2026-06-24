@@ -46,6 +46,7 @@ import {
   TripParticipantStatusEnum,
   TripParticipantTypeEnum,
   TripTransport,
+  CATEGORY_AGE_RANK,
 } from '@ltrc-campo/shared-api-model';
 import { PaymentLinksPanelComponent } from '../../../payments/components/payment-links-panel/payment-links-panel.component';
 import { TripsService, AddParticipantPayload, AddTransportPayload } from '../../services/trips.service';
@@ -852,7 +853,14 @@ export class TripViewerComponent implements OnInit {
   getTransportTypeLabel = getTransportTypeLabel;
 
   getParticipantsForTransport(transportId: string): TripParticipant[] {
-    return this.trip?.participants.filter((p) => p.transportId === transportId) ?? [];
+    return (this.trip?.participants.filter((p) => p.transportId === transportId) ?? [])
+      .slice()
+      .sort((a, b) => {
+        const rankA = CATEGORY_AGE_RANK[(a.player as any)?.category as CategoryEnum] ?? 999;
+        const rankB = CATEGORY_AGE_RANK[(b.player as any)?.category as CategoryEnum] ?? 999;
+        if (rankA !== rankB) return rankA - rankB;
+        return this.getParticipantName(a).localeCompare(this.getParticipantName(b), 'es');
+      });
   }
 
   getUnassignedParticipants(): TripParticipant[] {
@@ -982,8 +990,7 @@ export class TripViewerComponent implements OnInit {
         filter((confirmed) => !!confirmed),
         switchMap(() => {
           this.bulkUpdating = true;
-          return concat(...ids.map((id) => this.tripsService.removeParticipant(this.trip!.id!, id))).pipe(
-            last(),
+          return this.tripsService.bulkRemoveParticipants(this.trip!.id!, ids).pipe(
             catchError((err) => {
               this.bulkUpdating = false;
               this.snackBar.open(getErrorMessage(err, 'Error al quitar participantes'), 'Cerrar', { duration: 4000 });

@@ -18,6 +18,7 @@ import { TripFilterDto } from './dto/trip-filter.dto';
 import { AddParticipantDto } from './dto/add-participant.dto';
 import { BulkAddParticipantsDto } from './dto/bulk-add-participants.dto';
 import { BulkUpdateStatusDto } from './dto/bulk-update-status.dto';
+import { BulkRemoveParticipantsDto } from './dto/bulk-remove-participants.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { RecordPaymentDto } from './dto/record-payment.dto';
 import { AddTransportDto } from './dto/add-transport.dto';
@@ -118,6 +119,16 @@ export class TripsController {
   @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
   removeAllParticipants(@Param('id') id: string, @Req() req: Request) {
     return this.tripsService.removeAllParticipants(id, (req as any).user);
+  }
+
+  @Delete(':id/participants/bulk')
+  @Roles(RoleEnum.ADMIN)
+  bulkRemoveParticipants(
+    @Param('id') id: string,
+    @Body() dto: BulkRemoveParticipantsDto,
+    @Req() req: Request
+  ) {
+    return this.tripsService.bulkRemoveParticipants(id, dto.participantIds, (req as any).user);
   }
 
   @Delete(':id/participants/:participantId')

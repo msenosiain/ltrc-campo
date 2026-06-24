@@ -132,6 +132,12 @@ export class TripsService {
     return this.http.delete<Trip>(`${this.baseUrl}/${tripId}/participants`);
   }
 
+  bulkRemoveParticipants(tripId: string, participantIds: string[]): Observable<Trip> {
+    return this.http.delete<Trip>(`${this.baseUrl}/${tripId}/participants/bulk`, {
+      body: { participantIds },
+    });
+  }
+
   recordPayment(
     tripId: string,
     participantId: string,

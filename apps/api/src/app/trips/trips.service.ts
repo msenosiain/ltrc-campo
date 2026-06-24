@@ -287,6 +287,20 @@ export class TripsService {
     return true;
   }
 
+  async bulkRemoveParticipants(id: string, participantIds: string[], caller?: User) {
+    const trip = await this.tripModel.findById(id);
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    for (const pid of participantIds) {
+      const participant = (trip.participants as any).id(pid);
+      if (participant) participant.deleteOne();
+    }
+
+    if (caller) trip.updatedBy = (caller as any)._id;
+    await trip.save();
+    return this.findOne(id);
+  }
+
   async removeParticipant(id: string, participantId: string, caller?: User) {
     const trip = await this.tripModel.findById(id);
     if (!trip) throw new NotFoundException('Viaje no encontrado');
