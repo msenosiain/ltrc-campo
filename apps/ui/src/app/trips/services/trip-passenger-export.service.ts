@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx-js-style';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Trip, TripParticipant, TripParticipantStatusEnum, TripParticipantTypeEnum, TripTransport } from '@ltrc-campo/shared-api-model';
+import { CATEGORY_AGE_RANK, Trip, TripParticipant, TripParticipantStatusEnum, TripParticipantTypeEnum, TripTransport } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../common/category-options';
 import { getParticipantTypeLabel } from '../trip-options';
 
@@ -229,9 +229,14 @@ export class TripPassengerExportService {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private getConfirmedInTransport(trip: Trip, transportId: string): TripParticipant[] {
-    return trip.participants.filter(
-      (p) => p.transportId === transportId && p.status === TripParticipantStatusEnum.CONFIRMED,
-    );
+    return trip.participants
+      .filter((p) => p.transportId === transportId && p.status === TripParticipantStatusEnum.CONFIRMED)
+      .sort((a, b) => {
+        const rankA = CATEGORY_AGE_RANK[(a.player as any)?.category as keyof typeof CATEGORY_AGE_RANK] ?? 999;
+        const rankB = CATEGORY_AGE_RANK[(b.player as any)?.category as keyof typeof CATEGORY_AGE_RANK] ?? 999;
+        if (rankA !== rankB) return rankA - rankB;
+        return this.getParticipantName(a).localeCompare(this.getParticipantName(b), 'es');
+      });
   }
 
   private getParticipantName(p: TripParticipant): string {
