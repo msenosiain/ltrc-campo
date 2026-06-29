@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { CategoryEnum, IPayment, PaymentMethodEnum, PaymentStatusEnum, SportEnum } from '@ltrc-campo/shared-api-model';
-import { getCategoryLabel } from '../../common/category-options';
+import { categoryOptions, getCategoryLabel } from '../../common/category-options';
 import { GlobalPaymentRow, GlobalPaymentsReport } from '../../payments/services/payments.service';
 
 export interface PaymentsReportPdfContext {
@@ -172,20 +172,25 @@ export class PaymentsReportPdfService {
     y += 6;
 
     // Agrupar por categoría
+    const catOrder = new Map(categoryOptions.map((c, i) => [c.id as string, i]));
     const categoryGroups = new Map<string, IPayment[]>();
     for (const p of payments) {
-      const cat = (p as any).playerId?.category;
+      const cat = (p as any).playerId?.category as string | undefined;
       const label = cat ? getCategoryLabel(cat as CategoryEnum) : 'Sin categoría';
-      if (!categoryGroups.has(label)) categoryGroups.set(label, []);
-      categoryGroups.get(label)!.push(p);
+      const key = cat ?? '__none__';
+      if (!categoryGroups.has(key)) categoryGroups.set(key, []);
+      categoryGroups.get(key)!.push(p);
     }
+    const sortedGroups = Array.from(categoryGroups.entries())
+      .sort(([keyA], [keyB]) => (catOrder.get(keyA) ?? 999) - (catOrder.get(keyB) ?? 999));
 
     const CAT_HEADER_BG: [number, number, number] = [55, 71, 99];
     const SUBTOTAL_BG: [number, number, number] = [232, 240, 254];
     const body: any[] = [];
     let rowIndex = 1;
 
-    for (const [catLabel, catPayments] of categoryGroups) {
+    for (const [catKey, catPayments] of sortedGroups) {
+      const catLabel = catKey === '__none__' ? 'Sin categoría' : getCategoryLabel(catKey as CategoryEnum);
       body.push([{
         content: catLabel.toUpperCase(),
         colSpan: 8,
