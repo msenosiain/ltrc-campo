@@ -34,7 +34,7 @@ const PAYMENT_TYPE_LABELS: Record<string, string> = {
   [PaymentTypeEnum.INSTALLMENT]: 'Cuota',
 };
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
-import { getCategoryLabel } from '../../../common/category-options';
+import { categoryOptions, getCategoryLabel } from '../../../common/category-options';
 
 @Component({
   selector: 'ltrc-payment-links-panel',
@@ -286,17 +286,21 @@ export class PaymentLinksPanelComponent implements OnInit {
   }
 
   get categorySubtotals(): Array<{ label: string; total: number; count: number }> {
-    const map = new Map<string, { total: number; count: number }>();
+    const catOrder = new Map(categoryOptions.map((c, i) => [c.id as string, i]));
+    const map = new Map<string, { label: string; total: number; count: number }>();
     for (const p of this.categoryFilteredPayments) {
       if (p.status !== PaymentStatusEnum.APPROVED) continue;
-      const cat = (p.playerId as any)?.category;
-      const label = cat ? getCategoryLabel(cat) : 'Sin categoría';
-      const entry = map.get(label) ?? { total: 0, count: 0 };
+      const cat = (p.playerId as any)?.category as string | undefined;
+      const key = cat ?? '__none__';
+      const label = cat ? getCategoryLabel(cat as any) : 'Sin categoría';
+      const entry = map.get(key) ?? { label, total: 0, count: 0 };
       entry.total += p.amount;
       entry.count++;
-      map.set(label, entry);
+      map.set(key, entry);
     }
-    return Array.from(map.entries()).map(([label, data]) => ({ label, ...data }));
+    return Array.from(map.entries())
+      .sort(([keyA], [keyB]) => (catOrder.get(keyA) ?? 999) - (catOrder.get(keyB) ?? 999))
+      .map(([, data]) => data);
   }
 
   statusLabel(status: PaymentStatusEnum | PaymentLinkStatusEnum): string {
