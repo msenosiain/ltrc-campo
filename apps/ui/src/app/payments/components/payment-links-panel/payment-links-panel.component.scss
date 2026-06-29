@@ -99,6 +99,38 @@
 .pfilter-search { flex: 1; min-width: 180px; }
 .pfilter-select { width: 150px; }
 
+.category-subtotals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.cat-subtotal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: #f1f8e9;
+  border: 1px solid #c5e1a5;
+  border-radius: 16px;
+  font-size: 12px;
+
+  &__label {
+    font-weight: 600;
+    color: #33691e;
+  }
+
+  &__amount {
+    font-weight: 700;
+    color: #2e7d32;
+  }
+
+  &__count {
+    color: #81c784;
+  }
+}
+
 .panel-paginator {
   display: flex;
   align-items: center;

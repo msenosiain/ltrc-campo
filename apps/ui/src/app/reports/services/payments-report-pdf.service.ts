@@ -171,23 +171,77 @@ export class PaymentsReportPdfService {
     doc.setDrawColor(200, 200, 200).line(marginL, y, pageW - marginL, y);
     y += 6;
 
+    // Agrupar por categoría
+    const categoryGroups = new Map<string, IPayment[]>();
+    for (const p of payments) {
+      const cat = (p as any).playerId?.category;
+      const label = cat ? getCategoryLabel(cat as CategoryEnum) : 'Sin categoría';
+      if (!categoryGroups.has(label)) categoryGroups.set(label, []);
+      categoryGroups.get(label)!.push(p);
+    }
+
+    const CAT_HEADER_BG: [number, number, number] = [55, 71, 99];
+    const SUBTOTAL_BG: [number, number, number] = [232, 240, 254];
+    const body: any[] = [];
+    let rowIndex = 1;
+
+    for (const [catLabel, catPayments] of categoryGroups) {
+      body.push([{
+        content: catLabel.toUpperCase(),
+        colSpan: 8,
+        styles: {
+          fillColor: CAT_HEADER_BG,
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 8,
+          cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 },
+        },
+      }]);
+
+      for (const p of catPayments) {
+        body.push([
+          String(rowIndex++),
+          (p as any).playerId?.name ?? p.playerName ?? '-',
+          (p as any).playerId?.idNumber ?? p.playerDni ?? '-',
+          p.concept,
+          this.methodLabel(p.method),
+          this.formatMoney(p.amount),
+          this.formatDate(p.date),
+          this.statusLabel(p.status),
+        ]);
+      }
+
+      const catApproved = catPayments
+        .filter((p) => p.status === PaymentStatusEnum.APPROVED)
+        .reduce((s, p) => s + p.amount, 0);
+      const catApprovedCount = catPayments.filter((p) => p.status === PaymentStatusEnum.APPROVED).length;
+
+      body.push([
+        {
+          content: `Subtotal — ${catApprovedCount} aprobado(s)`,
+          colSpan: 5,
+          styles: { fillColor: SUBTOTAL_BG, fontStyle: 'bold', fontSize: 7.5, textColor: this.PRIMARY },
+        },
+        {
+          content: this.formatMoney(catApproved),
+          colSpan: 1,
+          styles: { fillColor: SUBTOTAL_BG, fontStyle: 'bold', fontSize: 7.5, halign: 'right', textColor: [46, 125, 50] as [number, number, number] },
+        },
+        {
+          content: '',
+          colSpan: 2,
+          styles: { fillColor: SUBTOTAL_BG },
+        },
+      ]);
+    }
+
     autoTable(doc, {
       startY: y,
       head: [['#', 'Jugador', 'DNI', 'Concepto', 'Método', 'Monto', 'Fecha', 'Estado']],
-      body: payments.map((p, i) => [
-        String(i + 1),
-        (p as any).playerId?.name ?? p.playerName ?? '-',
-        (p as any).playerId?.idNumber ?? p.playerDni ?? '-',
-        p.concept,
-        this.methodLabel(p.method),
-        this.formatMoney(p.amount),
-        this.formatDate(p.date),
-        this.statusLabel(p.status),
-      ]),
+      body,
       theme: 'grid',
       headStyles: { fillColor: this.HEADER_BG, textColor: 255, fontStyle: 'bold', fontSize: 8, halign: 'center' },
       bodyStyles: { fontSize: 7.5, textColor: this.PRIMARY, lineColor: [200, 200, 200], lineWidth: 0.3 },
-      alternateRowStyles: { fillColor: this.SECTION_BG },
       columnStyles: {
         0: { cellWidth: 8, halign: 'center' },
         1: { cellWidth: 'auto' },

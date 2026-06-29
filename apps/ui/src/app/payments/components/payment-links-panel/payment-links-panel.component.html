@@ -24,6 +24,18 @@
     </div>
   </div>
 
+  @if (categorySubtotals.length > 1) {
+    <div class="category-subtotals">
+      @for (sub of categorySubtotals; track sub.label) {
+        <span class="cat-subtotal">
+          <span class="cat-subtotal__label">{{ sub.label }}</span>
+          <span class="cat-subtotal__amount">${{ sub.total | number:'1.0-0' }}</span>
+          <span class="cat-subtotal__count">({{ sub.count }})</span>
+        </span>
+      }
+    </div>
+  }
+
   @if (links.length > 0) {
     <h4 class="section-title">Links de cobro</h4>
     <table mat-table [dataSource]="pagedLinks" class="links-table">

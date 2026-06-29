@@ -34,6 +34,7 @@ const PAYMENT_TYPE_LABELS: Record<string, string> = {
   [PaymentTypeEnum.INSTALLMENT]: 'Cuota',
 };
 import { AllowedRolesDirective } from '../../../auth/directives/allowed-roles.directive';
+import { getCategoryLabel } from '../../../common/category-options';
 
 @Component({
   selector: 'ltrc-payment-links-panel',
@@ -282,6 +283,20 @@ export class PaymentLinksPanelComponent implements OnInit {
     return this.categoryFilteredPayments
       .filter((p) => p.status === PaymentStatusEnum.APPROVED)
       .reduce((s, p) => s + p.amount, 0);
+  }
+
+  get categorySubtotals(): Array<{ label: string; total: number; count: number }> {
+    const map = new Map<string, { total: number; count: number }>();
+    for (const p of this.categoryFilteredPayments) {
+      if (p.status !== PaymentStatusEnum.APPROVED) continue;
+      const cat = (p.playerId as any)?.category;
+      const label = cat ? getCategoryLabel(cat) : 'Sin categoría';
+      const entry = map.get(label) ?? { total: 0, count: 0 };
+      entry.total += p.amount;
+      entry.count++;
+      map.set(label, entry);
+    }
+    return Array.from(map.entries()).map(([label, data]) => ({ label, ...data }));
   }
 
   statusLabel(status: PaymentStatusEnum | PaymentLinkStatusEnum): string {
