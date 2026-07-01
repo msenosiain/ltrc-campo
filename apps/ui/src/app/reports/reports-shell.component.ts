@@ -20,6 +20,10 @@ import { MatTabsModule } from '@angular/material/tabs';
          [active]="rlaLinks.isActive">
         Links de Pago
       </a>
+      <a mat-tab-link routerLink="birthdays" routerLinkActive #rlaBirthdays="routerLinkActive"
+         [active]="rlaBirthdays.isActive">
+        Cumpleaños
+      </a>
     </nav>
     <mat-tab-nav-panel #tabPanel>
       <router-outlet />

@@ -32,6 +32,13 @@ export const REPORTS_ROUTES: Routes = [
             (m) => m.PaymentLinksReportComponent
           ),
       },
+      {
+        path: 'birthdays',
+        loadComponent: () =>
+          import('./pages/birthdays-report/birthdays-report.component').then(
+            (m) => m.BirthdaysReportComponent
+          ),
+      },
     ],
   },
 ];

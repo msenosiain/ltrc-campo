@@ -1,0 +1,141 @@
+<div class="report-page">
+
+  <div class="report-header">
+    <h1 class="report-title">Listado de Cumpleaños</h1>
+    <p class="report-subtitle">Jugadores ordenados por próximo cumpleaños</p>
+  </div>
+
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filter-row">
+
+        @if (showSport()) {
+          <mat-form-field appearance="outline">
+            <mat-label>Deporte</mat-label>
+            <mat-select formControlName="sport">
+              <mat-option [value]="null">Todos</mat-option>
+              @for (opt of availableSports(); track opt.value) {
+                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+              }
+            </mat-select>
+            @if (filterForm.get('sport')?.value) {
+              <button matIconSuffix mat-icon-button type="button" (click)="clearControl('sport')">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </mat-form-field>
+        }
+
+        <mat-form-field appearance="outline">
+          <mat-label>Categorías</mat-label>
+          <mat-select formControlName="categories" multiple>
+            @for (opt of availableCategories(); track opt.id) {
+              <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+          @if (filterForm.get('categories')?.value?.length) {
+            <button matIconSuffix mat-icon-button type="button" (click)="clearControl('categories')">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="status">
+            @for (opt of statusOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (activeFilterCount() > 0) {
+          <div class="filter-actions">
+            <button mat-stroked-button (click)="clearFilters()">
+              <mat-icon>clear</mat-icon> Limpiar ({{ activeFilterCount() }})
+            </button>
+          </div>
+        }
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  @if (loading()) {
+    <div class="loading-center">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else {
+
+    <div class="results-bar">
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <span class="summary-stat__label">Jugadores</span>
+          <span class="summary-stat__value">{{ rows().length }}</span>
+        </div>
+      </div>
+
+      @if (rows().length > 0) {
+        <button mat-stroked-button (click)="downloadPdf()" [disabled]="generatingPdf()">
+          @if (generatingPdf()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>picture_as_pdf</mat-icon>
+          }
+          Exportar PDF
+        </button>
+      }
+    </div>
+
+    @if (rows().length === 0) {
+      <p class="empty-state">Sin resultados para los filtros seleccionados.</p>
+    } @else {
+      <div class="table-container">
+        <table mat-table [dataSource]="rows()" [trackBy]="trackById" class="birthdays-table">
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Nombre</th>
+            <td mat-cell *matCellDef="let p">{{ p.name }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef>Categoría</th>
+            <td mat-cell *matCellDef="let p">
+              @if (sportLabel(p.sport)) {
+                <span class="sport-label">{{ sportLabel(p.sport) }}</span>
+              }
+              <span class="cat-label">{{ getCategoryLabel(p.category) }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="birthDate">
+            <th mat-header-cell *matHeaderCellDef>Fecha de nac.</th>
+            <td mat-cell *matCellDef="let p">{{ formatBirthDate(p.birthDate) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="age">
+            <th mat-header-cell *matHeaderCellDef class="col-center">Edad</th>
+            <td mat-cell *matCellDef="let p" class="col-center">{{ p.age }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="daysToNext">
+            <th mat-header-cell *matHeaderCellDef>Próximo cumpleaños</th>
+            <td mat-cell *matCellDef="let p">
+              <span class="days-badge"
+                    [class.days-badge--today]="p.daysToNext === 0"
+                    [class.days-badge--soon]="p.daysToNext > 0 && p.daysToNext <= 7">
+                {{ daysLabel(p.daysToNext) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns;"
+              [class.row--today]="row.daysToNext === 0"
+              [class.row--soon]="row.daysToNext > 0 && row.daysToNext <= 7"></tr>
+        </table>
+      </div>
+    }
+  }
+
+</div>
