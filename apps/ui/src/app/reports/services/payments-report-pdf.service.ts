@@ -206,8 +206,8 @@ export class PaymentsReportPdfService {
       for (const p of catPayments) {
         body.push([
           String(rowIndex++),
-          (p as any).playerId?.name ?? p.playerName ?? '-',
-          (p as any).playerId?.idNumber ?? p.playerDni ?? '-',
+          (p as any).playerId?.name ?? p.payerName ?? '-',
+          (p as any).playerId?.idNumber ?? p.payerDni ?? '-',
           p.concept,
           this.methodLabel(p.method),
           this.formatMoney(p.amount),

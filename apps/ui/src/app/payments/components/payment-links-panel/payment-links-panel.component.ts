@@ -269,7 +269,7 @@ export class PaymentLinksPanelComponent implements OnInit {
     const term = this.paymentsSearch.toLowerCase().trim();
     return this.categoryFilteredPayments.filter((p) => {
       if (term) {
-        const name = ((p.playerId as any)?.name ?? p.playerName ?? '').toLowerCase();
+        const name = ((p.playerId as any)?.name ?? p.payerName ?? '').toLowerCase();
         const concept = (p.concept ?? '').toLowerCase();
         if (!name.includes(term) && !concept.includes(term)) return false;
       }

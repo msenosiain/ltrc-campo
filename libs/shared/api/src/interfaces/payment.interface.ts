@@ -35,8 +35,9 @@ export interface IPayment {
   entityType: PaymentEntityTypeEnum;
   entityId: string;
   playerId: string;
-  playerName?: string;
-  playerDni?: string;
+  userId?: string;
+  payerName?: string;
+  payerDni?: string;
   amount: number;
   method: PaymentMethodEnum;
   status: PaymentStatusEnum;
