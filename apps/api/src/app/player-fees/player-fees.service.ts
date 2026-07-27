@@ -474,10 +474,11 @@ export class PlayerFeesService {
       const needsFondoSolidario = sport === SportEnum.RUGBY && RUGBY_M15_PLUS.has(cat);
 
       const needsCursos = sport === SportEnum.RUGBY && RUGBY_M15_PLUS.has(cat);
+      const needsBduar = sport === SportEnum.RUGBY;
 
       const feePaid = !!payment;
       const membershipCurrent = record?.membershipCurrent ?? false;
-      const bduarRegistered = record?.bduarRegistered ?? false;
+      const bduarRegistered = needsBduar ? (record?.bduarRegistered ?? false) : undefined;
       const coursesApproved = needsCursos ? (record?.coursesApproved ?? false) : undefined;
       const solidarityFundPaid = needsFondoSolidario
         ? (record?.solidarityFundPaid ?? false)
@@ -486,7 +487,7 @@ export class PlayerFeesService {
       const eligible =
         membershipCurrent &&
         feePaid &&
-        bduarRegistered &&
+        (!needsBduar || bduarRegistered === true) &&
         (!needsCursos || coursesApproved === true) &&
         (!needsFondoSolidario || solidarityFundPaid === true);
 
@@ -528,16 +529,17 @@ export class PlayerFeesService {
     ]);
 
     const needsCursos = sport === SportEnum.RUGBY && RUGBY_M15_PLUS.has(cat);
+    const needsBduar = sport === SportEnum.RUGBY;
 
     const feePaid = !!payment;
     const membershipCurrent = record?.membershipCurrent ?? false;
-    const bduarRegistered = record?.bduarRegistered ?? false;
+    const bduarRegistered = needsBduar ? (record?.bduarRegistered ?? false) : undefined;
     const coursesApproved = needsCursos ? (record?.coursesApproved ?? false) : undefined;
     const solidarityFundPaid = needsFondoSolidario ? (record?.solidarityFundPaid ?? false) : undefined;
     const eligible =
       membershipCurrent &&
       feePaid &&
-      bduarRegistered &&
+      (!needsBduar || bduarRegistered === true) &&
       (!needsCursos || coursesApproved === true) &&
       (!needsFondoSolidario || solidarityFundPaid === true);
 

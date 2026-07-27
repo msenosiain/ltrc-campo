@@ -63,11 +63,13 @@ export class EligibilityReportComponent implements OnInit {
   loading = signal(false);
   generatingPdf = signal(false);
 
+  readonly hasBduar = computed(() => this.rows().some(r => r.bduarRegistered !== undefined));
   readonly hasCursos = computed(() => this.rows().some(r => r.coursesApproved !== undefined));
   readonly hasFondo = computed(() => this.rows().some(r => r.solidarityFundPaid !== undefined));
 
   readonly displayedColumns = computed(() => {
-    const cols = ['player', 'category', 'membershipCurrent', 'feePaid', 'bduarRegistered'];
+    const cols = ['player', 'category', 'membershipCurrent', 'feePaid'];
+    if (this.hasBduar()) cols.push('bduarRegistered');
     if (this.hasCursos()) cols.push('coursesApproved');
     if (this.hasFondo()) cols.push('solidarityFundPaid');
     cols.push('eligible');
@@ -139,6 +141,7 @@ export class EligibilityReportComponent implements OnInit {
         season,
         sport,
         category,
+        hasBduar: this.hasBduar(),
         hasCursos: this.hasCursos(),
         hasFondo: this.hasFondo(),
       });

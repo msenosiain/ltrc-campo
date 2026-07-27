@@ -130,7 +130,7 @@ export class PlayerFeesListComponent implements OnInit {
       if (cats.length && !cats.includes(r.category as CategoryEnum)) return false;
       if (feePaid !== null && r.feePaid !== feePaid) return false;
       if (membership !== null && r.membershipCurrent !== membership) return false;
-      if (bduar !== null && r.bduarRegistered !== bduar) return false;
+      if (bduar !== null && r.bduarRegistered !== undefined && r.bduarRegistered !== bduar) return false;
       if (courses !== null && r.coursesApproved !== undefined && r.coursesApproved !== courses) return false;
       if (solidarity !== null && r.solidarityFundPaid !== undefined && r.solidarityFundPaid !== solidarity) return false;
       if (eligible !== null && r.eligible !== eligible) return false;
@@ -164,6 +164,10 @@ export class PlayerFeesListComponent implements OnInit {
     };
   });
 
+  readonly hasBduar = computed(() =>
+    this.filteredRows().some(r => r.bduarRegistered !== undefined)
+  );
+
   readonly hasCursos = computed(() =>
     this.filteredRows().some(r => r.coursesApproved !== undefined)
   );
@@ -173,7 +177,8 @@ export class PlayerFeesListComponent implements OnInit {
   );
 
   readonly displayedColumns = computed(() => {
-    const cols = ['player', 'category', 'membershipCurrent', 'feePaid', 'bduarRegistered'];
+    const cols = ['player', 'category', 'membershipCurrent', 'feePaid'];
+    if (this.hasBduar()) cols.push('bduarRegistered');
     if (this.hasCursos()) cols.push('coursesApproved');
     if (this.hasFondoSolidario()) cols.push('solidarityFundPaid');
     cols.push('eligible');
@@ -301,6 +306,7 @@ export class PlayerFeesListComponent implements OnInit {
         season,
         sport,
         category,
+        hasBduar: this.hasBduar(),
         hasCursos: this.hasCursos(),
         hasFondo: this.hasFondoSolidario(),
       });

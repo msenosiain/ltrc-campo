@@ -108,9 +108,13 @@
         <ng-container matColumnDef="bduarRegistered">
           <th mat-header-cell *matHeaderCellDef>Ficha BD UAR</th>
           <td mat-cell *matCellDef="let row">
-            <mat-icon [class]="row.bduarRegistered ? 'check-icon' : 'cross-icon'">
-              {{ row.bduarRegistered ? 'check_circle' : 'cancel' }}
-            </mat-icon>
+            @if (row.bduarRegistered !== undefined) {
+              <mat-icon [class]="row.bduarRegistered ? 'check-icon' : 'cross-icon'">
+                {{ row.bduarRegistered ? 'check_circle' : 'cancel' }}
+              </mat-icon>
+            } @else {
+              <span class="na">—</span>
+            }
           </td>
         </ng-container>
 

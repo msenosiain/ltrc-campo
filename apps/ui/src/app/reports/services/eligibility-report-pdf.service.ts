@@ -8,6 +8,7 @@ export interface EligibilityReportPdfContext {
   season: string;
   sport: SportEnum | null;
   category: CategoryEnum | null;
+  hasBduar: boolean;
   hasCursos: boolean;
   hasFondo: boolean;
 }
@@ -35,7 +36,8 @@ export class EligibilityReportPdfService {
       grouped.get(catLabel)!.push(row);
     }
 
-    const columns: string[] = ['Jugador', 'DNI', 'Cuota', 'Pago Derecho', 'Ficha Médica'];
+    const columns: string[] = ['Jugador', 'DNI', 'Cuota', 'Pago Derecho'];
+    if (ctx.hasBduar) columns.push('Ficha BD UAR');
     if (ctx.hasCursos) columns.push('Cursos');
     if (ctx.hasFondo) columns.push('Fondo Sol.');
     columns.push('Habilitado');
@@ -64,8 +66,8 @@ export class EligibilityReportPdfService {
           row.playerDni,
           this.yesNo(row.membershipCurrent),
           this.yesNo(row.feePaid),
-          this.yesNo(row.bduarRegistered),
         ];
+        if (ctx.hasBduar) cells.push(row.bduarRegistered !== undefined ? this.yesNo(row.bduarRegistered) : '—');
         if (ctx.hasCursos) cells.push(row.coursesApproved !== undefined ? this.yesNo(row.coursesApproved) : '—');
         if (ctx.hasFondo) cells.push(row.solidarityFundPaid !== undefined ? this.yesNo(row.solidarityFundPaid) : '—');
         cells.push({
@@ -103,7 +105,6 @@ export class EligibilityReportPdfService {
         1: { cellWidth: 20, halign: 'center' },
         2: { cellWidth: 14, halign: 'center' },
         3: { cellWidth: 16, halign: 'center' },
-        4: { cellWidth: 14, halign: 'center' },
       },
       margin: { left: marginL, right: marginL },
       didDrawPage: () => {

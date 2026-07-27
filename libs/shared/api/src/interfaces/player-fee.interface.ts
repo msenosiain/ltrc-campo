@@ -116,7 +116,7 @@ export interface IPlayerFeeStatusRow {
   feePaidAt?: Date;
   // Eligibility
   membershipCurrent: boolean;
-  bduarRegistered: boolean;
+  bduarRegistered?: boolean;       // solo rugby
   coursesApproved?: boolean;       // solo M15→PS rugby
   solidarityFundPaid?: boolean;    // solo M15→PS rugby
   // Overall status

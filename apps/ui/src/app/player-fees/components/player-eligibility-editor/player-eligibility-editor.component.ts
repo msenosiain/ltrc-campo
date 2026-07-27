@@ -41,6 +41,7 @@ export class PlayerEligibilityEditorComponent implements OnChanges {
   loading = signal(false);
   saving = signal(false);
 
+  readonly hasBduar = computed(() => this.status()?.bduarRegistered !== undefined);
   readonly hasCursos = computed(() => this.status()?.coursesApproved !== undefined);
   readonly hasFondo = computed(() => this.status()?.solidarityFundPaid !== undefined);
 

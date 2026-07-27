@@ -327,10 +327,12 @@
             Derecho pagado
             <mat-icon>{{ eligibilityStatus()!.feePaid ? 'check_circle' : 'cancel' }}</mat-icon>
           </span>
-          <span class="fichaje-item" [class.fichaje-item--ok]="eligibilityStatus()!.bduarRegistered">
-            Ficha BD UAR
-            <mat-icon>{{ eligibilityStatus()!.bduarRegistered ? 'check_circle' : 'cancel' }}</mat-icon>
-          </span>
+          @if (eligibilityStatus()!.bduarRegistered !== undefined) {
+            <span class="fichaje-item" [class.fichaje-item--ok]="eligibilityStatus()!.bduarRegistered">
+              Ficha BD UAR
+              <mat-icon>{{ eligibilityStatus()!.bduarRegistered ? 'check_circle' : 'cancel' }}</mat-icon>
+            </span>
+          }
           @if (eligibilityStatus()!.coursesApproved !== undefined) {
             <span class="fichaje-item" [class.fichaje-item--ok]="eligibilityStatus()!.coursesApproved">
               Cursos

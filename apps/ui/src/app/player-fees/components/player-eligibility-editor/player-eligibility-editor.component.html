@@ -38,14 +38,16 @@
         </span>
       </label>
 
-      <label class="eligibility-check">
-        <mat-checkbox
-          [checked]="status()?.bduarRegistered ?? false"
-          [disabled]="saving()"
-          (change)="toggle('bduarRegistered', $event.checked)"
-        />
-        <span class="eligibility-check__label">Ficha BD UAR</span>
-      </label>
+      @if (hasBduar()) {
+        <label class="eligibility-check">
+          <mat-checkbox
+            [checked]="status()?.bduarRegistered ?? false"
+            [disabled]="saving()"
+            (change)="toggle('bduarRegistered', $event.checked)"
+          />
+          <span class="eligibility-check__label">Ficha BD UAR</span>
+        </label>
+      }
 
       @if (hasCursos()) {
         <label class="eligibility-check">
