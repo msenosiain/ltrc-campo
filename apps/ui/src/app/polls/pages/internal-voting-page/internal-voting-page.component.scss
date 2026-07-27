@@ -1,0 +1,351 @@
+.ivote-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #0d0d1a;
+  color: #ffffff;
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 16px;
+    gap: 12px;
+  }
+
+  &__shields {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  &__shield {
+    height: 56px;
+    object-fit: contain;
+  }
+
+  &__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0;
+    color: #c9a84c;
+  }
+
+  &__content {
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: #aaa;
+  }
+
+  &__message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px 16px;
+    text-align: center;
+    color: #ccc;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      opacity: 0.6;
+    }
+
+    strong {
+      color: #fff;
+      font-size: 1.05rem;
+    }
+
+    &--error {
+      color: #ef9a9a;
+    }
+  }
+
+  // Results
+  &__results {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__results-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #c9a84c;
+    margin: 0;
+  }
+
+  &__total {
+    font-size: 0.875rem;
+    color: #aaa;
+    margin: 0;
+  }
+
+  &__voted-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: rgba(76, 175, 80, 0.15);
+    color: #81c784;
+    font-weight: 600;
+    font-size: 1rem;
+
+    mat-icon { color: #81c784; }
+  }
+
+  &__my-votes {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__my-votes-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #888;
+    margin: 0 0 4px;
+  }
+
+  &__my-vote-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+  }
+
+  &__my-vote-award {
+    color: #c9a84c;
+    font-weight: 500;
+  }
+
+  &__my-vote-player {
+    color: #fff;
+  }
+
+  &__award-result {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__award-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #c9a84c;
+    margin: 0 0 4px;
+  }
+
+  &__result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__podium {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  &__result-info {
+    flex: 1;
+  }
+
+  &__result-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  &__shirt {
+    font-weight: 700;
+    color: #c9a84c;
+    min-width: 36px;
+  }
+
+  &__name {
+    flex: 1;
+    font-size: 0.9rem;
+  }
+
+  &__pct {
+    font-size: 0.875rem;
+    color: #aaa;
+  }
+
+  &__bar-track {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  &__bar {
+    height: 100%;
+    background: #c9a84c;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  &__empty {
+    font-size: 0.875rem;
+    color: #666;
+    margin: 0;
+  }
+
+  &__closes {
+    font-size: 0.8rem;
+    color: #888;
+    margin: 0;
+    text-align: center;
+  }
+
+  // Voting wizard
+  &__voting {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__award-nav {
+    text-align: center;
+  }
+
+  &__award-counter {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__award-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #c9a84c;
+    margin: 4px 0 0;
+  }
+
+  &__summary {
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #666;
+    padding: 2px 0;
+
+    &.active {
+      color: #fff;
+      font-weight: 600;
+    }
+  }
+
+  &__summary-award {
+    color: inherit;
+  }
+
+  &__summary-player {
+    color: #c9a84c;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+  }
+
+  &__player-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1.5px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #fff;
+
+    &:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    &.selected {
+      border-color: #c9a84c;
+      background: rgba(201,168,76,0.15);
+    }
+
+    .ivote-page__shirt {
+      font-size: 1rem;
+    }
+
+    .ivote-page__name {
+      font-size: 0.75rem;
+      text-align: center;
+      line-height: 1.2;
+    }
+  }
+
+  &__nav-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+
+    button {
+      min-width: 120px;
+    }
+  }
+
+  &__confirm-btn {
+    min-width: 160px;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  &__footer-logo {
+    height: 40px;
+    opacity: 0.6;
+    object-fit: contain;
+  }
+}

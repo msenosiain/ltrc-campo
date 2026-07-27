@@ -53,6 +53,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'votar-interno/:matchId',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./polls/pages/internal-voting-page/internal-voting-page.component').then(
+        (m) => m.InternalVotingPageComponent
+      ),
+  },
+  {
     path: 'votar/:qualifier/:token',
     loadComponent: () =>
       import('./polls/pages/voting-page/voting-page.component').then(

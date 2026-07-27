@@ -446,7 +446,7 @@
         <mat-icon>{{ showPollPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
       </div>
       @if (showPollPanel) {
-        <ltrc-poll-panel [matchId]="match!.id!" />
+        <ltrc-poll-panel [matchId]="match!.id!" [squad]="match!.squad" />
       }
     </mat-card-content>
   </mat-card>
