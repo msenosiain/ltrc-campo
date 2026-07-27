@@ -42,7 +42,7 @@ export function mapPlayerToForm(player: Player): PlayerFormValue {
     memberNumber: player.memberNumber ?? '',
     nickName: player.nickName ?? '',
     idNumber: player.idNumber,
-    birthDate: player.birthDate,
+    birthDate: utcToLocalDate(new Date(player.birthDate)),
     email: player.email,
 
     sport: player.sport ?? null,
@@ -92,6 +92,10 @@ export function mapPlayerToForm(player: Player): PlayerFormValue {
 }
 
 // helpers
+
+function utcToLocalDate(d: Date): Date {
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+}
 
 function mapAddress(value: PlayerFormValue) {
   const a = value.address;

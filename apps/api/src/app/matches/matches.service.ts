@@ -196,9 +196,12 @@ export class MatchesService {
     }
 
     if (filters.fromDate || filters.toDate) {
+      // Anchor to Argentina (UTC-3) day boundaries — a bare new Date(fromDate/toDate)
+      // parses as UTC midnight, which is 21:00 the previous day in Argentina and
+      // silently excludes matches played on `toDate` itself.
       const dateFilter: Record<string, Date> = {};
-      if (filters.fromDate) dateFilter['$gte'] = new Date(filters.fromDate);
-      if (filters.toDate) dateFilter['$lte'] = new Date(filters.toDate);
+      if (filters.fromDate) dateFilter['$gte'] = new Date(`${filters.fromDate}T00:00:00-03:00`);
+      if (filters.toDate) dateFilter['$lte'] = new Date(`${filters.toDate}T23:59:59.999-03:00`);
       queryFilters['date'] = dateFilter;
     }
 

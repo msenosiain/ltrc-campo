@@ -42,8 +42,10 @@ export class CalendarService {
     if (sport) scopeFilter['sport'] = sport;
     if (category) scopeFilter['category'] = category;
 
-    const fromDateObj = new Date(fromDate + 'T00:00:00.000Z');
-    const toDateObj = new Date(toDate + 'T23:59:59.999Z');
+    // Anchor to Argentina (UTC-3) day boundaries, not UTC — otherwise matches/trips
+    // scheduled on `toDate` itself can fall outside the UTC-midnight cutoff.
+    const fromDateObj = new Date(`${fromDate}T00:00:00-03:00`);
+    const toDateObj = new Date(`${toDate}T23:59:59.999-03:00`);
 
     const tripScopeFilter: Record<string, unknown> = {};
     if (caller && !isAdmin) {
