@@ -8,7 +8,7 @@ export const REPORTS_ROUTES: Routes = [
     loadComponent: () =>
       import('./reports-shell.component').then((m) => m.ReportsShellComponent),
     canActivate: [hasRoleGuard],
-    data: { allowedRoles: [RoleEnum.ADMIN, RoleEnum.COORDINATOR] },
+    data: { allowedRoles: [RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER] },
     children: [
       { path: '', redirectTo: 'payments', pathMatch: 'full' },
       {
@@ -37,6 +37,13 @@ export const REPORTS_ROUTES: Routes = [
         loadComponent: () =>
           import('./pages/birthdays-report/birthdays-report.component').then(
             (m) => m.BirthdaysReportComponent
+          ),
+      },
+      {
+        path: 'attendance',
+        loadComponent: () =>
+          import('./pages/attendance-report/attendance-report.component').then(
+            (m) => m.AttendanceReportComponent
           ),
       },
     ],

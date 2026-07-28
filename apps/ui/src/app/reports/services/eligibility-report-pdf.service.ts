@@ -3,6 +3,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { CategoryEnum, IPlayerFeeStatusRow, SportEnum } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../common/category-options';
+import {
+  REPORT_PDF_COLORS,
+  drawReportPdfContextRow,
+  drawReportPdfHeader,
+  drawReportPdfPageFooter,
+} from './report-pdf.util';
 
 export interface EligibilityReportPdfContext {
   season: string;
@@ -15,11 +21,10 @@ export interface EligibilityReportPdfContext {
 
 @Injectable({ providedIn: 'root' })
 export class EligibilityReportPdfService {
-  private readonly LOGO_PATH = '/escudo.png';
-  private readonly PRIMARY: [number, number, number] = [30, 30, 30];
-  private readonly HEADER_BG: [number, number, number] = [20, 20, 20];
-  private readonly SECTION_BG: [number, number, number] = [245, 245, 245];
-  private readonly GROUP_BG: [number, number, number] = [55, 71, 99];
+  private readonly PRIMARY = REPORT_PDF_COLORS.primary;
+  private readonly HEADER_BG = REPORT_PDF_COLORS.headerBg;
+  private readonly SECTION_BG = REPORT_PDF_COLORS.sectionBg;
+  private readonly GROUP_BG = REPORT_PDF_COLORS.groupBg;
 
   async generate(rows: IPlayerFeeStatusRow[], ctx: EligibilityReportPdfContext): Promise<void> {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -107,16 +112,7 @@ export class EligibilityReportPdfService {
         3: { cellWidth: 16, halign: 'center' },
       },
       margin: { left: marginL, right: marginL },
-      didDrawPage: () => {
-        doc.setFontSize(7);
-        doc.setTextColor(150, 150, 150);
-        doc.text(
-          `Página ${doc.getNumberOfPages()}`,
-          pageW - marginL,
-          doc.internal.pageSize.getHeight() - 8,
-          { align: 'right' }
-        );
-      },
+      didDrawPage: () => drawReportPdfPageFooter(doc, pageW, marginL),
     });
 
     const sportLabel = ctx.sport === SportEnum.RUGBY ? 'rugby' : ctx.sport === SportEnum.HOCKEY ? 'hockey' : 'todos';
@@ -131,43 +127,14 @@ export class EligibilityReportPdfService {
     pageW: number,
     marginL: number,
   ): Promise<number> {
-    const logoSize = 18;
-
-    try {
-      const logoBase64 = await this.loadImageAsBase64(this.LOGO_PATH);
-      doc.addImage(logoBase64, 'PNG', marginL, 10, logoSize, logoSize);
-    } catch {
-      // sin logo
-    }
-
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...this.PRIMARY);
-    doc.text('LOS TORDOS RUGBY CLUB', marginL + logoSize + 5, 17);
-
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(80, 80, 80);
-    doc.text('HABILITACIÓN DE JUGADORES', marginL + logoSize + 5, 24);
-
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.4);
-    doc.line(marginL, 32, pageW - marginL, 32);
+    const y0 = await drawReportPdfHeader(doc, { pageW, marginL, subtitle: 'HABILITACIÓN DE JUGADORES' });
 
     const col1x = marginL;
     const col2x = pageW / 2;
-    let y = 39;
+    let y = y0;
     const lineH = 6;
 
-    const row = (label: string, value: string, x: number, yy: number) => {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(...this.PRIMARY);
-      const labelW = doc.getTextWidth(`${label}: `);
-      doc.text(`${label}: `, x, yy);
-      doc.setFont('helvetica', 'normal');
-      doc.text(value, x + labelW, yy);
-    };
+    const row = (label: string, value: string, x: number, yy: number) => drawReportPdfContextRow(doc, label, value, x, yy);
 
     const sportLabel = ctx.sport === SportEnum.RUGBY ? 'Rugby' : ctx.sport === SportEnum.HOCKEY ? 'Hockey' : 'Todos';
     row('Deporte', sportLabel, col1x, y);
@@ -197,21 +164,5 @@ export class EligibilityReportPdfService {
 
   private yesNo(value: boolean): string {
     return value ? 'Sí' : 'No';
-  }
-
-  private loadImageAsBase64(url: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        canvas.getContext('2d')!.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
   }
 }

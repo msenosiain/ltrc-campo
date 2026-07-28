@@ -24,6 +24,10 @@ import { MatTabsModule } from '@angular/material/tabs';
          [active]="rlaBirthdays.isActive">
         Cumpleaños
       </a>
+      <a mat-tab-link routerLink="attendance" routerLinkActive #rlaAttendance="routerLinkActive"
+         [active]="rlaAttendance.isActive">
+        Asistencia
+      </a>
     </nav>
     <mat-tab-nav-panel #tabPanel>
       <router-outlet />

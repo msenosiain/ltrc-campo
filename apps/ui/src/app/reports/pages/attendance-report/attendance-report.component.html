@@ -1,0 +1,213 @@
+<div class="report-page">
+
+  <div class="report-header">
+    <h1 class="report-title">Reporte de Asistencia</h1>
+    <p class="report-subtitle">Asistencia a entrenamientos y partidos por jugador</p>
+  </div>
+
+  <!-- Filtros -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filter-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Deporte</mat-label>
+          <mat-select formControlName="sport">
+            @for (opt of availableSports(); track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Categoría</mat-label>
+          <mat-select formControlName="category">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (opt of availableCategories(); track opt.id) {
+              <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+          @if (filterForm.get('category')?.value) {
+            <button matIconSuffix mat-icon-button type="button" (click)="clearControl('category')">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Jugador</mat-label>
+          <input
+            matInput
+            [formControl]="playerSearchControl"
+            [matAutocomplete]="playerAuto"
+            placeholder="Buscar por nombre..."
+          />
+          @if (filterForm.get('playerId')?.value) {
+            <button matIconSuffix mat-icon-button type="button" (click)="clearControl('playerId')">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+          <mat-autocomplete #playerAuto="matAutocomplete" [displayWith]="displayPlayerFn" (optionSelected)="onPlayerSelected($event)">
+            @for (p of filteredPlayerOptions(); track p.id) {
+              <mat-option [value]="p">{{ p.name }}</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <mat-button-toggle-group formControlName="type" class="type-toggle">
+          <mat-button-toggle value="both">Ambos</mat-button-toggle>
+          <mat-button-toggle value="training">Entrenamientos</mat-button-toggle>
+          <mat-button-toggle value="match">Partidos</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Desde</mat-label>
+          <input matInput [matDatepicker]="pickerFrom" formControlName="fromDate" />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerFrom" />
+          <mat-datepicker #pickerFrom />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Hasta</mat-label>
+          <input matInput [matDatepicker]="pickerTo" formControlName="toDate" />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerTo" />
+          <mat-datepicker #pickerTo />
+        </mat-form-field>
+      </form>
+
+      @if (activeFilterCount() > 0) {
+        <div class="filter-actions">
+          <button mat-stroked-button (click)="clearFilters()">
+            <mat-icon>clear</mat-icon> Limpiar ({{ activeFilterCount() }})
+          </button>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Resultados -->
+  @if (loading()) {
+    <div class="loading-center">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else if (!filterForm.value.sport) {
+    <p class="empty-state">Seleccioná un deporte para ver el reporte.</p>
+  } @else {
+
+    <div class="results-bar">
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <span class="summary-stat__label">Jugadores</span>
+          <span class="summary-stat__value">{{ totalsRow().players }}</span>
+        </div>
+        @if (filterForm.value.type !== 'match') {
+          <div class="summary-stat summary-stat--green">
+            <span class="summary-stat__label">% Asistencia entren.</span>
+            <span class="summary-stat__value">{{ totalsRow().trainingPct }}%</span>
+          </div>
+        }
+        @if (filterForm.value.type !== 'training') {
+          <div class="summary-stat summary-stat--green">
+            <span class="summary-stat__label">% Asistencia partidos</span>
+            <span class="summary-stat__value">{{ totalsRow().matchPct }}%</span>
+          </div>
+        }
+      </div>
+
+      @if (players().length > 0) {
+        <button mat-stroked-button (click)="downloadPdf()" [disabled]="generatingPdf()">
+          @if (generatingPdf()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>picture_as_pdf</mat-icon>
+          }
+          Exportar PDF
+        </button>
+      }
+    </div>
+
+    @if (players().length === 0) {
+      <p class="empty-state">Sin resultados para los filtros seleccionados.</p>
+    } @else {
+      <div class="table-container">
+        <table mat-table [dataSource]="players()" [trackBy]="trackByPlayerId" multiTemplateDataRows class="attendance-table">
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Jugador</th>
+            <td mat-cell *matCellDef="let p">{{ p.playerName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef>Categoría</th>
+            <td mat-cell *matCellDef="let p">{{ getCategoryLabel(p.category) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="trainingPresent">
+            <th mat-header-cell *matHeaderCellDef class="col-num">Entren. (P/T)</th>
+            <td mat-cell *matCellDef="let p" class="col-num">{{ p.training.present }} / {{ p.training.total }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="trainingPct">
+            <th mat-header-cell *matHeaderCellDef class="col-num">% Entren.</th>
+            <td mat-cell *matCellDef="let p" class="col-num">{{ p.training.pct }}%</td>
+          </ng-container>
+
+          <ng-container matColumnDef="matchPresent">
+            <th mat-header-cell *matHeaderCellDef class="col-num">Partidos (P/T)</th>
+            <td mat-cell *matCellDef="let p" class="col-num">{{ p.match.present }} / {{ p.match.total }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="matchPct">
+            <th mat-header-cell *matHeaderCellDef class="col-num">% Partidos</th>
+            <td mat-cell *matCellDef="let p" class="col-num">{{ p.match.pct }}%</td>
+          </ng-container>
+
+          <ng-container matColumnDef="expandedDetail">
+            <td mat-cell *matCellDef="let p" [attr.colspan]="displayedColumns().length">
+              @if (expandedPlayerId() === p.playerId) {
+                <div class="detail-panel">
+                  @if (p.sessions.length === 0) {
+                    <p class="detail-empty">Sin entrenamientos o partidos en el rango seleccionado.</p>
+                  } @else {
+                    <table class="detail-table">
+                      <thead>
+                        <tr>
+                          <th>Fecha</th>
+                          <th>Tipo</th>
+                          <th>Detalle</th>
+                          <th>Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (s of p.sessions; track s.id) {
+                          <tr>
+                            <td>{{ s.date + 'T12:00:00Z' | date:'dd/MM/yyyy':'UTC' }}</td>
+                            <td>{{ s.type === 'training' ? 'Entrenamiento' : 'Partido' }}</td>
+                            <td>{{ s.label || '—' }}</td>
+                            <td>
+                              <mat-chip [class]="'status-chip status-chip--' + s.status">
+                                {{ statusLabel(s.status) }}
+                              </mat-chip>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  }
+                </div>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns();"
+              class="player-row"
+              (click)="toggleExpand(row.playerId)"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['expandedDetail'];"
+              class="detail-row"
+              [class.detail-row--expanded]="expandedPlayerId() === row.playerId"></tr>
+        </table>
+      </div>
+    }
+  }
+
+</div>

@@ -1,0 +1,219 @@
+.report-page {
+  padding: 24px;
+}
+
+.report-header {
+  margin-bottom: 20px;
+}
+
+.report-title {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.report-subtitle {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+// ── Filtros ──────────────────────────────────────────────────────────────────
+
+.filters-card {
+  margin-bottom: 20px;
+
+  mat-card-content {
+    padding: 16px !important;
+  }
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px 16px;
+  align-items: center;
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.type-toggle {
+  justify-self: center;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+  padding-top: 8px;
+}
+
+// ── Barra de resultados ───────────────────────────────────────────────────────
+
+.results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: #f5f5f5;
+
+  &--green {
+    background: #e8f5e9;
+
+    .summary-stat__value {
+      color: #2e7d32;
+    }
+  }
+
+  &__label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    font-weight: 500;
+  }
+
+  &__value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.87);
+  }
+}
+
+// ── Tabla ─────────────────────────────────────────────────────────────────────
+
+.table-container {
+  overflow-x: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
+}
+
+.attendance-table {
+  width: 100%;
+
+  th.mat-header-cell {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #666;
+    background: #fafafa;
+    white-space: nowrap;
+  }
+
+  td.mat-cell {
+    font-size: 0.88rem;
+    vertical-align: middle;
+  }
+
+  th.mat-header-cell,
+  td.mat-cell {
+    padding: 0 12px;
+  }
+
+  .col-num {
+    text-align: center;
+  }
+}
+
+.player-row {
+  cursor: pointer;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.detail-row {
+  height: 0;
+
+  td {
+    border-bottom: none;
+    padding: 0 !important;
+  }
+
+  &--expanded td {
+    border-bottom: 1px solid #e0e0e0;
+  }
+}
+
+.detail-panel {
+  padding: 12px 16px;
+  background: #fafafa;
+}
+
+.detail-empty {
+  margin: 0;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+
+  th {
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #888;
+    font-weight: 600;
+    padding: 4px 8px;
+  }
+
+  td {
+    padding: 4px 8px;
+    border-top: 1px solid #e8e8e8;
+  }
+}
+
+// ── Status chips ──────────────────────────────────────────────────────────────
+
+::ng-deep {
+  .status-chip {
+    font-size: 0.72rem !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    padding: 0 8px !important;
+
+    &--present { background: #e8f5e9 !important; color: #2e7d32 !important; }
+    &--absent { background: #ffebee !important; color: #c62828 !important; }
+    &--justified { background: #fff3e0 !important; color: #e65100 !important; }
+  }
+}
+
+// ── Estados vacíos ────────────────────────────────────────────────────────────
+
+.loading-center {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.empty-state {
+  color: #999;
+  font-size: 0.9rem;
+  padding: 32px 0;
+  text-align: center;
+}

@@ -465,6 +465,149 @@ describe('TrainingSessionsService', () => {
     });
   });
 
+  // ── getAttendanceReport ───────────────────────────────────────────────────
+
+  describe('getAttendanceReport()', () => {
+    const player1 = makePlayer({
+      _id: oid('1'.repeat(24)),
+      name: 'Ana',
+      sport: 'rugby',
+      category: 'plantel_superior',
+    });
+
+    const mockPlayersFind = (players: any[]) => {
+      mockPlayerModel.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(players),
+      });
+    };
+    const mockSessionsFind = (sessions: any[]) => {
+      mockSessionModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue(sessions) });
+    };
+    const mockMatchesFind = (matches: any[]) => {
+      mockMatchModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue(matches) });
+    };
+
+    const baseFilters = {
+      sport: 'rugby',
+      category: 'plantel_superior',
+      fromDate: '2026-01-01',
+      toDate: '2026-01-31',
+    };
+
+    it('counts a session with no attendance entry as absent', async () => {
+      mockPlayersFind([player1]);
+      mockSessionsFind([makeSession({ attendance: [] })]);
+      mockMatchesFind([]);
+
+      const result = await service.getAttendanceReport(undefined, { ...baseFilters, type: 'training' });
+
+      expect(result.players).toHaveLength(1);
+      expect(result.players[0].training).toEqual({ total: 1, present: 0, absent: 1, justified: 0, pct: 0 });
+    });
+
+    it('counts a marked-but-unset-status entry as absent, not present', async () => {
+      mockPlayersFind([player1]);
+      mockSessionsFind([
+        makeSession({ attendance: [{ isStaff: false, player: player1._id, confirmed: false }] }),
+      ]);
+      mockMatchesFind([]);
+
+      const result = await service.getAttendanceReport(undefined, { ...baseFilters, type: 'training' });
+
+      expect(result.players[0].training).toEqual({ total: 1, present: 0, absent: 1, justified: 0, pct: 0 });
+    });
+
+    it('counts present and justified entries correctly', async () => {
+      mockPlayersFind([player1]);
+      mockSessionsFind([
+        makeSession({ attendance: [{ isStaff: false, player: player1._id, status: 'present' }] }),
+        makeSession({ attendance: [{ isStaff: false, player: player1._id, status: 'justified' }] }),
+      ]);
+      mockMatchesFind([]);
+
+      const result = await service.getAttendanceReport(undefined, { ...baseFilters, type: 'training' });
+
+      expect(result.players[0].training).toEqual({ total: 2, present: 1, absent: 0, justified: 1, pct: 50 });
+    });
+
+    it('excludes cancelled sessions/matches from the query', async () => {
+      mockPlayersFind([player1]);
+      mockSessionsFind([]);
+      mockMatchesFind([]);
+
+      await service.getAttendanceReport(undefined, baseFilters);
+
+      expect(mockSessionModel.find).toHaveBeenCalledWith(
+        expect.objectContaining({ status: { $ne: 'cancelled' } }),
+      );
+      expect(mockMatchModel.find).toHaveBeenCalledWith(
+        expect.objectContaining({ status: { $ne: 'cancelled' } }),
+      );
+    });
+
+    it("only counts a session toward a player's total when it matches the player's own sport/category", async () => {
+      mockPlayersFind([player1]);
+      mockSessionsFind([
+        makeSession({ category: 'plantel_superior', attendance: [] }),
+        makeSession({ category: 'm15', attendance: [] }), // different category — shouldn't count for player1
+      ]);
+      mockMatchesFind([]);
+
+      const result = await service.getAttendanceReport(undefined, { ...baseFilters, category: undefined, type: 'training' });
+
+      expect(result.players[0].training.total).toBe(1);
+    });
+
+    it('type="match" skips the training-sessions query entirely', async () => {
+      mockPlayersFind([player1]);
+      mockMatchesFind([]);
+
+      await service.getAttendanceReport(undefined, { ...baseFilters, type: 'match' });
+
+      expect(mockSessionModel.find).not.toHaveBeenCalled();
+      expect(mockMatchModel.find).toHaveBeenCalled();
+    });
+
+    it('filters by a single playerId regardless of active status', async () => {
+      mockPlayersFind([player1]);
+      mockSessionsFind([]);
+      mockMatchesFind([]);
+
+      await service.getAttendanceReport(undefined, { ...baseFilters, playerId: player1._id.toString() });
+
+      expect(mockPlayerModel.find).toHaveBeenCalledWith(
+        expect.objectContaining({ _id: player1._id.toString() }),
+      );
+      const calledQuery = mockPlayerModel.find.mock.calls[0][0];
+      expect(calledQuery.status).toBeUndefined();
+    });
+
+    it('returns an empty result without querying players when no sport can be resolved', async () => {
+      const caller = makeUser([RoleEnum.COACH]) as User;
+      (caller as any).sports = [];
+      (caller as any).categories = [];
+      mockPlayerModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+      const result = await service.getAttendanceReport(caller, { fromDate: '2026-01-01', toDate: '2026-01-31' });
+
+      expect(result.players).toEqual([]);
+      expect(mockPlayerModel.find).not.toHaveBeenCalled();
+    });
+
+    it('anchors the match date range to Argentina day boundaries', async () => {
+      mockPlayersFind([player1]);
+      mockSessionsFind([]);
+      mockMatchesFind([]);
+
+      await service.getAttendanceReport(undefined, baseFilters);
+
+      const matchQuery = mockMatchModel.find.mock.calls[0][0];
+      expect((matchQuery.date['$gte'] as Date).toISOString()).toBe('2026-01-01T03:00:00.000Z');
+      expect((matchQuery.date['$lte'] as Date).toISOString()).toBe('2026-02-01T02:59:59.999Z');
+    });
+  });
+
   // ── addAttachment ─────────────────────────────────────────────────────────
 
   describe('addAttachment()', () => {

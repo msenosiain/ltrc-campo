@@ -16,15 +16,22 @@ import { MatchEntity } from '../../matches/schemas/match.entity';
 import { PaginationDto } from '../../shared/pagination.dto';
 import { TrainingSessionFiltersDto } from './training-session-filter.dto';
 import {
+  AttendanceReportResponse,
+  AttendanceStatusEnum,
   BlockEnum,
   CATEGORY_AGE_RANK,
+  CategoryEnum,
+  MatchStatusEnum,
   PaginatedResponse,
+  PlayerStatusEnum,
   RoleEnum,
+  SportEnum,
   TrainingSessionStatusEnum,
   UpcomingTraining,
   DayOfWeekEnum,
   getBlockCategories,
 } from '@ltrc-campo/shared-api-model';
+import { toMatchDateRange, toTrainingDateRange } from './attendance-report-date.util';
 import { CreateTrainingSessionDto } from './dto/create-training-session.dto';
 import { UpdateTrainingSessionDto } from './dto/update-training-session.dto';
 import { RecordAttendanceDto } from './dto/record-attendance.dto';
@@ -929,6 +936,178 @@ export class TrainingSessionsService {
     });
 
     return { categories: result };
+  }
+
+  async getAttendanceReport(
+    caller: User | undefined,
+    filters: {
+      sport?: string;
+      category?: string;
+      playerId?: string;
+      fromDate?: string;
+      toDate?: string;
+      type?: 'training' | 'match' | 'both';
+    },
+  ): Promise<AttendanceReportResponse> {
+    const type = filters.type ?? 'both';
+
+    let sports = filters.sport ? [filters.sport as SportEnum] : [];
+    let categories = filters.category ? [filters.category as CategoryEnum] : [];
+
+    if (caller && !caller.roles?.includes(RoleEnum.ADMIN)) {
+      let callerSports = caller.sports ?? [];
+      let callerCategories = caller.categories ?? [];
+      if (!callerSports.length || !callerCategories.length) {
+        const player = await this.playerModel
+          .findOne({ userId: String(caller._id) })
+          .exec();
+        if (!callerSports.length && player?.sport) callerSports = [player.sport];
+        if (!callerCategories.length && player?.category) callerCategories = [player.category];
+      }
+      sports = sports.length
+        ? sports.filter((s) => !callerSports.length || callerSports.includes(s))
+        : callerSports;
+      categories = categories.length
+        ? categories.filter((c) => !callerCategories.length || callerCategories.includes(c))
+        : callerCategories;
+    }
+
+    const emptyResult: AttendanceReportResponse = {
+      players: [],
+      meta: {
+        sport: sports[0],
+        category: categories[0],
+        fromDate: filters.fromDate ?? '',
+        toDate: filters.toDate ?? '',
+        type,
+      },
+    };
+    if (!sports.length) return emptyResult;
+
+    const playerQuery: Record<string, unknown> = { sport: { $in: sports } };
+    if (categories.length) playerQuery['category'] = { $in: categories };
+    if (filters.playerId) playerQuery['_id'] = filters.playerId;
+    else playerQuery['status'] = PlayerStatusEnum.ACTIVE;
+
+    const players = await this.playerModel.find(playerQuery).sort({ name: 1 }).lean();
+    if (!players.length) return emptyResult;
+
+    const sessionDateRange = toTrainingDateRange(filters.fromDate, filters.toDate);
+    const matchDateRange = toMatchDateRange(filters.fromDate, filters.toDate);
+
+    const sessionScopeFilter: Record<string, unknown> = {
+      sport: { $in: sports },
+      status: { $ne: TrainingSessionStatusEnum.CANCELLED },
+    };
+    if (categories.length) sessionScopeFilter['category'] = { $in: categories };
+    if (Object.keys(sessionDateRange).length) sessionScopeFilter['date'] = sessionDateRange;
+
+    const matchScopeFilter: Record<string, unknown> = {
+      sport: { $in: sports },
+      status: { $ne: MatchStatusEnum.CANCELLED },
+    };
+    if (categories.length) matchScopeFilter['category'] = { $in: categories };
+    if (Object.keys(matchDateRange).length) matchScopeFilter['date'] = matchDateRange;
+
+    const [sessions, matches] = await Promise.all([
+      type !== 'match' ? this.sessionModel.find(sessionScopeFilter).lean() : Promise.resolve([]),
+      type !== 'training' ? this.matchModel.find(matchScopeFilter).lean() : Promise.resolve([]),
+    ]);
+
+    type Totals = { total: number; present: number; absent: number; justified: number };
+    const emptyTotals = (): Totals => ({ total: 0, present: 0, absent: 0, justified: 0 });
+
+    const trainingTotals = new Map<string, Totals>();
+    const matchTotals = new Map<string, Totals>();
+    const sessionsByPlayer = new Map<string, AttendanceReportResponse['players'][number]['sessions']>();
+    for (const p of players) {
+      const pid = (p._id as Types.ObjectId).toString();
+      trainingTotals.set(pid, emptyTotals());
+      matchTotals.set(pid, emptyTotals());
+      sessionsByPlayer.set(pid, []);
+    }
+
+    const attendanceStatus = (
+      entry: { status?: AttendanceStatusEnum } | undefined,
+    ): 'present' | 'absent' | 'justified' => {
+      if (entry?.status === AttendanceStatusEnum.PRESENT) return 'present';
+      if (entry?.status === AttendanceStatusEnum.JUSTIFIED) return 'justified';
+      return 'absent'; // no entry, or entry without a status, counts as absent
+    };
+
+    for (const s of sessions as any[]) {
+      for (const p of players) {
+        if (s.sport !== p.sport || s.category !== p.category) continue;
+        const pid = (p._id as Types.ObjectId).toString();
+        const totals = trainingTotals.get(pid)!;
+        totals.total++;
+        const entry = (s.attendance ?? []).find(
+          (a: any) => !a.isStaff && a.player?.toString() === pid,
+        );
+        const status = attendanceStatus(entry);
+        totals[status]++;
+        sessionsByPlayer.get(pid)!.push({
+          type: 'training',
+          id: s._id.toString(),
+          date: s.date,
+          sport: s.sport,
+          category: s.category,
+          status,
+          label: s.location,
+        });
+      }
+    }
+
+    for (const m of matches as any[]) {
+      for (const p of players) {
+        if (m.sport !== p.sport || m.category !== p.category) continue;
+        const pid = (p._id as Types.ObjectId).toString();
+        const totals = matchTotals.get(pid)!;
+        totals.total++;
+        const entry = (m.attendance ?? []).find(
+          (a: any) => !a.isStaff && a.player?.toString() === pid,
+        );
+        const status = attendanceStatus(entry);
+        totals[status]++;
+        sessionsByPlayer.get(pid)!.push({
+          type: 'match',
+          id: m._id.toString(),
+          date: new Date(m.date).toISOString().slice(0, 10),
+          sport: m.sport,
+          category: m.category,
+          status,
+          label: m.opponent,
+        });
+      }
+    }
+
+    const pct = (t: Totals) => (t.total > 0 ? Math.round((t.present / t.total) * 100) : 0);
+
+    const resultPlayers = players.map((p) => {
+      const pid = (p._id as Types.ObjectId).toString();
+      const trainT = trainingTotals.get(pid)!;
+      const matchT = matchTotals.get(pid)!;
+      return {
+        playerId: pid,
+        playerName: p.name,
+        sport: p.sport as SportEnum,
+        category: p.category as CategoryEnum,
+        training: { ...trainT, pct: pct(trainT) },
+        match: { ...matchT, pct: pct(matchT) },
+        sessions: sessionsByPlayer.get(pid)!.sort((a, b) => a.date.localeCompare(b.date)),
+      };
+    });
+
+    return {
+      players: resultPlayers,
+      meta: {
+        sport: sports[0],
+        category: categories[0],
+        fromDate: filters.fromDate ?? '',
+        toDate: filters.toDate ?? '',
+        type,
+      },
+    };
   }
 
   async addAttachment(

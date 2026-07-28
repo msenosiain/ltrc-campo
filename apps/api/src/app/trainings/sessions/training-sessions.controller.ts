@@ -100,6 +100,27 @@ export class TrainingSessionsController {
     return this.sessionsService.getNonCompetitiveByCategory((req as any).user, { sport, period });
   }
 
+  @Get('stats/attendance-report')
+  @UseGuards(JwtAuthGuard)
+  async getAttendanceReport(
+    @Req() req: Request,
+    @Query('sport') sport?: string,
+    @Query('category') category?: string,
+    @Query('playerId') playerId?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+    @Query('type') type?: 'training' | 'match' | 'both',
+  ) {
+    return this.sessionsService.getAttendanceReport((req as any).user, {
+      sport,
+      category,
+      playerId,
+      fromDate,
+      toDate,
+      type,
+    });
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async getOne(@Param('id') id: string) {

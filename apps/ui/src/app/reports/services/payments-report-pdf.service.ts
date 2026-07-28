@@ -4,6 +4,12 @@ import autoTable from 'jspdf-autotable';
 import { CategoryEnum, IPayment, PaymentMethodEnum, PaymentStatusEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 import { categoryOptions, getCategoryLabel } from '../../common/category-options';
 import { GlobalPaymentRow, GlobalPaymentsReport } from '../../payments/services/payments.service';
+import {
+  REPORT_PDF_COLORS,
+  drawReportPdfContextRow,
+  drawReportPdfHeader,
+  drawReportPdfPageFooter,
+} from './report-pdf.util';
 
 export interface PaymentsReportPdfContext {
   sport?: string | null;
@@ -17,10 +23,9 @@ export interface PaymentsReportPdfContext {
 
 @Injectable({ providedIn: 'root' })
 export class PaymentsReportPdfService {
-  private readonly LOGO_PATH = '/escudo.png';
-  private readonly PRIMARY: [number, number, number] = [30, 30, 30];
-  private readonly HEADER_BG: [number, number, number] = [20, 20, 20];
-  private readonly SECTION_BG: [number, number, number] = [245, 245, 245];
+  private readonly PRIMARY = REPORT_PDF_COLORS.primary;
+  private readonly HEADER_BG = REPORT_PDF_COLORS.headerBg;
+  private readonly SECTION_BG = REPORT_PDF_COLORS.sectionBg;
 
   async generate(report: GlobalPaymentsReport, ctx: PaymentsReportPdfContext): Promise<void> {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -101,16 +106,7 @@ export class PaymentsReportPdfService {
         7: { cellWidth: 18, halign: 'center' },    // Estado
       },
       margin: { left: marginL, right: marginL },
-      didDrawPage: () => {
-        doc.setFontSize(7);
-        doc.setTextColor(150, 150, 150);
-        doc.text(
-          `Página ${doc.getNumberOfPages()}`,
-          pageW - marginL,
-          doc.internal.pageSize.getHeight() - 8,
-          { align: 'right' }
-        );
-      },
+      didDrawPage: () => drawReportPdfPageFooter(doc, pageW, marginL),
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 4;
@@ -132,18 +128,8 @@ export class PaymentsReportPdfService {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageW = doc.internal.pageSize.getWidth();
     const marginL = 14;
-    const logoSize = 18;
 
-    try {
-      const logoBase64 = await this.loadImageAsBase64(this.LOGO_PATH);
-      doc.addImage(logoBase64, 'PNG', marginL, 10, logoSize, logoSize);
-    } catch { /* sin logo */ }
-
-    doc.setFontSize(16).setFont('helvetica', 'bold').setTextColor(...this.PRIMARY);
-    doc.text('LOS TORDOS RUGBY CLUB', marginL + logoSize + 5, 17);
-    doc.setFontSize(11).setFont('helvetica', 'normal').setTextColor(80, 80, 80);
-    doc.text('REPORTE DE COBROS', marginL + logoSize + 5, 24);
-    doc.setDrawColor(200, 200, 200).setLineWidth(0.4).line(marginL, 32, pageW - marginL, 32);
+    let y = await drawReportPdfHeader(doc, { pageW, marginL, subtitle: 'REPORTE DE COBROS' });
 
     const approved = payments.filter((p) => p.status === PaymentStatusEnum.APPROVED);
     const totalApproved = approved.reduce((s, p) => s + p.amount, 0);
@@ -152,13 +138,7 @@ export class PaymentsReportPdfService {
       .reduce((s, p) => s + p.amount, 0);
 
     const col2x = pageW / 2;
-    let y = 39;
-    const addRow = (label: string, value: string, x: number) => {
-      doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(...this.PRIMARY);
-      const labelW = doc.getTextWidth(`${label}: `);
-      doc.text(`${label}: `, x, y);
-      doc.setFont('helvetica', 'normal').text(value, x + labelW, y);
-    };
+    const addRow = (label: string, value: string, x: number) => drawReportPdfContextRow(doc, label, value, x, y);
 
     addRow('Evento', entityLabel, marginL);
     if (entityDate) addRow('Fecha', this.formatDate(entityDate), col2x);
@@ -184,7 +164,7 @@ export class PaymentsReportPdfService {
     const sortedGroups = Array.from(categoryGroups.entries())
       .sort(([keyA], [keyB]) => (catOrder.get(keyA) ?? 999) - (catOrder.get(keyB) ?? 999));
 
-    const CAT_HEADER_BG: [number, number, number] = [55, 71, 99];
+    const CAT_HEADER_BG = REPORT_PDF_COLORS.groupBg;
     const SUBTOTAL_BG: [number, number, number] = [232, 240, 254];
     const body: any[] = [];
     let rowIndex = 1;
@@ -258,10 +238,7 @@ export class PaymentsReportPdfService {
         7: { cellWidth: 18, halign: 'center' },
       },
       margin: { left: marginL, right: marginL },
-      didDrawPage: () => {
-        doc.setFontSize(7).setTextColor(150, 150, 150);
-        doc.text(`Página ${doc.getNumberOfPages()}`, pageW - marginL, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
-      },
+      didDrawPage: () => drawReportPdfPageFooter(doc, pageW, marginL),
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 4;
@@ -280,43 +257,14 @@ export class PaymentsReportPdfService {
     pageW: number,
     marginL: number
   ): Promise<number> {
-    const logoSize = 18;
-
-    try {
-      const logoBase64 = await this.loadImageAsBase64(this.LOGO_PATH);
-      doc.addImage(logoBase64, 'PNG', marginL, 10, logoSize, logoSize);
-    } catch {
-      // sin logo
-    }
-
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...this.PRIMARY);
-    doc.text('LOS TORDOS RUGBY CLUB', marginL + logoSize + 5, 17);
-
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(80, 80, 80);
-    doc.text('INFORME DE PAGOS', marginL + logoSize + 5, 24);
-
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.4);
-    doc.line(marginL, 32, pageW - marginL, 32);
+    const y0 = await drawReportPdfHeader(doc, { pageW, marginL, subtitle: 'INFORME DE PAGOS' });
 
     const col1x = marginL;
     const col2x = pageW / 2;
-    let y = 39;
+    let y = y0;
     const lineH = 6;
 
-    const row = (label: string, value: string, x: number, yy: number) => {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(...this.PRIMARY);
-      const labelW = doc.getTextWidth(`${label}: `);
-      doc.text(`${label}: `, x, yy);
-      doc.setFont('helvetica', 'normal');
-      doc.text(value, x + labelW, yy);
-    };
+    const row = (label: string, value: string, x: number, yy: number) => drawReportPdfContextRow(doc, label, value, x, yy);
 
     // Fila 1: torneo / deporte+categoría
     if (ctx.tournamentName) {
@@ -399,21 +347,5 @@ export class PaymentsReportPdfService {
       cancelled: 'Cancelado',
     };
     return labels[status] ?? status;
-  }
-
-  private loadImageAsBase64(url: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        canvas.getContext('2d')!.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
   }
 }

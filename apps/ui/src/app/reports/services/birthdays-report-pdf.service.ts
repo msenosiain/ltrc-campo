@@ -3,6 +3,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { CategoryEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../common/category-options';
+import {
+  REPORT_PDF_COLORS,
+  drawReportPdfContextRow,
+  drawReportPdfHeader,
+  drawReportPdfPageFooter,
+} from './report-pdf.util';
 
 export interface BirthdayRow {
   id: string;
@@ -21,11 +27,10 @@ export interface BirthdaysPdfContext {
 
 @Injectable({ providedIn: 'root' })
 export class BirthdaysReportPdfService {
-  private readonly LOGO_PATH = '/escudo.png';
-  private readonly PRIMARY: [number, number, number] = [30, 30, 30];
-  private readonly HEADER_BG: [number, number, number] = [20, 20, 20];
-  private readonly SECTION_BG: [number, number, number] = [245, 245, 245];
-  private readonly CAT_BG: [number, number, number] = [55, 71, 99];
+  private readonly PRIMARY = REPORT_PDF_COLORS.primary;
+  private readonly HEADER_BG = REPORT_PDF_COLORS.headerBg;
+  private readonly SECTION_BG = REPORT_PDF_COLORS.sectionBg;
+  private readonly CAT_BG = REPORT_PDF_COLORS.groupBg;
 
   async generate(players: BirthdayRow[], ctx: BirthdaysPdfContext): Promise<void> {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -89,15 +94,7 @@ export class BirthdaysReportPdfService {
         3: { cellWidth: 16, halign: 'center' },
       },
       margin: { left: marginL, right: marginL },
-      didDrawPage: () => {
-        doc.setFontSize(7).setTextColor(150, 150, 150);
-        doc.text(
-          `Página ${doc.getNumberOfPages()}`,
-          pageW - marginL,
-          doc.internal.pageSize.getHeight() - 8,
-          { align: 'right' }
-        );
-      },
+      didDrawPage: () => drawReportPdfPageFooter(doc, pageW, marginL),
     });
 
     const today = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
@@ -111,36 +108,16 @@ export class BirthdaysReportPdfService {
     pageW: number,
     marginL: number
   ): Promise<number> {
-    const logoSize = 18;
-    try {
-      const logoBase64 = await this.loadImageAsBase64(this.LOGO_PATH);
-      doc.addImage(logoBase64, 'PNG', marginL, 10, logoSize, logoSize);
-    } catch { /* sin logo */ }
-
-    doc.setFontSize(16).setFont('helvetica', 'bold').setTextColor(...this.PRIMARY);
-    doc.text('LOS TORDOS RUGBY CLUB', marginL + logoSize + 5, 17);
-    doc.setFontSize(11).setFont('helvetica', 'normal').setTextColor(80, 80, 80);
-    doc.text('LISTADO DE CUMPLEAÑOS', marginL + logoSize + 5, 24);
-    doc.setDrawColor(200, 200, 200).setLineWidth(0.4).line(marginL, 32, pageW - marginL, 32);
-
-    let y = 39;
+    let y = await drawReportPdfHeader(doc, { pageW, marginL, subtitle: 'LISTADO DE CUMPLEAÑOS' });
     const lineH = 6;
 
     const sportCat = this.buildSportCatText(ctx);
     if (sportCat) {
-      doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(...this.PRIMARY);
-      const lw = doc.getTextWidth('Ámbito: ');
-      doc.text('Ámbito: ', marginL, y);
-      doc.setFont('helvetica', 'normal');
-      doc.text(sportCat, marginL + lw, y);
+      drawReportPdfContextRow(doc, 'Ámbito', sportCat, marginL, y);
       y += lineH;
     }
 
-    doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(...this.PRIMARY);
-    const lw = doc.getTextWidth('Total: ');
-    doc.text('Total: ', marginL, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${total} jugador(es)`, marginL + lw, y);
+    drawReportPdfContextRow(doc, 'Total', `${total} jugador(es)`, marginL, y);
     y += lineH;
 
     doc.setDrawColor(200, 200, 200).line(marginL, y, pageW - marginL, y);
@@ -159,21 +136,5 @@ export class BirthdaysReportPdfService {
   private formatDate(date: Date | string): string {
     if (!date) return '—';
     return new Date(date).toLocaleDateString('es-AR', { timeZone: 'UTC' });
-  }
-
-  private loadImageAsBase64(url: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        canvas.getContext('2d')!.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
   }
 }

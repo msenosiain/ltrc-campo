@@ -2,13 +2,13 @@ import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { EncounterReport } from '../../payments/services/payments.service';
+import { REPORT_PDF_COLORS, drawReportPdfContextRow, drawReportPdfHeader } from './report-pdf.util';
 
 @Injectable({ providedIn: 'root' })
 export class EncounterPdfService {
-  private readonly LOGO_PATH = '/escudo.png';
-  private readonly PRIMARY: [number, number, number] = [30, 30, 30];
-  private readonly HEADER_BG: [number, number, number] = [20, 20, 20];
-  private readonly SECTION_BG: [number, number, number] = [245, 245, 245];
+  private readonly PRIMARY = REPORT_PDF_COLORS.primary;
+  private readonly HEADER_BG = REPORT_PDF_COLORS.headerBg;
+  private readonly SECTION_BG = REPORT_PDF_COLORS.sectionBg;
 
   async generate(report: EncounterReport): Promise<void> {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -100,44 +100,14 @@ export class EncounterPdfService {
   }
 
   private async drawHeader(doc: jsPDF, report: EncounterReport, pageW: number, marginL: number): Promise<number> {
-    const logoSize = 18;
-
-    try {
-      const logoBase64 = await this.loadImageAsBase64(this.LOGO_PATH);
-      doc.addImage(logoBase64, 'PNG', marginL, 10, logoSize, logoSize);
-    } catch {
-      // Logo no disponible, continuar sin él
-    }
-
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...this.PRIMARY);
-    doc.text('LOS TORDOS RUGBY CLUB', marginL + logoSize + 5, 17);
-
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(80, 80, 80);
-    doc.text('INFORME DE COBROS — ENCUENTRO', marginL + logoSize + 5, 24);
-
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.4);
-    doc.line(marginL, 32, pageW - marginL, 32);
+    const y0 = await drawReportPdfHeader(doc, { pageW, marginL, subtitle: 'INFORME DE COBROS — ENCUENTRO' });
 
     const col1x = marginL;
     const col2x = pageW / 2;
-    let y = 39;
+    let y = y0;
     const lineH = 6;
 
-    const row = (label: string, value: string, x: number, yy: number) => {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(...this.PRIMARY);
-      const labelText = `${label}: `;
-      const labelW = doc.getTextWidth(labelText);
-      doc.text(labelText, x, yy);
-      doc.setFont('helvetica', 'normal');
-      doc.text(value, x + labelW, yy);
-    };
+    const row = (label: string, value: string, x: number, yy: number) => drawReportPdfContextRow(doc, label, value, x, yy);
 
     row('Encuentro', report.encounterLabel, col1x, y);
     if (report.opponent) row('Rival', report.opponent, col2x, y);
@@ -169,21 +139,5 @@ export class EncounterPdfService {
       mercadopago: 'Mercado Pago',
     };
     return labels[method] ?? method;
-  }
-
-  private loadImageAsBase64(url: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        canvas.getContext('2d')!.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
   }
 }
