@@ -21,6 +21,7 @@ export class TrainingsSchedulerService implements OnModuleInit {
   async onModuleInit() {
     await this.migrateSessionDates();
     await this.migrateScheduleDates();
+    await this.deduplicateSessions();
     await this.generateUpcomingSessions();
   }
 
@@ -59,6 +60,50 @@ export class TrainingsSchedulerService implements OnModuleInit {
     }
     if (migrated > 0) {
       this.logger.log(`Migrated ${migrated} session dates from Date to string`);
+    }
+  }
+
+  /**
+   * One-time cleanup of duplicate sessions created before the unique
+   * (schedule, date, startTime) index existed. Keeps the session with the
+   * most attendance data recorded; ties broken by oldest _id.
+   */
+  private async deduplicateSessions() {
+    const duplicateGroups = await this.sessionModel.aggregate([
+      { $match: { schedule: { $exists: true } } },
+      {
+        $group: {
+          _id: { schedule: '$schedule', date: '$date', startTime: '$startTime' },
+          ids: { $push: '$_id' },
+          count: { $sum: 1 },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ]);
+
+    if (duplicateGroups.length === 0) return;
+
+    let removed = 0;
+    for (const group of duplicateGroups) {
+      const sessions = await this.sessionModel
+        .find({ _id: { $in: group.ids } })
+        .sort({ _id: 1 })
+        .exec();
+
+      const [keep, ...rest] = [...sessions].sort((a, b) => {
+        const attendanceDiff = (b.attendance?.length ?? 0) - (a.attendance?.length ?? 0);
+        if (attendanceDiff !== 0) return attendanceDiff;
+        return a._id.toString() < b._id.toString() ? -1 : 1;
+      });
+
+      if (!keep) continue;
+      const idsToRemove = rest.map((s) => s._id);
+      await this.sessionModel.deleteMany({ _id: { $in: idsToRemove } });
+      removed += idsToRemove.length;
+    }
+
+    if (removed > 0) {
+      this.logger.log(`Removed ${removed} duplicate training sessions`);
     }
   }
 

@@ -51,6 +51,14 @@ export const TrainingSessionSchema = new Schema<TrainingSessionEntity>(
   }
 );
 
+// Prevents the scheduler from ever inserting two sessions for the same
+// schedule/date/slot, even if generateForSchedule runs concurrently
+// (e.g. overlapping app instances during a deploy).
+TrainingSessionSchema.index(
+  { schedule: 1, date: 1, startTime: 1 },
+  { unique: true, partialFilterExpression: { schedule: { $exists: true } } }
+);
+
 TrainingSessionSchema.virtual('id').get(function () {
   return (this._id as Types.ObjectId).toHexString();
 });
