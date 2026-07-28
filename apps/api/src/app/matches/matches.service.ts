@@ -7,7 +7,7 @@ import { MatchEntity } from './schemas/match.entity';
 import { TournamentEntity } from '../tournaments/schemas/tournament.entity';
 import { PlayerEntity } from '../players/schemas/player.entity';
 import { PaginationDto } from '../shared/pagination.dto';
-import { BlockEnum, CATEGORY_AGE_RANK, CategoryEnum, MatchStatusEnum, PaginatedResponse, RoleEnum, getBlockCategories } from '@ltrc-campo/shared-api-model';
+import { AttendanceStatusEnum, BlockEnum, CATEGORY_AGE_RANK, CategoryEnum, MatchStatusEnum, PaginatedResponse, RoleEnum, getBlockCategories } from '@ltrc-campo/shared-api-model';
 import { MatchFiltersDto } from './match-filter.dto';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
@@ -589,7 +589,11 @@ export class MatchesService {
       const cat = m.category as string;
       if (!stats[cat]) stats[cat] = { matches: 0, totalPresent: 0, totalAttendees: 0 };
       stats[cat].matches++;
-      const playerAttendance = (m.attendance ?? []).filter((a: any) => !a.isStaff);
+      // Split-group fixtures: players auto-excluded to a sibling match on the same
+      // date don't count as an attendance opportunity here.
+      const playerAttendance = (m.attendance ?? []).filter(
+        (a: any) => !a.isStaff && a.status !== AttendanceStatusEnum.OTHER_MATCH
+      );
       stats[cat].totalAttendees += playerAttendance.length;
       stats[cat].totalPresent += playerAttendance.filter((a: any) => a.status === 'present').length;
     }
@@ -648,7 +652,9 @@ export class MatchesService {
 
       if (!buckets[key]) buckets[key] = { matches: 0, present: 0, attendees: 0 };
       buckets[key].matches++;
-      const playerAtt = (m.attendance ?? []).filter((a: any) => !a.isStaff);
+      const playerAtt = (m.attendance ?? []).filter(
+        (a: any) => !a.isStaff && a.status !== AttendanceStatusEnum.OTHER_MATCH
+      );
       buckets[key].attendees += playerAtt.length;
       buckets[key].present += playerAtt.filter((a: any) => a.status === 'present').length;
     }
