@@ -1035,6 +1035,15 @@ export class TrainingSessionsService {
       return 'absent'; // no entry, or entry without a status, counts as absent
     };
 
+    // Matches only: recognizes OTHER_MATCH (player belongs to a sibling fixture on
+    // the same date, not this one) for the per-match detail list.
+    const matchAttendanceStatus = (
+      entry: { status?: AttendanceStatusEnum } | undefined,
+    ): 'present' | 'absent' | 'justified' | 'other_match' => {
+      if (entry?.status === AttendanceStatusEnum.OTHER_MATCH) return 'other_match';
+      return attendanceStatus(entry);
+    };
+
     for (const s of sessions as any[]) {
       for (const p of players) {
         if (s.sport !== p.sport || s.category !== p.category) continue;
@@ -1058,26 +1067,54 @@ export class TrainingSessionsService {
       }
     }
 
+    // Detail list: one row per match actually played, regardless of split-group fixtures.
     for (const m of matches as any[]) {
       for (const p of players) {
         if (m.sport !== p.sport || m.category !== p.category) continue;
         const pid = (p._id as Types.ObjectId).toString();
-        const totals = matchTotals.get(pid)!;
-        totals.total++;
         const entry = (m.attendance ?? []).find(
           (a: any) => !a.isStaff && a.player?.toString() === pid,
         );
-        const status = attendanceStatus(entry);
-        totals[status]++;
         sessionsByPlayer.get(pid)!.push({
           type: 'match',
           id: m._id.toString(),
           date: m.date,
           sport: m.sport,
           category: m.category,
-          status,
+          status: matchAttendanceStatus(entry),
           label: m.opponent,
         });
+      }
+    }
+
+    // Totals: split-group fixtures (two matches, same date/sport/category — the
+    // category divided into two groups) count as a single opportunity per player,
+    // not one per match. Pick the best status found across the sibling matches.
+    const matchGroups = new Map<string, any[]>();
+    for (const m of matches as any[]) {
+      const key = `${m.sport}|${m.category}|${m.date}`;
+      const group = matchGroups.get(key);
+      if (group) group.push(m);
+      else matchGroups.set(key, [m]);
+    }
+
+    for (const group of matchGroups.values()) {
+      const { sport, category } = group[0];
+      for (const p of players) {
+        if (sport !== p.sport || category !== p.category) continue;
+        const pid = (p._id as Types.ObjectId).toString();
+        const rank = { absent: 0, justified: 1, present: 2 } as const;
+        let best: 'present' | 'absent' | 'justified' = 'absent';
+        for (const m of group) {
+          const entry = (m.attendance ?? []).find(
+            (a: any) => !a.isStaff && a.player?.toString() === pid,
+          );
+          const status = attendanceStatus(entry);
+          if (rank[status] > rank[best]) best = status;
+        }
+        const totals = matchTotals.get(pid)!;
+        totals.total++;
+        totals[best]++;
       }
     }
 

@@ -14,7 +14,7 @@ export interface AttendanceReportSessionDetail {
   date: string; // YYYY-MM-DD
   sport: SportEnum;
   category: CategoryEnum;
-  status: 'present' | 'absent' | 'justified';
+  status: 'present' | 'absent' | 'justified' | 'other_match';
   label?: string; // location (training) or opponent (match)
 }
 

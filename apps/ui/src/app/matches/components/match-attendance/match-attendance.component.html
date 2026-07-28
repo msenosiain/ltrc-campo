@@ -30,6 +30,21 @@
   </mat-card>
   } @else {
 
+  @if (siblingMatches.length) {
+  <mat-card class="sibling-matches-notice">
+    <mat-card-content>
+      <mat-icon>info</mat-icon>
+      <span>
+        Fecha dividida: esta categoría también juega
+        @for (sibling of siblingMatches; track sibling.id) {
+        vs. {{ sibling.opponent || sibling.venue }}{{ !$last ? ', ' : '' }}
+        }
+        . Los jugadores marcados presentes/justificados ahí se excluyen acá automáticamente.
+      </span>
+    </mat-card-content>
+  </mat-card>
+  }
+
   <div class="roll-call-actions-top">
     <button mat-stroked-button type="button" (click)="markAllPresent()">
       <mat-icon>done_all</mat-icon>
@@ -78,10 +93,22 @@
           <mat-icon class="confirmed-badge" matTooltip="El jugador confirmó su presencia">check_circle</mat-icon>
           }
         </div>
+        @if (row.autoExcluded) {
+        <button
+          type="button"
+          class="other-match-label"
+          matTooltip="Presente/justificado en el otro partido de la fecha — click para editar"
+          (click)="unlockRow(row)"
+        >
+          Otro partido
+          <mat-icon>edit</mat-icon>
+        </button>
+        } @else {
         <mat-button-toggle-group [value]="row.status">
           <mat-button-toggle [value]="AttendanceStatusEnum.PRESENT" (click)="setStatus(row, AttendanceStatusEnum.PRESENT)">P</mat-button-toggle>
           <mat-button-toggle [value]="AttendanceStatusEnum.JUSTIFIED" (click)="setStatus(row, AttendanceStatusEnum.JUSTIFIED)">J</mat-button-toggle>
         </mat-button-toggle-group>
+        }
       </div>
       }
     </div>
@@ -106,10 +133,22 @@
           <mat-icon class="confirmed-badge" matTooltip="El jugador confirmó su presencia">check_circle</mat-icon>
           }
         </div>
+        @if (row.autoExcluded) {
+        <button
+          type="button"
+          class="other-match-label"
+          matTooltip="Presente/justificado en el otro partido de la fecha — click para editar"
+          (click)="unlockRow(row)"
+        >
+          Otro partido
+          <mat-icon>edit</mat-icon>
+        </button>
+        } @else {
         <mat-button-toggle-group [value]="row.status">
           <mat-button-toggle [value]="AttendanceStatusEnum.PRESENT" (click)="setStatus(row, AttendanceStatusEnum.PRESENT)">P</mat-button-toggle>
           <mat-button-toggle [value]="AttendanceStatusEnum.JUSTIFIED" (click)="setStatus(row, AttendanceStatusEnum.JUSTIFIED)">J</mat-button-toggle>
         </mat-button-toggle-group>
+        }
       </div>
       }
     </div>

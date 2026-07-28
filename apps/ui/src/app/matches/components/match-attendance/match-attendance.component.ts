@@ -7,6 +7,8 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
@@ -43,6 +45,7 @@ interface AttendanceRow {
   status: AttendanceStatusEnum | null;
   isTrial?: boolean;
   trialDaysLeft?: number;
+  autoExcluded?: boolean;
 }
 
 @Component({
@@ -78,6 +81,7 @@ export class MatchAttendanceComponent implements OnInit {
   saving = false;
   loading = signal(true);
   missingConfig = false;
+  siblingMatches: Match[] = [];
 
   readonly AttendanceStatusEnum = AttendanceStatusEnum;
 
@@ -115,8 +119,8 @@ export class MatchAttendanceComponent implements OnInit {
       return;
     }
 
-    this.playersService
-      .getPlayers({
+    forkJoin({
+      players: this.playersService.getPlayers({
         page: 1,
         size: 200,
         filters: {
@@ -126,11 +130,25 @@ export class MatchAttendanceComponent implements OnInit {
         } as any,
         sortBy: 'name',
         sortOrder: SortOrder.ASC,
-      })
+      }),
+      siblings: this.matchesService
+        .getMatches({
+          page: 1,
+          size: 50,
+          filters: {
+            sport,
+            category,
+            fromDate: match.date,
+            toDate: match.date,
+          } as any,
+        })
+        .pipe(catchError(() => of({ items: [] as Match[], total: 0, page: 1, size: 50 }))),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (res) => {
-          this.buildRows(match, res.items);
+        next: ({ players, siblings }) => {
+          this.siblingMatches = siblings.items.filter((m) => m.id !== match.id);
+          this.buildRows(match, players.items);
           this.loading.set(false);
         },
         error: () => {
@@ -138,6 +156,24 @@ export class MatchAttendanceComponent implements OnInit {
           this.loading.set(false);
         },
       });
+  }
+
+  /** Players already marked present/justified in a sibling match on the same date/sport/category. */
+  private autoExcludedPlayerIds(): Set<string> {
+    const ids = new Set<string>();
+    for (const sibling of this.siblingMatches) {
+      for (const entry of sibling.attendance ?? []) {
+        if (entry.isStaff || !entry.player) continue;
+        if (
+          entry.status === AttendanceStatusEnum.PRESENT ||
+          entry.status === AttendanceStatusEnum.JUSTIFIED
+        ) {
+          const p = entry.player as any;
+          ids.add(p?.id ?? p?._id ?? String(p));
+        }
+      }
+    }
+    return ids;
   }
 
   private buildRows(match: Match, allPlayers: Player[]): void {
@@ -173,20 +209,25 @@ export class MatchAttendanceComponent implements OnInit {
         })
     );
 
+    const autoExcluded = this.autoExcludedPlayerIds();
+
     const toRow = (player: Player): AttendanceRow => {
       const existing = attendanceByPlayer.get(player.id!);
       const isTrial = player.status === PlayerStatusEnum.TRIAL;
       const trialDaysLeft = isTrial && player.trialStartDate
         ? Math.ceil((new Date(player.trialStartDate as any).getTime() + 14 * 86400000 - Date.now()) / 86400000)
         : undefined;
+      const isAutoExcluded = !existing?.status && autoExcluded.has(player.id!);
       return {
         playerId: player.id!,
         name: (player as any).name ?? player.id!,
         isStaff: false,
         confirmed: existing?.confirmed ?? false,
-        status: (existing?.status as AttendanceStatusEnum) ?? null,
+        status: (existing?.status as AttendanceStatusEnum) ??
+          (isAutoExcluded ? AttendanceStatusEnum.OTHER_MATCH : null),
         isTrial,
         trialDaysLeft,
+        autoExcluded: isAutoExcluded,
       };
     };
 
@@ -219,7 +260,9 @@ export class MatchAttendanceComponent implements OnInit {
   }
 
   get totalCount(): number {
-    return this.playerRows.length + this.injuredRows.length;
+    return [...this.playerRows, ...this.injuredRows].filter(
+      (r) => r.status !== AttendanceStatusEnum.OTHER_MATCH
+    ).length;
   }
 
   get presentStaffCount(): number {
@@ -234,6 +277,12 @@ export class MatchAttendanceComponent implements OnInit {
 
   setStatus(row: AttendanceRow, status: AttendanceStatusEnum): void {
     row.status = row.status === status ? null : status;
+    row.autoExcluded = false;
+  }
+
+  unlockRow(row: AttendanceRow): void {
+    row.autoExcluded = false;
+    row.status = null;
   }
 
   markAllPresent(): void {

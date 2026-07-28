@@ -201,6 +201,11 @@ export class MatchViewerComponent implements OnInit {
     return this.playerAttendance.filter((a) => a.status === AttendanceStatusEnum.PRESENT).length;
   }
 
+  // Excludes players assigned to a sibling match on the same date (split-group fixtures)
+  get countedPlayerAttendance(): number {
+    return this.playerAttendance.filter((a) => a.status !== AttendanceStatusEnum.OTHER_MATCH).length;
+  }
+
   get presentStaffCount(): number {
     return this.staffAttendance.filter((a) => a.status === AttendanceStatusEnum.PRESENT).length;
   }
@@ -209,6 +214,7 @@ export class MatchViewerComponent implements OnInit {
     if (status === AttendanceStatusEnum.PRESENT) return 'Presente';
     if (status === AttendanceStatusEnum.ABSENT) return 'Ausente';
     if (status === AttendanceStatusEnum.JUSTIFIED) return 'Justificado';
+    if (status === AttendanceStatusEnum.OTHER_MATCH) return 'Otro partido';
     return '—';
   }
 

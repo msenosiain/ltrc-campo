@@ -269,7 +269,10 @@ export class AttendanceReportComponent implements OnInit {
   }
 
   statusLabel(status: string): string {
-    return status === 'present' ? 'Presente' : status === 'justified' ? 'Justificado' : 'Ausente';
+    if (status === 'present') return 'Presente';
+    if (status === 'justified') return 'Justificado';
+    if (status === 'other_match') return 'Otro partido';
+    return 'Ausente';
   }
 
   downloadPdf() {

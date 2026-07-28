@@ -113,6 +113,47 @@ mat-card {
   flex-shrink: 0;
 }
 
+.other-match-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 16px;
+  padding: 4px 10px;
+  background: #f3e5f5;
+  color: #7b1fa2;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    background: #e1bee7;
+  }
+}
+
+.sibling-matches-notice {
+  background: #fff8e1;
+
+  mat-card-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.85rem;
+
+    mat-icon {
+      color: #ef6c00;
+      flex-shrink: 0;
+    }
+  }
+}
+
 .trial-days {
   font-size: 0.72rem;
   font-weight: 600;
