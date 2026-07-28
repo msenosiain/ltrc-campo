@@ -238,20 +238,11 @@ export class MatchFormComponent implements OnInit, OnChanges {
         this.updateCompetitive();
       });
 
-    // Cuando el usuario selecciona una hora, fusionarla en el control date.
-    this.timeControl.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((time) => this.applyTimeToDate(time ?? ''));
-
-    // Cuando el datepicker cambia la fecha, re-aplicar la hora para no perderla.
-    // También sincroniza la fecha de vencimiento del cobro si está habilitado.
+    // Cuando el datepicker cambia la fecha, sincroniza la fecha de vencimiento del cobro si está habilitado.
     this.matchForm
       .get('date')!
       .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((newDate) => {
-        if (this.timeControl.value) {
-          this.applyTimeToDate(this.timeControl.value);
-        }
         if (this.paymentEnabled && newDate) {
           this.matchForm.get('payment.expiresAt')?.setValue(newDate, { emitEvent: false });
         }
@@ -264,13 +255,8 @@ export class MatchFormComponent implements OnInit, OnChanges {
       this.tournamentSport = tournament?.sport ?? null;
       this.categoryOptions = this.categoryOptionsForTournament(tournament);
 
-      const matchDate = this.match.date ? new Date(this.match.date) : null;
-      const h = matchDate?.getHours() ?? 0;
-      const m = matchDate?.getMinutes() ?? 0;
-      const timeStr = h || m
-        ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-        : '';
-      this.timeControl.setValue(timeStr, { emitEvent: false });
+      const matchDate = this.match.date ? this.utcToLocalDate(new Date(this.match.date)) : null;
+      this.timeControl.setValue(this.match.time ?? '', { emitEvent: false });
 
       const storedOpponent = (this.match as any).opponent as string | undefined;
       this.opponents = storedOpponent ? storedOpponent.split(', ').filter(Boolean) : [];
@@ -372,7 +358,7 @@ export class MatchFormComponent implements OnInit, OnChanges {
   onSubmit(): void {
     if (this.formInvalid) return;
     const value = this.matchForm.getRawValue() as MatchFormValue;
-    this.formSubmit.emit({ ...value, opponents: this.opponents });
+    this.formSubmit.emit({ ...value, time: this.timeControl.value ?? '', opponents: this.opponents });
   }
 
   addOpponentOnBlur(): void {
@@ -517,12 +503,7 @@ export class MatchFormComponent implements OnInit, OnChanges {
     // Rivals are managed as chips array; validated via formInvalid getter
   }
 
-  private applyTimeToDate(time: string): void {
-    const date = this.matchForm.get('date')?.value as Date | null;
-    if (!date || !time) return;
-    const [h, m] = time.split(':').map(Number);
-    const merged = new Date(date);
-    merged.setHours(h ?? 0, m ?? 0, 0, 0);
-    this.matchForm.get('date')?.setValue(merged, { emitEvent: false });
+  private utcToLocalDate(d: Date): Date {
+    return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
   }
 }

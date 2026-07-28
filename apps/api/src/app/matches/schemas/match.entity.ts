@@ -13,7 +13,7 @@ import { PlayerEntity } from '../../players/schemas/player.entity';
 
 export class MatchEntity extends Document {
   id: string;
-  date: Date;
+  date: string;
   time?: string;
   name?: string;
   opponent?: string;

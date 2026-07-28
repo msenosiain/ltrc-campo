@@ -83,6 +83,7 @@ export class MatchesService {
     categories: CategoryEnum[];
     opponent?: string;
     date: string;
+    time?: string;
     name?: string;
     venue: string;
     isHome?: boolean;

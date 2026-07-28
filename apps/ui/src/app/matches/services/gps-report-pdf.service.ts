@@ -84,6 +84,12 @@ export class GpsReportPdfService {
   }
 }
 
+/** Parsea un 'YYYY-MM-DD' de Match.date como fecha local (evita el corrimiento de día por UTC). */
+function parseMatchDate(dateStr: string): Date {
+  const d = new Date(dateStr);
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+}
+
 // ─── Page 1: Header + KPIs + Table + Resistencia bars ────────────────────────
 
 function drawPage1(doc: jsPDF, match: Match, players: GpsPlayerData[], logoB64: string | null): void {
@@ -202,7 +208,7 @@ function drawHeader(doc: jsPDF, match: Match, players: GpsPlayerData[], logoB64:
 
   // Metadata
   const dateStr = match.date
-    ? (() => { const d = format(new Date(match.date), "EEEE dd 'de' MMMM 'de' yyyy", { locale: es }); return d.charAt(0).toUpperCase() + d.slice(1); })()
+    ? (() => { const d = format(parseMatchDate(match.date), "EEEE dd 'de' MMMM 'de' yyyy", { locale: es }); return d.charAt(0).toUpperCase() + d.slice(1); })()
     : '—';
   const condition = match.isHome === true ? 'Local' : match.isHome === false ? 'Visitante' : '—';
   const metaLine = [dateStr, condition, getCategoryLabel(match.category), 'Datos GPS: Catapult'].filter(Boolean).join(' | ');
@@ -499,7 +505,7 @@ function drawFooter(doc: jsPDF, match: Match): void {
   const h = 7;
   doc.setFillColor(...NAVY);
   doc.rect(0, fy - h, PW, h, 'F');
-  const dateStr = match.date ? format(new Date(match.date), 'dd \'de\' MMMM \'de\' yyyy', { locale: es }) : '—';
+  const dateStr = match.date ? format(parseMatchDate(match.date), 'dd \'de\' MMMM \'de\' yyyy', { locale: es }) : '—';
   const catLabel = getCategoryLabel(match.category) ?? '';
   const parts = ['Los Tordos Rugby Club', `Informe GPS ${catLabel}`, `vs ${match.opponent ?? '—'} — ${dateStr}`, 'Datos: Catapult GPS'];
   doc.setFontSize(5.5);

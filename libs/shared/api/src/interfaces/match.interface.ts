@@ -54,7 +54,7 @@ export interface MatchAttachment {
 
 export interface Match extends Document {
   readonly id?: string;
-  readonly date: Date;
+  readonly date: string;
   readonly time?: string;
   readonly name?: string;
   readonly opponent?: string;

@@ -47,14 +47,11 @@ export class ShareSquadDialogComponent {
   }
 
   private oneHourBefore(): string {
-    const d = this.data.match.date;
-    if (!d) return '';
-    const matchDate = new Date(d as unknown as string);
-    matchDate.setMinutes(matchDate.getMinutes() - 60);
-    const h = matchDate.getHours();
-    const m = matchDate.getMinutes();
-    if (!h && !m) return '';
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    const time = this.data.match.time;
+    if (!time) return '';
+    const [h, m] = time.split(':').map(Number);
+    const totalMin = (h * 60 + m - 60 + 24 * 60) % (24 * 60);
+    return `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`;
   }
 
   share(): void {

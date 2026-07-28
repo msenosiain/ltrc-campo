@@ -12,7 +12,7 @@
           @for (match of group.matches; track match.id) {
             <div class="match-row" (click)="goToMatch(match.id!)" tabindex="0" (keydown.enter)="goToMatch(match.id!)">
               <div class="match-info">
-                <span class="match-time">{{ hasTime(match.date) ? (match.date | date : 'HH:mm') : 'Sin hora' }}</span>
+                <span class="match-time">{{ hasTime(match) ? match.time : 'Sin hora' }}</span>
                 <span class="match-meta">
                   {{ match.tournament?.name ?? 'Amistoso' }} · {{ getCategoryLabel(match) }}
                   @if (match.division) { · {{ match.division }} }

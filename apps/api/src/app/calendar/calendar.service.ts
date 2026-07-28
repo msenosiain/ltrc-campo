@@ -42,8 +42,8 @@ export class CalendarService {
     if (sport) scopeFilter['sport'] = sport;
     if (category) scopeFilter['category'] = category;
 
-    // Anchor to Argentina (UTC-3) day boundaries, not UTC — otherwise matches/trips
-    // scheduled on `toDate` itself can fall outside the UTC-midnight cutoff.
+    // Trips still store a real Date; anchor to Argentina (UTC-3) day boundaries, not
+    // UTC — otherwise trips departing on `toDate` itself can fall outside the cutoff.
     const fromDateObj = new Date(`${fromDate}T00:00:00-03:00`);
     const toDateObj = new Date(`${toDate}T23:59:59.999-03:00`);
 
@@ -57,7 +57,7 @@ export class CalendarService {
     if (sport) tripScopeFilter['sport'] = sport;
 
     const [matches, sessions, trips] = await Promise.all([
-      this.matchModel.find({ date: { $gte: fromDateObj, $lte: toDateObj }, status: { $nin: ['cancelled', 'completed'] }, ...scopeFilter }).populate('tournament').lean(),
+      this.matchModel.find({ date: { $gte: fromDate, $lte: toDate }, status: { $nin: ['cancelled', 'completed'] }, ...scopeFilter }).populate('tournament').lean(),
       this.sessionModel.find({ date: { $gte: fromDate, $lte: toDate }, status: { $nin: ['cancelled', 'completed'] }, ...scopeFilter }).lean(),
       this.tripModel.find({
         departureDate: { $gte: fromDateObj, $lte: toDateObj },
@@ -69,7 +69,8 @@ export class CalendarService {
     const matchEvents: CalendarEvent[] = (matches as any[]).map((m) => ({
       type: 'match' as const,
       id: m._id.toString(),
-      date: (m.date as Date).toISOString(),
+      date: `${m.date}T12:00:00`,
+      startTime: m.time,
       title: m.opponent ? `vs ${m.opponent}` : ((m.tournament as any)?.name || 'Encuentro'),
       sport: m.sport,
       category: m.category,

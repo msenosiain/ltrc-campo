@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, DestroyRef, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
+import { format } from 'date-fns';
 import { Match, MatchStatusEnum, SortOrder } from '@ltrc-campo/shared-api-model';
 import { MatchesService } from '../../services/matches.service';
 import { getCategoryLabel } from '../../match-options';
@@ -18,7 +18,7 @@ interface GroupedMatches {
 @Component({
   selector: 'ltrc-my-matches-widget',
   standalone: true,
-  imports: [DatePipe, WidgetShellComponent],
+  imports: [WidgetShellComponent],
   templateUrl: './my-matches-widget.component.html',
   styleUrl: './my-matches-widget.component.scss',
 })
@@ -31,13 +31,10 @@ export class MyMatchesWidgetComponent implements OnInit {
   loading = signal(true);
 
   ngOnInit(): void {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     this.matchesService.getMySquadMatches({
       page: 1,
       size: 20,
-      filters: { status: MatchStatusEnum.UPCOMING, fromDate: today.toISOString() },
+      filters: { status: MatchStatusEnum.UPCOMING, fromDate: format(new Date(), 'yyyy-MM-dd') },
       sortBy: 'date',
       sortOrder: SortOrder.ASC,
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -55,8 +52,7 @@ export class MyMatchesWidgetComponent implements OnInit {
   private groupByDate(matches: Match[]): GroupedMatches[] {
     const map = new Map<string, Match[]>();
     for (const m of matches) {
-      const d = new Date(m.date!);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const key = m.date!;
       const list = map.get(key) ?? [];
       list.push(m);
       map.set(key, list);
@@ -86,10 +82,8 @@ export class MyMatchesWidgetComponent implements OnInit {
     return getCategoryLabel(match.category);
   }
 
-  hasTime(date: string | Date | undefined): boolean {
-    if (!date) return false;
-    const d = new Date(date);
-    return d.getHours() !== 0 || d.getMinutes() !== 0;
+  hasTime(match: Match): boolean {
+    return !!match.time;
   }
 
   goToMatch(matchId: string): void {

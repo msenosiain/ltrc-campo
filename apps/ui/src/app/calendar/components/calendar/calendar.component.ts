@@ -162,9 +162,7 @@ export class CalendarComponent implements OnInit {
   }
 
   getEventTime(event: CalendarEvent): string {
-    if (event.type === 'training') {
-      return event.startTime ?? '';
-    }
+    if (event.type !== 'trip') return event.startTime ?? '';
     const d = new Date(event.date);
     if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) return '';
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;

@@ -15,6 +15,7 @@ export interface MatchDayStaffFormValue {
 
 export interface MatchFormValue {
   date: Date | null;
+  time: string;
   opponent: string;
   opponents: string[];
   venue: string;

@@ -196,12 +196,9 @@ export class MatchesService {
     }
 
     if (filters.fromDate || filters.toDate) {
-      // Anchor to Argentina (UTC-3) day boundaries — a bare new Date(fromDate/toDate)
-      // parses as UTC midnight, which is 21:00 the previous day in Argentina and
-      // silently excludes matches played on `toDate` itself.
-      const dateFilter: Record<string, Date> = {};
-      if (filters.fromDate) dateFilter['$gte'] = new Date(`${filters.fromDate}T00:00:00-03:00`);
-      if (filters.toDate) dateFilter['$lte'] = new Date(`${filters.toDate}T23:59:59.999-03:00`);
+      const dateFilter: Record<string, string> = {};
+      if (filters.fromDate) dateFilter['$gte'] = filters.fromDate;
+      if (filters.toDate) dateFilter['$lte'] = filters.toDate;
       queryFilters['date'] = dateFilter;
     }
 
@@ -277,12 +274,25 @@ export class MatchesService {
       { $match: queryFilters },
       {
         $addFields: {
-          _isPast: { $cond: [{ $lt: ['$date', now] }, 1, 0] },
+          // date/time are plain strings ('YYYY-MM-DD' / 'HH:mm'); synthesize a real
+          // datetime (Argentina UTC-3) to compare against `now` for sort purposes.
+          _dateTime: {
+            $dateFromString: {
+              dateString: {
+                $concat: ['$date', 'T', { $ifNull: ['$time', '00:00'] }, ':00-03:00'],
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          _isPast: { $cond: [{ $lt: ['$_dateTime', now] }, 1, 0] },
           _distanceMs: {
             $cond: [
-              { $gte: ['$date', now] },
-              { $subtract: ['$date', now] },
-              { $subtract: [now, '$date'] },
+              { $gte: ['$_dateTime', now] },
+              { $subtract: ['$_dateTime', now] },
+              { $subtract: [now, '$_dateTime'] },
             ],
           },
           _categoryRank: categoryRankSwitch,
@@ -291,7 +301,7 @@ export class MatchesService {
       { $sort: { _isPast: 1, _distanceMs: 1, time: 1, _categoryRank: -1 } },
       { $skip: skip },
       { $limit: size },
-      { $project: { _isPast: 0, _distanceMs: 0, _categoryRank: 0 } },
+      { $project: { _dateTime: 0, _isPast: 0, _distanceMs: 0, _categoryRank: 0 } },
     ];
 
     const [rawItems, total] = await Promise.all([
@@ -554,12 +564,14 @@ export class MatchesService {
   async getAttendanceStats(caller?: User, sport?: string, category?: string): Promise<{
     byCategory: Record<string, { matches: number; totalPresent: number; totalAttendees: number; pct: number }>;
   }> {
+    const today = new Date().toISOString().slice(0, 10);
     const since = new Date();
     since.setDate(since.getDate() - 28);
+    const sinceStr = since.toISOString().slice(0, 10);
 
     const scopeFilter: Record<string, unknown> = {
       status: MatchStatusEnum.COMPLETED,
-      date: { $lte: new Date(), $gte: since },
+      date: { $lte: today, $gte: sinceStr },
     };
     if (caller && !caller.roles?.includes(RoleEnum.ADMIN)) {
       const sports = caller.sports ?? [];
@@ -598,12 +610,14 @@ export class MatchesService {
     filters?: { sport?: string; category?: string; period?: string; categoryGroup?: 'competitive' | 'non-competitive' },
   ): Promise<{ labels: string[]; matches: number[]; present: number[]; attendees: number[]; pct: number[] }> {
     const weeks = filters?.period === '1m' ? 5 : filters?.period === '3m' ? 13 : 26;
+    const today = new Date().toISOString().slice(0, 10);
     const since = new Date();
     since.setDate(since.getDate() - weeks * 7);
+    const sinceStr = since.toISOString().slice(0, 10);
 
     const scopeFilter: Record<string, unknown> = {
       status: MatchStatusEnum.COMPLETED,
-      date: { $lte: new Date(), $gte: since },
+      date: { $lte: today, $gte: sinceStr },
     };
     if (caller && !caller.roles?.includes(RoleEnum.ADMIN)) {
       const sports = caller.sports ?? [];
@@ -630,11 +644,7 @@ export class MatchesService {
 
     const buckets: Record<string, { matches: number; present: number; attendees: number }> = {};
     for (const m of matchDocs) {
-      const d = new Date(m.date);
-      const year = d.getUTCFullYear();
-      const startOfYear = new Date(Date.UTC(year, 0, 1));
-      const week = Math.ceil(((d.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getUTCDay() + 1) / 7);
-      const key = `${year}-W${String(week).padStart(2, '0')}`;
+      const key = this.isoWeekKey(m.date as unknown as string);
 
       if (!buckets[key]) buckets[key] = { matches: 0, present: 0, attendees: 0 };
       buckets[key].matches++;
@@ -670,5 +680,13 @@ export class MatchesService {
     const match = await this.matchModel.findById(id);
     if (!match) throw new NotFoundException('Match not found');
     return match.deleteOne();
+  }
+
+  private isoWeekKey(dateStr: string): string {
+    const d = new Date(dateStr + 'T12:00:00Z');
+    const year = d.getUTCFullYear();
+    const startOfYear = new Date(Date.UTC(year, 0, 1));
+    const week = Math.ceil(((d.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getUTCDay() + 1) / 7);
+    return `${year}-W${String(week).padStart(2, '0')}`;
   }
 }

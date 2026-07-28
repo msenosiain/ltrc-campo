@@ -102,10 +102,14 @@ export class MatchViewerComponent implements OnInit {
 
   get matchPaymentLabel(): string {
     if (!this.match) return '';
-    const date = new Date(this.match.date).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const date = new Date(`${this.match.date}T12:00:00Z`).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     if (this.match.name) return `${this.match.name} (${date})`;
     if (this.match.opponent) return `vs ${this.match.opponent} (${date})`;
     return `Encuentro (${date})`;
+  }
+
+  get matchPaymentDate(): Date | undefined {
+    return this.match?.date ? new Date(`${this.match.date}T12:00:00Z`) : undefined;
   }
 
   ngOnInit(): void {
@@ -258,7 +262,7 @@ export class MatchViewerComponent implements OnInit {
       const csvText = await file.text();
       const blob = await this.gpsReportPdf.generateReport(this.match, csvText);
       const dateStr = this.match.date
-        ? new Date(this.match.date).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
+        ? new Date(`${this.match.date}T12:00:00Z`).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
         : 'sin fecha';
       const division = this.match.division ? `${this.match.division} ` : '';
       const partido = this.match.name

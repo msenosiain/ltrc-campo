@@ -221,10 +221,10 @@ export class EncounterReportComponent implements OnInit {
     for (const m of matches) {
       const key = `${m.date?.toString().substring(0, 10)}_${m.opponent ?? ''}_${m.name ?? ''}`;
       if (!groups.has(key)) {
-        const label = m.name || (m.opponent ? `vs ${m.opponent}` : format(new Date(m.date), 'dd/MM/yyyy'));
+        const label = m.name || (m.opponent ? `vs ${m.opponent}` : format(new Date(`${m.date}T12:00:00Z`), 'dd/MM/yyyy'));
         groups.set(key, {
           label,
-          date: format(new Date(m.date), 'dd/MM/yyyy'),
+          date: format(new Date(`${m.date}T12:00:00Z`), 'dd/MM/yyyy'),
           time: m.time || undefined,
           opponent: m.opponent || undefined,
           matchIds: [],

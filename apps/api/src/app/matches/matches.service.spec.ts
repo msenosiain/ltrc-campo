@@ -18,7 +18,7 @@ const POPULATE_FIELDS = [
 
 const mockMatch = {
   id: 'match-1',
-  date: new Date('2026-03-07'),
+  date: '2026-03-07',
   opponent: 'Rivadavia RC',
   venue: 'Cancha Marista',
   isHome: true,
@@ -90,7 +90,7 @@ describe('MatchesService', () => {
         opponent: 'Rivadavia RC',
         venue: 'Cancha Marista',
         isHome: true,
-        date: new Date(),
+        date: '2026-03-07',
         category: 'plantel_superior',
         tournament: 'tournament-1',
       };
@@ -487,7 +487,7 @@ describe('MatchesService', () => {
 
       const result = await service.createBulk({
         opponent: 'Rival',
-        date: new Date(),
+        date: '2026-03-07',
         categories: ['plantel_superior', 'm14'],
       } as any);
 

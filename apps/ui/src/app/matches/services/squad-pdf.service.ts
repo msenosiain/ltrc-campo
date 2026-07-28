@@ -46,7 +46,7 @@ export class SquadPdfService {
     const escudoB64 = await this.loadImageAsBase64(this.LOGO_PATH).catch(() => null);
     const tourneyB64 = await this.loadTournamentLogo(match).catch(() => null);
 
-    const dateStr = match.date ? format(new Date(match.date), 'dd/MM/yyyy') : '';
+    const dateStr = match.date ? format(this.parseMatchDate(match.date), 'dd/MM/yyyy') : '';
     const rival = match.opponent ?? '';
     const sorted = [...squadRows].sort((a, b) => a.shirtNumber - b.shirtNumber);
 
@@ -200,8 +200,8 @@ export class SquadPdfService {
     doc.line(marginL, 32, pageW - marginL, 32);
 
     // Match data
-    const date = match.date ? new Date(match.date) : null;
-    const dateStr = date ? format(date, 'dd/MM/yyyy HH:mm') : '—';
+    const date = match.date ? this.parseMatchDate(match.date) : null;
+    const dateStr = date ? `${format(date, 'dd/MM/yyyy')}${match.time ? ' ' + match.time : ''}` : '—';
     const localidad = match.isHome === true ? 'Local' : match.isHome === false ? 'Visitante' : '—';
     const rival = match.opponent || 'Sin rival';
     const torneo = (match.tournament as any)?.name ?? '—';
@@ -340,9 +340,9 @@ export class SquadPdfService {
     // ── Datos del partido ────────────────────────────────────────────────────
     const kickoffTime = this.resolveKickoffTime(match);
     const dateStr = match.date
-      ? format(new Date(match.date), 'dd/MM/yyyy')
+      ? format(this.parseMatchDate(match.date), 'dd/MM/yyyy')
       : '—';
-    const timeLabel = match.time ?? (kickoffTime ? format(kickoffTime, 'HH:mm') : '—');
+    const timeLabel = match.time ?? '—';
     const localidad = match.isHome === true ? 'Local' : match.isHome === false ? 'Visitante' : '—';
     const torneo = (match.tournament as any)?.name ?? '—';
 
@@ -506,21 +506,24 @@ export class SquadPdfService {
 
   private resolveKickoffTime(match: Match): Date | null {
     if (!match.date) return null;
-    const base = new Date(match.date);
+    const base = this.parseMatchDate(match.date);
     if (match.time) {
-      const parts = match.time.split(':');
-      if (parts.length >= 2) {
-        base.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
-        return base;
-      }
+      const [h, m] = match.time.split(':').map(Number);
+      base.setHours(h ?? 0, m ?? 0, 0, 0);
     }
     return base;
+  }
+
+  /** Parsea un 'YYYY-MM-DD' de Match.date como fecha local (evita el corrimiento de día por UTC). */
+  private parseMatchDate(dateStr: string): Date {
+    const d = new Date(dateStr);
+    return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
   }
 
   private buildFilename(match: Match, suffix: string): string {
     const division = match.division?.replace(/\s+/g, '-').toLowerCase() ?? 'sin-division';
     const rival = match.opponent?.replace(/\s+/g, '-').toLowerCase() ?? 'sin-rival';
-    const date = match.date ? format(new Date(match.date), 'yyyyMMdd') : 'sin-fecha';
+    const date = match.date ? format(this.parseMatchDate(match.date), 'yyyyMMdd') : 'sin-fecha';
     return `${division}-${rival}-${date}-${suffix}.pdf`;
   }
 

@@ -595,7 +595,7 @@ describe('TrainingSessionsService', () => {
       expect(mockPlayerModel.find).not.toHaveBeenCalled();
     });
 
-    it('anchors the match date range to Argentina day boundaries', async () => {
+    it('filters the match date range by plain YYYY-MM-DD string comparison', async () => {
       mockPlayersFind([player1]);
       mockSessionsFind([]);
       mockMatchesFind([]);
@@ -603,8 +603,8 @@ describe('TrainingSessionsService', () => {
       await service.getAttendanceReport(undefined, baseFilters);
 
       const matchQuery = mockMatchModel.find.mock.calls[0][0];
-      expect((matchQuery.date['$gte'] as Date).toISOString()).toBe('2026-01-01T03:00:00.000Z');
-      expect((matchQuery.date['$lte'] as Date).toISOString()).toBe('2026-02-01T02:59:59.999Z');
+      expect(matchQuery.date['$gte']).toBe('2026-01-01');
+      expect(matchQuery.date['$lte']).toBe('2026-01-31');
     });
   });
 

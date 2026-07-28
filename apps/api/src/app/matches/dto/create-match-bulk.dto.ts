@@ -2,12 +2,12 @@ import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
-  IsDate,
   IsEnum,
   IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import {
@@ -15,14 +15,18 @@ import {
   HockeyBranchEnum,
   MatchStatusEnum,
   SportEnum,
-  parseDate,
 } from '@ltrc-campo/shared-api-model';
 
 export class CreateMatchBulkDto {
   @IsNotEmpty()
-  @Transform(({ value }) => parseDate(value))
-  @IsDate({ message: '$property must be a valid date (dd/MM/yyyy)' })
-  readonly date!: Date;
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'date must be in YYYY-MM-DD format' })
+  readonly date!: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{2}:\d{2}$/, { message: 'time must be in HH:mm format' })
+  readonly time?: string;
 
   @IsOptional()
   @IsString()

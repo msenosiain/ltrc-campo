@@ -33,9 +33,9 @@
     <ng-container matColumnDef="date">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
       <td mat-cell *matCellDef="let match">
-        {{ match.date | date : 'dd/MM/yyyy' }}
-        @if ((match.date | date: 'HH:mm') !== '00:00') {
-        <span class="match-time">{{ match.date | date : 'HH:mm' }}</span>
+        {{ match.date | date : 'dd/MM/yyyy' : 'UTC' }}
+        @if (match.time) {
+        <span class="match-time">{{ match.time }}</span>
         }
       </td>
     </ng-container>

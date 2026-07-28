@@ -3,7 +3,7 @@
     <h2>Pasar lista</h2>
     @if (match) {
     <span class="session-info">
-      {{ match.date | date : 'dd/MM/yyyy' }}
+      {{ match.date | date : 'dd/MM/yyyy' : 'UTC' }}
       @if (match.opponent) { — vs. {{ match.opponent }} }
     </span>
     }

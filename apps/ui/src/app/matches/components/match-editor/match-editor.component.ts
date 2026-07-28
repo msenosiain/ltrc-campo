@@ -121,7 +121,8 @@ export class MatchEditorComponent implements OnInit {
     if (payload.categories.length > 1) {
       this.matchesService
         .createMatchesBulk({
-          date: payload.date!.toISOString(),
+          date: format(payload.date!, 'yyyy-MM-dd'),
+          time: payload.time || undefined,
           categories: payload.categories,
           opponent,
           name: payload.name || undefined,

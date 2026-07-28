@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { MatchFormValue } from './match-form.types';
 
 export function mapFormToCreateMatchDto(value: MatchFormValue) {
@@ -5,7 +6,8 @@ export function mapFormToCreateMatchDto(value: MatchFormValue) {
     value.result?.homeScore != null && value.result?.awayScore != null;
 
   return {
-    date: value.date!.toISOString(),
+    date: format(value.date!, 'yyyy-MM-dd'),
+    time: value.time || undefined,
     opponent: value.opponents?.length ? value.opponents.join(', ') : (value.opponent || undefined),
     venue: value.venue,
     isHome: value.isHome,

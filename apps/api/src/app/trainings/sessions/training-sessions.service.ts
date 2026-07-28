@@ -31,7 +31,7 @@ import {
   DayOfWeekEnum,
   getBlockCategories,
 } from '@ltrc-campo/shared-api-model';
-import { toMatchDateRange, toTrainingDateRange } from './attendance-report-date.util';
+import { toTrainingDateRange } from './attendance-report-date.util';
 import { CreateTrainingSessionDto } from './dto/create-training-session.dto';
 import { UpdateTrainingSessionDto } from './dto/update-training-session.dto';
 import { RecordAttendanceDto } from './dto/record-attendance.dto';
@@ -800,7 +800,7 @@ export class TrainingSessionsService {
 
     const [sessions, matches] = await Promise.all([
       this.sessionModel.find({ ...scopeFilter, date: { $gte: sinceStr, $lte: todayStr } }).lean(),
-      this.matchModel.find({ ...scopeFilter, date: { $gte: new Date(sinceStr), $lte: new Date() } }).lean(),
+      this.matchModel.find({ ...scopeFilter, date: { $gte: sinceStr, $lte: todayStr } }).lean(),
     ]);
 
     // Build weekly buckets: Set of playerIds per week for training and matches
@@ -815,7 +815,7 @@ export class TrainingSessionsService {
 
     const matchWeek: Record<string, Set<string>> = {};
     for (const m of matches) {
-      const key = this.isoWeekKey(new Date(m.date).toISOString().slice(0, 10));
+      const key = this.isoWeekKey(m.date);
       if (!matchWeek[key]) matchWeek[key] = new Set();
       for (const a of (m.attendance ?? []).filter((a: any) => !a.isStaff && a.status === 'present')) {
         matchWeek[key].add(a.player?.toString());
@@ -864,7 +864,7 @@ export class TrainingSessionsService {
 
     const [sessions, matches] = await Promise.all([
       this.sessionModel.find({ ...scopeFilter, date: { $gte: sinceStr, $lte: todayStr } }).lean(),
-      this.matchModel.find({ ...scopeFilter, date: { $gte: new Date(sinceStr), $lte: new Date() } }).lean(),
+      this.matchModel.find({ ...scopeFilter, date: { $gte: sinceStr, $lte: todayStr } }).lean(),
     ]);
 
     const labels = this.generateWeekLabels(weeks);
@@ -891,7 +891,7 @@ export class TrainingSessionsService {
 
     for (const m of matches) {
       const cat = m.category as string;
-      const key = this.isoWeekKey(new Date(m.date).toISOString().slice(0, 10));
+      const key = this.isoWeekKey(m.date);
       if (!catWeek[cat]) catWeek[cat] = {};
       if (!catWeek[cat][key]) catWeek[cat][key] = { trainPlayerIds: new Set(), matchPlayerIds: new Set(), trainPresent: 0, trainAttendees: 0, matchPresent: 0, matchAttendees: 0 };
       const b = catWeek[cat][key];
@@ -993,7 +993,7 @@ export class TrainingSessionsService {
     if (!players.length) return emptyResult;
 
     const sessionDateRange = toTrainingDateRange(filters.fromDate, filters.toDate);
-    const matchDateRange = toMatchDateRange(filters.fromDate, filters.toDate);
+    const matchDateRange = toTrainingDateRange(filters.fromDate, filters.toDate);
 
     const sessionScopeFilter: Record<string, unknown> = {
       sport: { $in: sports },
@@ -1072,7 +1072,7 @@ export class TrainingSessionsService {
         sessionsByPlayer.get(pid)!.push({
           type: 'match',
           id: m._id.toString(),
-          date: new Date(m.date).toISOString().slice(0, 10),
+          date: m.date,
           sport: m.sport,
           category: m.category,
           status,
