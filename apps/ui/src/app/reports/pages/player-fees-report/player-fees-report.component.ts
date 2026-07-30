@@ -22,11 +22,14 @@ import {
   PaymentEntityTypeEnum,
   PaymentMethodEnum,
   PaymentStatusEnum,
-  SportEnum,
 } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../../common/category-options';
-import { GlobalPaymentsReport, PaymentsService } from '../../../payments/services/payments.service';
+import { GlobalPaymentsReport, GlobalReportFilters, PaymentsService } from '../../../payments/services/payments.service';
 import { PlayerFeesAdminService } from '../../../player-fees/services/player-fees-admin.service';
+import {
+  PlayerFeesReportPdfContext,
+  PlayerFeesReportPdfService,
+} from '../../services/player-fees-report-pdf.service';
 
 @Component({
   selector: 'ltrc-player-fees-report',
@@ -53,12 +56,14 @@ import { PlayerFeesAdminService } from '../../../player-fees/services/player-fee
 export class PlayerFeesReportComponent implements OnInit {
   private readonly paymentsService = inject(PaymentsService);
   private readonly feesAdminService = inject(PlayerFeesAdminService);
+  private readonly pdfService = inject(PlayerFeesReportPdfService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
   configs = signal<IPlayerFeeConfig[]>([]);
   report = signal<GlobalPaymentsReport | null>(null);
   loading = signal(false);
+  generatingPdf = signal(false);
   page = signal(1);
   readonly pageSize = 50;
   sortBy = signal('date');
@@ -66,7 +71,6 @@ export class PlayerFeesReportComponent implements OnInit {
 
   readonly filterForm = new FormGroup({
     concept:  new FormControl<string[]>([]),
-    sport:    new FormControl<SportEnum | null>(null),
     status:   new FormControl<PaymentStatusEnum[]>([]),
     method:   new FormControl<PaymentMethodEnum[]>([]),
     dateFrom: new FormControl<Date | null>(null),
@@ -78,11 +82,6 @@ export class PlayerFeesReportComponent implements OnInit {
     { value: PaymentStatusEnum.PENDING,    label: 'Pendiente' },
     { value: PaymentStatusEnum.REJECTED,   label: 'Rechazado' },
     { value: PaymentStatusEnum.CANCELLED,  label: 'Cancelado' },
-  ];
-
-  readonly sportOptions = [
-    { value: SportEnum.RUGBY,  label: 'Rugby' },
-    { value: SportEnum.HOCKEY, label: 'Hockey' },
   ];
 
   readonly methodOptions: Record<string, string> = {
@@ -97,7 +96,6 @@ export class PlayerFeesReportComponent implements OnInit {
     const v = this.filterForm.value;
     let n = 0;
     if (v.concept?.length) n++;
-    if (v.sport) n++;
     if (v.status?.length) n++;
     if (v.method?.length) n++;
     if (v.dateFrom) n++;
@@ -117,23 +115,28 @@ export class PlayerFeesReportComponent implements OnInit {
     this.search();
   }
 
-  search(resetPage = true): void {
-    if (resetPage) this.page.set(1);
-    this.loading.set(true);
+  private buildFilters(): GlobalReportFilters {
     const v = this.filterForm.value;
-
-    this.paymentsService.getGlobalReport({
+    return {
       entityType: PaymentEntityTypeEnum.PLAYER_FEE,
       concept:    v.concept?.length  ? v.concept.join(',')  : undefined,
-      sport:      v.sport            ?? undefined,
       status:     v.status?.length   ? v.status.join(',')   : undefined,
       method:     v.method?.length   ? v.method.join(',')   : undefined,
       dateFrom:   v.dateFrom ? format(v.dateFrom, 'yyyy-MM-dd') : undefined,
       dateTo:     v.dateTo   ? format(v.dateTo,   'yyyy-MM-dd') : undefined,
       sortBy:     this.sortBy(),
       sortDir:    this.sortDir(),
-      page:       this.page(),
-      limit:      this.pageSize,
+    };
+  }
+
+  search(resetPage = true): void {
+    if (resetPage) this.page.set(1);
+    this.loading.set(true);
+
+    this.paymentsService.getGlobalReport({
+      ...this.buildFilters(),
+      page:  this.page(),
+      limit: this.pageSize,
     }).pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  (r) => { this.report.set(r); this.loading.set(false); },
@@ -142,6 +145,40 @@ export class PlayerFeesReportComponent implements OnInit {
           this.loading.set(false);
         },
       });
+  }
+
+  downloadPdf(): void {
+    this.generatingPdf.set(true);
+    const filters = this.buildFilters();
+    this.paymentsService
+      .getGlobalReport({ ...filters, page: 1, limit: 1000 })
+      .subscribe({
+        next: async (allData) => {
+          const ctx = this.buildPdfContext(filters);
+          try {
+            await this.pdfService.generate(allData, ctx);
+          } catch {
+            this.snackBar.open('Error al generar el PDF', '', { duration: 3000 });
+          } finally {
+            this.generatingPdf.set(false);
+          }
+        },
+        error: () => {
+          this.snackBar.open('Error al cargar los datos para el PDF', '', { duration: 3000 });
+          this.generatingPdf.set(false);
+        },
+      });
+  }
+
+  private buildPdfContext(filters: GlobalReportFilters): PlayerFeesReportPdfContext {
+    const v = this.filterForm.value;
+    return {
+      conceptLabel: v.concept?.length ? v.concept.join(', ') : null,
+      statusLabel: v.status?.length ? v.status.map((s) => this.statusLabel(s)).join(', ') : null,
+      methodLabel: v.method?.length ? v.method.map((m) => this.methodLabel(m)).join(', ') : null,
+      dateFrom: filters.dateFrom ?? null,
+      dateTo: filters.dateTo ?? null,
+    };
   }
 
   onPageChange(e: PageEvent): void {

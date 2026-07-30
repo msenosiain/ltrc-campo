@@ -26,21 +26,6 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Deporte</mat-label>
-            <mat-select formControlName="sport">
-              <mat-option [value]="null">Todos</mat-option>
-              @for (opt of sportOptions; track opt.value) {
-                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-              }
-            </mat-select>
-            @if (filterForm.get('sport')?.value) {
-              <button matIconSuffix mat-icon-button type="button" (click)="clearControl('sport')">
-                <mat-icon>close</mat-icon>
-              </button>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
             <mat-label>Estado</mat-label>
             <mat-select formControlName="status" multiple>
               @for (opt of statusOptions; track opt.value) {
@@ -125,6 +110,17 @@
           <span class="summary-stat__value">${{ r.totalApproved | number:'1.0-0' }}</span>
         </div>
       </div>
+
+      @if (r.data.length > 0) {
+        <button mat-stroked-button (click)="downloadPdf()" [disabled]="generatingPdf()">
+          @if (generatingPdf()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>picture_as_pdf</mat-icon>
+          }
+          Exportar PDF
+        </button>
+      }
     </div>
 
     @if (r.data.length === 0) {
