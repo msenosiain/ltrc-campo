@@ -13,6 +13,7 @@ export const REPORTS_ROUTES: Routes = [
       { path: '', redirectTo: 'payments', pathMatch: 'full' },
       {
         path: 'payments',
+        title: 'Informe de Pagos',
         loadComponent: () =>
           import('./pages/payments-report/payments-report.component').then(
             (m) => m.PaymentsReportComponent
@@ -20,6 +21,7 @@ export const REPORTS_ROUTES: Routes = [
       },
       {
         path: 'player-fees',
+        title: 'Derechos de Jugador',
         loadComponent: () =>
           import('./pages/player-fees-report/player-fees-report.component').then(
             (m) => m.PlayerFeesReportComponent
@@ -27,6 +29,7 @@ export const REPORTS_ROUTES: Routes = [
       },
       {
         path: 'payment-links',
+        title: 'Links de Pago',
         loadComponent: () =>
           import('./pages/payment-links-report/payment-links-report.component').then(
             (m) => m.PaymentLinksReportComponent
@@ -34,6 +37,7 @@ export const REPORTS_ROUTES: Routes = [
       },
       {
         path: 'birthdays',
+        title: 'Listado de Cumpleaños',
         loadComponent: () =>
           import('./pages/birthdays-report/birthdays-report.component').then(
             (m) => m.BirthdaysReportComponent
@@ -41,6 +45,7 @@ export const REPORTS_ROUTES: Routes = [
       },
       {
         path: 'attendance',
+        title: 'Reporte de Asistencia',
         loadComponent: () =>
           import('./pages/attendance-report/attendance-report.component').then(
             (m) => m.AttendanceReportComponent

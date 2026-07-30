@@ -11,28 +11,29 @@ export const PLAYERS_ROUTES: Routes = [
   {
     path: '',
     component: PlayersListComponent,
-    data: { title: 'Plantel - Los Tordos' },
+    title: 'Plantel',
   },
   {
     path: 'me/edit',
     component: MyProfileEditorComponent,
-    data: { title: 'Editar mi perfil' },
+    title: 'Editar mi perfil',
   },
   {
     path: 'create',
     component: PlayerEditorComponent,
     canActivate: [hasRoleGuard],
-    data: { title: 'Crear jugador', allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN, RoleEnum.COACH, RoleEnum.COORDINATOR] },
+    title: 'Crear jugador',
+    data: { allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN, RoleEnum.COACH, RoleEnum.COORDINATOR] },
   },
   {
     path: ':id',
     component: PlayerViewerComponent,
-    data: { title: 'Detalle del jugador' },
+    title: 'Detalle del jugador',
   },
   {
     path: ':id/edit',
     component: PlayerEditorComponent,
     canActivate: [canEditPlayerGuard],
-    data: { title: 'Editar jugador' },
+    title: 'Editar jugador',
   },
 ];

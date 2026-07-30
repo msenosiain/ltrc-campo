@@ -10,6 +10,7 @@ export const SETTINGS_ROUTES: Routes = [
         (m) => m.SettingsShellComponent
       ),
     canActivate: [hasRoleGuard],
+    title: 'Configuración',
     data: { allowedRoles: [RoleEnum.ADMIN] },
   },
 ];

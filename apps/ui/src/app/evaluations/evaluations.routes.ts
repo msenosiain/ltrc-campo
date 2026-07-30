@@ -9,7 +9,7 @@ export const EVALUATIONS_ROUTES: Routes = [
       import('./components/evaluations-list/evaluations-list.component').then(
         (m) => m.EvaluationsListComponent
       ),
-    data: { title: 'Evaluaciones' },
+    title: 'Evaluaciones',
   },
   {
     path: 'player/:playerId',
@@ -17,6 +17,6 @@ export const EVALUATIONS_ROUTES: Routes = [
       import('./components/player-evaluation-history/player-evaluation-history.component').then(
         (m) => m.PlayerEvaluationHistoryComponent
       ),
-    data: { title: 'Historial de evaluaciones' },
+    title: 'Historial de evaluaciones',
   },
 ];

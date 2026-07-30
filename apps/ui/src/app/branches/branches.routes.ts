@@ -6,11 +6,11 @@ export const BRANCHES_ROUTES: Routes = [
   {
     path: '',
     component: BranchListComponent,
-    data: { title: 'Ramas - Los Tordos' },
+    title: 'Ramas',
   },
   {
     path: 'detail',
     component: BranchDetailComponent,
-    data: { title: 'Detalle de rama' },
+    title: 'Detalle de rama',
   },
 ];

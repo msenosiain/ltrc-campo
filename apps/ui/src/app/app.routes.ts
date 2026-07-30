@@ -119,6 +119,7 @@ export const routes: Routes = [
       },
       {
         path: 'my-workout',
+        title: 'Mi entrenamiento de hoy',
         loadComponent: () =>
           import('./physical-training/components/my-workout/my-workout.component').then(
             (m) => m.MyWorkoutComponent
@@ -154,7 +155,7 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./settings/settings.routes').then((m) => m.SETTINGS_ROUTES),
       },
-      { path: 'set-password', component: SetPasswordComponent },
+      { path: 'set-password', component: SetPasswordComponent, title: 'Cambiar contraseña' },
     ],
   },
   // Fallback to dashboard for any unknown route

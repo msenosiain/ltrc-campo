@@ -5,8 +5,9 @@ import {
   Provider,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, TitleStrategy } from '@angular/router';
 import { routes } from './app.routes';
+import { AppTitleStrategy } from './common/app-title-strategy';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import localeEsAr from '@angular/common/locales/es-AR';
@@ -62,6 +63,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
     apiConfigProvider,
+    { provide: TitleStrategy, useClass: AppTitleStrategy },
     { provide: LOCALE_ID, useValue: 'es-AR' },
     { provide: MAT_DATE_LOCALE, useValue: es },
     { provide: MatPaginatorIntl, useFactory: getEsArPaginatorIntl },

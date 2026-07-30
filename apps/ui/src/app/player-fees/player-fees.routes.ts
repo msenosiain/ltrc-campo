@@ -7,5 +7,6 @@ export const PLAYER_FEES_ROUTES: Routes = [
       import('./components/player-fees-list/player-fees-list.component').then(
         (m) => m.PlayerFeesListComponent
       ),
+    title: 'Habilitaciones',
   },
 ];

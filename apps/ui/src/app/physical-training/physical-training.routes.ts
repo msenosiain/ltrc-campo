@@ -10,6 +10,7 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
       import('./components/my-workout/my-workout.component').then(
         (m) => m.MyWorkoutComponent
       ),
+    title: 'Mi entrenamiento de hoy',
   },
   {
     path: 'exercises',
@@ -17,6 +18,7 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
       import('./components/exercise-list/exercise-list.component').then(
         (m) => m.ExerciseListComponent
       ),
+    title: 'Ejercicios',
   },
   {
     path: 'exercises/new',
@@ -25,6 +27,7 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
         (m) => m.ExerciseFormComponent
       ),
     canActivate: [hasRoleGuard],
+    title: 'Nuevo ejercicio',
     data: { allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.TRAINER] },
   },
   {
@@ -34,6 +37,7 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
         (m) => m.ExerciseFormComponent
       ),
     canActivate: [hasRoleGuard],
+    title: 'Editar ejercicio',
     data: { allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.TRAINER] },
   },
   {
@@ -42,6 +46,7 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
       import('./components/exercise-viewer/exercise-viewer.component').then(
         (m) => m.ExerciseViewerComponent
       ),
+    title: 'Detalle de ejercicio',
   },
   {
     path: 'workouts',
@@ -49,6 +54,7 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
       import('./components/workout-list/workout-list.component').then(
         (m) => m.WorkoutListComponent
       ),
+    title: 'Rutinas',
   },
   {
     path: 'workouts/new',
@@ -57,6 +63,7 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
         (m) => m.WorkoutFormComponent
       ),
     canActivate: [hasRoleGuard],
+    title: 'Nueva rutina',
     data: { allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.TRAINER] },
   },
   {
@@ -66,6 +73,7 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
         (m) => m.WorkoutBlocksEditorComponent
       ),
     canActivate: [hasRoleGuard],
+    title: 'Editar bloques de rutina',
     data: { allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.TRAINER] },
   },
   {
@@ -75,6 +83,7 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
         (m) => m.WorkoutFormComponent
       ),
     canActivate: [hasRoleGuard],
+    title: 'Editar rutina',
     data: { allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.TRAINER] },
   },
   {
@@ -83,6 +92,7 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
       import('./components/workout-viewer/workout-viewer.component').then(
         (m) => m.WorkoutViewerComponent
       ),
+    title: 'Detalle de rutina',
   },
   {
     path: 'workout-logs',
@@ -90,5 +100,6 @@ export const PHYSICAL_TRAINING_ROUTES: Routes = [
       import('./components/workout-log-list/workout-log-list.component').then(
         (m) => m.WorkoutLogListComponent
       ),
+    title: 'Registros de entrenamiento',
   },
 ];

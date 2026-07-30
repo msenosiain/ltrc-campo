@@ -9,23 +9,25 @@ export const TOURNAMENTS_ROUTES: Routes = [
   {
     path: '',
     component: TournamentsListComponent,
-    data: { title: 'Torneos - Los Tordos' },
+    title: 'Torneos',
   },
   {
     path: 'create',
     component: TournamentEditorComponent,
     canActivate: [hasRoleGuard],
-    data: { title: 'Crear torneo', allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN] },
+    title: 'Crear torneo',
+    data: { allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN] },
   },
   {
     path: ':id',
     component: TournamentViewerComponent,
-    data: { title: 'Detalle del torneo' },
+    title: 'Detalle del torneo',
   },
   {
     path: ':id/edit',
     component: TournamentEditorComponent,
     canActivate: [hasRoleGuard],
-    data: { title: 'Editar torneo', allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN] },
+    title: 'Editar torneo',
+    data: { allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN] },
   },
 ];

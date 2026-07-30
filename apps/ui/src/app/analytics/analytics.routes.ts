@@ -12,6 +12,7 @@ export const ANALYTICS_ROUTES: Routes = [
         (m) => m.AnalyticsDashboardComponent
       ),
     canActivate: [hasRoleGuard],
+    title: 'Estadísticas',
     data: { allowedRoles: ANALYTICS_ROLES },
   },
 ];

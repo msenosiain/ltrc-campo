@@ -11,28 +11,28 @@ export const MATCHES_ROUTES: Routes = [
   {
     path: '',
     component: MatchesListComponent,
-    data: { title: 'Partidos - Los Tordos' },
+    title: 'Partidos',
   },
   {
     path: 'create',
     component: MatchEditorComponent,
     canActivate: [hasRoleGuard],
+    title: 'Crear partido',
     data: {
-      title: 'Crear partido',
       allowedRoles: [RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER],
     },
   },
   {
     path: ':id',
     component: MatchViewerComponent,
-    data: { title: 'Detalle del partido' },
+    title: 'Detalle del partido',
   },
   {
     path: ':id/edit',
     component: MatchEditorComponent,
     canActivate: [hasRoleGuard],
+    title: 'Editar partido',
     data: {
-      title: 'Editar partido',
       allowedRoles: [RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER],
     },
   },
@@ -40,8 +40,8 @@ export const MATCHES_ROUTES: Routes = [
     path: ':id/squad',
     component: SquadEditorComponent,
     canActivate: [hasRoleGuard],
+    title: 'Gestionar plantel',
     data: {
-      title: 'Gestionar plantel',
       allowedRoles: [RoleEnum.TRAINER, RoleEnum.COACH, RoleEnum.MANAGER, RoleEnum.ADMIN],
     },
   },
@@ -49,8 +49,8 @@ export const MATCHES_ROUTES: Routes = [
     path: ':id/attendance',
     component: MatchAttendanceComponent,
     canActivate: [hasRoleGuard],
+    title: 'Gestionar asistencia',
     data: {
-      title: 'Gestionar asistencia',
       allowedRoles: [
         RoleEnum.ADMIN,
         RoleEnum.COORDINATOR,

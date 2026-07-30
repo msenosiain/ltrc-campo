@@ -24,14 +24,14 @@ export const TRAININGS_ROUTES: Routes = [
       {
         path: 'sessions',
         component: SessionListComponent,
-        data: { title: 'Sesiones de entrenamiento' },
+        title: 'Sesiones de entrenamiento',
       },
       {
         path: 'schedules',
         component: ScheduleListComponent,
         canActivate: [hasRoleGuard],
+        title: 'Horarios de entrenamiento',
         data: {
-          title: 'Horarios de entrenamiento',
           allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER],
         },
       },
@@ -39,36 +39,36 @@ export const TRAININGS_ROUTES: Routes = [
         path: 'schedules/create',
         component: ScheduleEditorComponent,
         canActivate: [hasRoleGuard],
+        title: 'Crear horario',
         data: {
-          title: 'Crear horario',
           allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
         },
       },
       {
         path: 'schedules/:id',
         component: ScheduleViewerComponent,
-        data: { title: 'Detalle del horario' },
+        title: 'Detalle del horario',
       },
       {
         path: 'schedules/:id/edit',
         component: ScheduleEditorComponent,
         canActivate: [hasRoleGuard],
+        title: 'Editar horario',
         data: {
-          title: 'Editar horario',
           allowedRoles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
         },
       },
       {
         path: 'sessions/:id',
         component: SessionViewerComponent,
-        data: { title: 'Detalle de sesión' },
+        title: 'Detalle de sesión',
       },
       {
         path: 'sessions/:id/qr',
         component: QrDisplayPageComponent,
         canActivate: [hasRoleGuard],
+        title: 'QR Asistencia',
         data: {
-          title: 'QR Asistencia',
           allowedRoles: [RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH, RoleEnum.TRAINER],
         },
       },
@@ -76,8 +76,8 @@ export const TRAININGS_ROUTES: Routes = [
         path: 'sessions/:id/attendance',
         component: AttendanceRollCallComponent,
         canActivate: [hasRoleGuard],
+        title: 'Asistencia',
         data: {
-          title: 'Asistencia',
           allowedRoles: [
             RoleEnum.ADMIN,
             RoleEnum.MANAGER,
@@ -90,8 +90,8 @@ export const TRAININGS_ROUTES: Routes = [
         path: 'sessions/:id/evaluate',
         component: SessionEvaluateComponent,
         canActivate: [hasRoleGuard],
+        title: 'Evaluar jugadores',
         data: {
-          title: 'Evaluar jugadores',
           allowedRoles: [
             RoleEnum.ADMIN,
             RoleEnum.MANAGER,
