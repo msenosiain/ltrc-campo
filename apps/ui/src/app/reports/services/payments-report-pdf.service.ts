@@ -32,7 +32,7 @@ export class PaymentsReportPdfService {
     const pageW = doc.internal.pageSize.getWidth();
     const marginL = 14;
 
-    let y = await this.drawHeader(doc, report, ctx, pageW, marginL);
+    const y = await this.drawHeader(doc, report, ctx, pageW, marginL);
 
     // Agrupar pagos por evento
     const grouped = new Map<string, GlobalPaymentRow[]>();

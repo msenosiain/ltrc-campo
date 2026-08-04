@@ -31,7 +31,7 @@ export class EligibilityReportPdfService {
     const pageW = doc.internal.pageSize.getWidth();
     const marginL = 14;
 
-    let y = await this.drawHeader(doc, rows, ctx, pageW, marginL);
+    const y = await this.drawHeader(doc, rows, ctx, pageW, marginL);
 
     // Group by category
     const grouped = new Map<string, IPlayerFeeStatusRow[]>();

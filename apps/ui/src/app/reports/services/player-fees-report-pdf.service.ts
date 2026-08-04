@@ -31,7 +31,7 @@ export class PlayerFeesReportPdfService {
     const pageW = doc.internal.pageSize.getWidth();
     const marginL = 14;
 
-    let y = await this.drawHeader(doc, report, ctx, pageW, marginL);
+    const y = await this.drawHeader(doc, report, ctx, pageW, marginL);
 
     // Agrupar por categoría
     const catOrder = new Map(categoryOptions.map((c, i) => [c.id as string, i]));

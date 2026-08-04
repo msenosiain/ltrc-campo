@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { SortOrder } from '@ltrc-campo/shared-api-model';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ListState {
   filters: any;
   pageIndex: number;
