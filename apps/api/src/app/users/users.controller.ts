@@ -8,8 +8,10 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -32,9 +34,15 @@ export class UsersController {
     return await this.usersService.create(payload);
   }
 
+  // Búsqueda de staff para pasajeros de viajes: managers/coordinadores/coaches
+  // sólo ven usuarios dentro de sus sports/categories asignados (ver UsersService#findAll).
   @Get()
-  async findAll(@Query() query: PaginationDto<UserFiltersDto>) {
-    return this.usersService.findAll(query);
+  @Roles(RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH)
+  async findAll(
+    @Query() query: PaginationDto<UserFiltersDto>,
+    @Req() req: Request
+  ) {
+    return this.usersService.findAll(query, (req as any).user);
   }
 
   @Get(':id')

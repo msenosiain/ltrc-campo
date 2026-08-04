@@ -5,7 +5,7 @@ import { Model } from 'mongoose';
 import { PaginationDto } from '../shared/pagination.dto';
 import { UserFiltersDto } from './dto/user-filter.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { PaginatedResponse } from '@ltrc-campo/shared-api-model';
+import { PaginatedResponse, RoleEnum } from '@ltrc-campo/shared-api-model';
 
 @Injectable()
 export class UsersService {
@@ -38,7 +38,8 @@ export class UsersService {
   }
 
   async findAll(
-    query: PaginationDto<UserFiltersDto>
+    query: PaginationDto<UserFiltersDto>,
+    caller?: User
   ): Promise<PaginatedResponse<User>> {
     const { page, size, filters = {}, sortBy, sortOrder = 'asc' } = query;
     const skip = (page - 1) * size;
@@ -57,11 +58,33 @@ export class UsersService {
     }
 
     if (filters.sport) {
-      queryFilters['sports'] = filters.sport;
+      queryFilters['sports'] = { $in: [filters.sport] };
     }
 
-    if (filters.category) {
-      queryFilters['categories'] = filters.category;
+    if (filters.categories?.length) {
+      queryFilters['categories'] = { $in: filters.categories };
+    } else if (filters.category) {
+      queryFilters['categories'] = { $in: [filters.category] };
+    }
+
+    // Server-side restriction: non-admin callers (managers, coordinadores, coaches)
+    // sólo pueden buscar staff dentro de sus sports/categories asignados —
+    // mismo patrón que players.service.ts#findPaginated.
+    if (caller && !caller.roles?.includes(RoleEnum.ADMIN)) {
+      if (caller.sports?.length) {
+        const requested = (queryFilters['sports'] as { $in?: string[] } | undefined)?.$in;
+        const allowed = caller.sports as string[];
+        queryFilters['sports'] = {
+          $in: requested ? requested.filter((s) => allowed.includes(s)) : allowed,
+        };
+      }
+      if (caller.categories?.length) {
+        const requested = (queryFilters['categories'] as { $in?: string[] } | undefined)?.$in;
+        const allowed = caller.categories as string[];
+        queryFilters['categories'] = {
+          $in: requested ? requested.filter((c) => allowed.includes(c)) : allowed,
+        };
+      }
     }
 
     const sort: Record<string, 1 | -1> = {};

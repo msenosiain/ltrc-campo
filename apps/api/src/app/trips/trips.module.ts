@@ -7,6 +7,7 @@ import { TripEntity } from './schemas/trip.entity';
 import { TripSchema } from './schemas/trip.schema';
 import { PaymentEntity } from '../payments/schemas/payment.entity';
 import { PaymentSchema } from '../payments/schemas/payment.schema';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { PaymentSchema } from '../payments/schemas/payment.schema';
         collection: 'payments',
       },
     ]),
+    UsersModule,
   ],
   controllers: [TripsController, TripsPublicController],
   providers: [TripsService],

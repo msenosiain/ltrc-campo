@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { TripsService } from './trips.service';
 import { TripEntity } from './schemas/trip.entity';
 import { PaymentEntity } from '../payments/schemas/payment.entity';
+import { UsersService } from '../users/users.service';
 import {
+  RoleEnum,
   TripParticipantStatusEnum,
   TripParticipantTypeEnum,
 } from '@ltrc-campo/shared-api-model';
@@ -71,6 +73,10 @@ const mockPaymentModel = {
   findById: jest.fn(),
 };
 
+const mockUsersService = {
+  findById: jest.fn(),
+};
+
 // ── suite ─────────────────────────────────────────────────────────────────────
 
 describe('TripsService', () => {
@@ -84,6 +90,7 @@ describe('TripsService', () => {
         TripsService,
         { provide: getModelToken(TripEntity.name), useValue: mockTripModel },
         { provide: getModelToken(PaymentEntity.name), useValue: mockPaymentModel },
+        { provide: UsersService, useValue: mockUsersService },
       ],
     }).compile();
 
@@ -235,6 +242,54 @@ describe('TripsService', () => {
       await expect(
         service.addParticipant('trip-1', { type: TripParticipantTypeEnum.PLAYER, playerId: 'id' } as any)
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should add a staff participant when caller is admin (no scope check)', async () => {
+      mockTripModel.findById
+        .mockResolvedValueOnce(makeTrip())
+        .mockReturnValue(populatedMock);
+      const caller = { roles: [RoleEnum.ADMIN] } as any;
+      const result = await service.addParticipant(
+        'trip-1',
+        { type: TripParticipantTypeEnum.STAFF, userId: 'bbbbbbbbbbbbbbbbbbbbbbbb' } as any,
+        caller
+      );
+      expect(result).toBe(populatedTrip);
+      expect(mockUsersService.findById).not.toHaveBeenCalled();
+    });
+
+    it('should add a staff participant when caller category matches staff category', async () => {
+      mockTripModel.findById
+        .mockResolvedValueOnce(makeTrip())
+        .mockReturnValue(populatedMock);
+      const caller = { roles: [RoleEnum.MANAGER], categories: ['M18'] } as any;
+      mockUsersService.findById.mockResolvedValueOnce({ categories: ['M18'], sports: [] } as any);
+      const result = await service.addParticipant(
+        'trip-1',
+        { type: TripParticipantTypeEnum.STAFF, userId: 'bbbbbbbbbbbbbbbbbbbbbbbb' } as any,
+        caller
+      );
+      expect(result).toBe(populatedTrip);
+    });
+
+    it('should throw ForbiddenException when caller category does not match staff category', async () => {
+      mockTripModel.findById.mockResolvedValueOnce(makeTrip());
+      const caller = { roles: [RoleEnum.MANAGER], categories: ['M18'] } as any;
+      mockUsersService.findById.mockResolvedValueOnce({ categories: ['M14'], sports: [] } as any);
+      await expect(
+        service.addParticipant(
+          'trip-1',
+          { type: TripParticipantTypeEnum.STAFF, userId: 'bbbbbbbbbbbbbbbbbbbbbbbb' } as any,
+          caller
+        )
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException when userId is missing for staff', async () => {
+      mockTripModel.findById.mockResolvedValueOnce(makeTrip());
+      await expect(
+        service.addParticipant('trip-1', { type: TripParticipantTypeEnum.STAFF } as any)
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

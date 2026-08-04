@@ -148,9 +148,15 @@ export class TripViewerComponent implements OnInit {
   isParticipantInScope(p: TripParticipant): boolean {
     const scope = this.scopedCategories();
     if (!scope) return true;
-    if (p.type !== TripParticipantTypeEnum.PLAYER) return true;
-    const cat = (p.player as any)?.category;
-    return !cat || scope.has(cat);
+    if (p.type === TripParticipantTypeEnum.PLAYER) {
+      const cat = (p.player as any)?.category;
+      return !cat || scope.has(cat);
+    }
+    if (p.type === TripParticipantTypeEnum.STAFF) {
+      const cats: string[] = (p as any).user?.categories ?? [];
+      return !cats.length || cats.some((c) => scope.has(c));
+    }
+    return true;
   }
 
   get availableCategoryFilters(): CategoryEnum[] {
@@ -424,7 +430,14 @@ export class TripViewerComponent implements OnInit {
         debounceTime(300),
         distinctUntilChanged(),
         switchMap((term) =>
-          this.usersService.getUsers({ page: 1, size: 20, filters: { searchTerm: term } })
+          this.usersService.getUsers({
+            page: 1,
+            size: 20,
+            filters: {
+              searchTerm: term,
+              ...(this.trip?.categories?.length && { categories: this.trip.categories }),
+            },
+          })
         ),
         takeUntilDestroyed(this.destroyRef)
       )

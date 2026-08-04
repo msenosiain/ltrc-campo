@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { TripEntity, TripParticipantEntity, TripTransportEntity } from './schemas/trip.entity';
@@ -19,11 +19,13 @@ import {
   PaginatedResponse,
   PaymentEntityTypeEnum,
   PaymentStatusEnum,
+  RoleEnum,
   SortOrder,
   TripParticipantTypeEnum,
   TripParticipantStatusEnum,
 } from '@ltrc-campo/shared-api-model';
 import { User } from '../users/schemas/user.schema';
+import { UsersService } from '../users/users.service';
 import { PaymentEntity } from '../payments/schemas/payment.entity';
 
 const POPULATE_FIELDS = [
@@ -39,7 +41,32 @@ export class TripsService {
     private readonly tripModel: Model<TripEntity>,
     @InjectModel(PaymentEntity.name)
     private readonly paymentModel: Model<PaymentEntity>,
+    private readonly usersService: UsersService,
   ) {}
+
+  /**
+   * Non-admin callers (managers, coordinadores, coaches) sólo pueden agregar como
+   * pasajeros staff (Users) cuyas sports/categories intersecten con las suyas —
+   * mismo patrón que players.service.ts#update.
+   */
+  private async assertStaffInCallerScope(userId: string, caller?: User): Promise<void> {
+    if (!caller || caller.roles?.includes(RoleEnum.ADMIN)) return;
+
+    const callerSports = (caller.sports ?? []) as string[];
+    const callerCategories = (caller.categories ?? []) as string[];
+    if (!callerSports.length && !callerCategories.length) return;
+
+    const staffUser = await this.usersService.findById(userId);
+    if (!staffUser) throw new NotFoundException('Usuario no encontrado');
+
+    const staffSports = (staffUser.sports ?? []) as string[];
+    const staffCategories = (staffUser.categories ?? []) as string[];
+    const sportOk = !callerSports.length || staffSports.some((s) => callerSports.includes(s));
+    const categoryOk = !callerCategories.length || staffCategories.some((c) => callerCategories.includes(c));
+    if (!sportOk || !categoryOk) {
+      throw new ForbiddenException('No tenés permisos para agregar staff de esta categoría al viaje');
+    }
+  }
 
   async create(dto: CreateTripDto, caller?: User) {
     const callerId = caller ? (caller as any)._id : undefined;
@@ -132,6 +159,7 @@ export class TripsService {
       participant.player = new Types.ObjectId(dto.playerId);
     } else if (dto.type === TripParticipantTypeEnum.STAFF) {
       if (!dto.userId) throw new BadRequestException('userId requerido');
+      await this.assertStaffInCallerScope(dto.userId, caller);
       participant.user = new Types.ObjectId(dto.userId);
     } else {
       if (!dto.externalName) throw new BadRequestException('externalName requerido');
