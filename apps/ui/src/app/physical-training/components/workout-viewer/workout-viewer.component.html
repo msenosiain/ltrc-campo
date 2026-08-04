@@ -59,7 +59,7 @@
           }
           <div class="info-item">
             <span class="info-label">Vigencia</span>
-            <span class="info-value">{{ workout.validFrom | date:'dd/MM/yyyy' }} – {{ workout.validUntil | date:'dd/MM/yyyy' }}</span>
+            <span class="info-value">{{ workout.validFrom | date:'dd/MM/yyyy':'UTC' }} – {{ workout.validUntil | date:'dd/MM/yyyy':'UTC' }}</span>
           </div>
         </div>
       </mat-card-content>

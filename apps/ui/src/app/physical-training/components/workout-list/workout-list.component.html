@@ -84,7 +84,7 @@
     <ng-container matColumnDef="validity">
       <th mat-header-cell *matHeaderCellDef>Vigencia</th>
       <td mat-cell *matCellDef="let routine">
-        {{ routine.validFrom | date:'dd/MM/yyyy' }} – {{ routine.validUntil | date:'dd/MM/yyyy' }}
+        {{ routine.validFrom | date:'dd/MM/yyyy':'UTC' }} – {{ routine.validUntil | date:'dd/MM/yyyy':'UTC' }}
       </td>
     </ng-container>
 
