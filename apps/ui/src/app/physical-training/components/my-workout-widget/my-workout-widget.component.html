@@ -1,4 +1,4 @@
-<app-widget-shell icon="exercise" iconFontSet="material-symbols-outlined" title="Mis rutinas" [loading]="loading()" height="460px">
+<ltrc-widget-shell icon="exercise" iconFontSet="material-symbols-outlined" title="Mis rutinas" [loading]="loading()" height="460px">
   @if (!loading()) {
     @if (workouts.length === 0) {
       <p class="workout-widget__empty">No tenés rutinas asignadas este período.</p>
@@ -20,4 +20,4 @@
       }
     }
   }
-</app-widget-shell>
+</ltrc-widget-shell>

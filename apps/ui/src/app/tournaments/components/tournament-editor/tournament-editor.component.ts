@@ -122,7 +122,7 @@ export class TournamentEditorComponent implements OnInit {
     concat(...uploads)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {},
+        next: () => { /* ignore: side effects handled via error/complete */ },
         error: (err) => {
           this.submitting = false;
           this.snackBar.open(

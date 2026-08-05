@@ -28,7 +28,11 @@ module.exports = [
   },
   {
     files: ['**/*.html'],
-    // Override or add rules here
-    rules: {},
+    rules: {
+      '@angular-eslint/template/label-has-associated-control': [
+        'error',
+        { controlComponents: ['mat-checkbox', 'mat-radio-button', 'mat-slide-toggle'] },
+      ],
+    },
   },
 ];

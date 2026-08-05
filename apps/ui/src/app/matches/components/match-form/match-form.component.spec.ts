@@ -91,7 +91,7 @@ describe('MatchFormComponent', () => {
   });
 
   it('should emit cancel', () => {
-    const spy = jest.spyOn(component.cancel, 'emit');
+    const spy = jest.spyOn(component.formCancel, 'emit');
     component.onCancel();
     expect(spy).toHaveBeenCalled();
   });

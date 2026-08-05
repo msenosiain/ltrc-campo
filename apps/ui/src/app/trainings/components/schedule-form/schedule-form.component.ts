@@ -92,7 +92,7 @@ export class ScheduleFormComponent implements OnInit, OnChanges {
   @Input() clearCategory = false;
 
   @Output() readonly formSubmit = new EventEmitter<ScheduleFormValue>();
-  @Output() readonly cancel = new EventEmitter<void>();
+  @Output() readonly formCancel = new EventEmitter<void>();
 
   readonly dayOptions = dayOfWeekOptions;
 
@@ -222,7 +222,7 @@ export class ScheduleFormComponent implements OnInit, OnChanges {
   }
 
   onCancel(): void {
-    this.cancel.emit();
+    this.formCancel.emit();
   }
 
   onSubmit(): void {

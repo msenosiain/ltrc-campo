@@ -4,7 +4,6 @@ import {
   Component,
   DestroyRef,
   inject,
-  OnDestroy,
   ViewChild,
 } from '@angular/core';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
@@ -49,7 +48,7 @@ import { ConfirmDialogComponent } from '../../../common/components/confirm-dialo
   templateUrl: './exercise-list.component.html',
   styleUrl: './exercise-list.component.scss',
 })
-export class ExerciseListComponent implements AfterViewInit, OnDestroy {
+export class ExerciseListComponent implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly exercisesService = inject(ExercisesService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -88,8 +87,6 @@ export class ExerciseListComponent implements AfterViewInit, OnDestroy {
       this.dataSource.setPage(this.paginator.pageIndex, this.paginator.pageSize);
     });
   }
-
-  ngOnDestroy(): void {}
 
   applyFilters(): void {
     const filters: Record<string, unknown> = {};

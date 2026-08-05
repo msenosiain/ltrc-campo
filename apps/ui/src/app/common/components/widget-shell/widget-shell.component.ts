@@ -3,7 +3,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 @Component({
-  selector: 'app-widget-shell',
+  selector: 'ltrc-widget-shell',
   standalone: true,
   imports: [MatIconModule, MatProgressBarModule],
   templateUrl: './widget-shell.component.html',

@@ -73,7 +73,7 @@ export class TripFormComponent implements OnInit, OnChanges {
   @Input() submitting = false;
 
   @Output() readonly formSubmit = new EventEmitter<CreateTripPayload>();
-  @Output() readonly cancel = new EventEmitter<void>();
+  @Output() readonly formCancel = new EventEmitter<void>();
 
   sportOptions: SportOption[] = sportOptions;
   readonly statusOptions: TripOption<TripStatusEnum>[] = tripStatusOptions;
@@ -176,6 +176,6 @@ export class TripFormComponent implements OnInit, OnChanges {
   }
 
   onCancel(): void {
-    this.cancel.emit();
+    this.formCancel.emit();
   }
 }

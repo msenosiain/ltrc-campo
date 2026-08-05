@@ -490,7 +490,7 @@ export class SquadEditorComponent implements OnInit {
         next: (rows) => {
           this.eligiblePlayerIds = new Set(rows.filter(r => r.eligible).map(r => r.playerId));
         },
-        error: () => {},
+        error: () => { /* ignore */ },
       });
   }
 

@@ -13,12 +13,9 @@ import { map } from 'rxjs';
 })
 export class AuthCallbackComponent implements OnInit {
   destroyRef = inject(DestroyRef);
-
-  constructor(
-    private route: ActivatedRoute,
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   ngOnInit(): void {
     this.route.queryParams

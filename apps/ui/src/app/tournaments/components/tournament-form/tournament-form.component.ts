@@ -70,7 +70,7 @@ export class TournamentFormComponent implements OnInit, OnChanges, OnDestroy {
   @Input() submitting = false;
 
   @Output() readonly formSubmit = new EventEmitter<TournamentFormValue>();
-  @Output() readonly cancel = new EventEmitter<void>();
+  @Output() readonly formCancel = new EventEmitter<void>();
 
   sportOptions: SportOption[] = sportOptions;
   readonly typeOptions: MatchOption<MatchTypeEnum>[] = matchTypeOptions;
@@ -202,7 +202,7 @@ export class TournamentFormComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onCancel(): void {
-    this.cancel.emit();
+    this.formCancel.emit();
   }
 
   onSubmit(): void {

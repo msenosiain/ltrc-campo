@@ -125,7 +125,12 @@
         } @if (tournamentName) {
         <div class="info-item">
           <span class="info-label">Torneo</span>
-          <span class="info-value tournament-link" (click)="goToTournament()">
+          <span
+            class="info-value tournament-link"
+            tabindex="0"
+            (click)="goToTournament()"
+            (keydown.enter)="goToTournament()"
+          >
             {{ tournamentName }}
             @if (tournamentHasAttachments) {
             <mat-icon class="attachment-indicator">attach_file</mat-icon>
@@ -319,7 +324,13 @@
         @for (att of match.attachments; track att.fileId) {
         <div class="attachment-item">
           <div class="attachment-info">
-            <a class="attachment-link" (click)="openAttachment(att)" style="cursor:pointer">
+            <a
+              class="attachment-link"
+              tabindex="0"
+              style="cursor:pointer"
+              (click)="openAttachment(att)"
+              (keydown.enter)="openAttachment(att)"
+            >
               <mat-icon>{{ isImage(att) ? 'image' : 'description' }}</mat-icon>
               <span class="attachment-name">{{ att.name || att.filename }}</span>
             </a>
@@ -424,7 +435,13 @@
   <!-- Sección Cobros -->
   <mat-card class="section-card" *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]">
     <mat-card-content>
-      <div class="section-header collapsible-header" [class.expanded]="showPaymentsPanel" (click)="showPaymentsPanel = !showPaymentsPanel">
+      <div
+        class="section-header collapsible-header"
+        [class.expanded]="showPaymentsPanel"
+        tabindex="0"
+        (click)="showPaymentsPanel = !showPaymentsPanel"
+        (keydown.enter)="showPaymentsPanel = !showPaymentsPanel"
+      >
         <p class="section-title">Cobros</p>
         <mat-icon>{{ showPaymentsPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
       </div>
@@ -441,7 +458,13 @@
   <!-- Sección Votación -->
   <mat-card class="section-card" *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR, RoleEnum.COACH]">
     <mat-card-content>
-      <div class="section-header collapsible-header" [class.expanded]="showPollPanel" (click)="showPollPanel = !showPollPanel">
+      <div
+        class="section-header collapsible-header"
+        [class.expanded]="showPollPanel"
+        tabindex="0"
+        (click)="showPollPanel = !showPollPanel"
+        (keydown.enter)="showPollPanel = !showPollPanel"
+      >
         <p class="section-title">Votación jugador del partido</p>
         <mat-icon>{{ showPollPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
       </div>

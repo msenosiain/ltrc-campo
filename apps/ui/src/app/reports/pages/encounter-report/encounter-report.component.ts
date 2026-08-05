@@ -129,7 +129,11 @@ export class EncounterReportComponent implements OnInit {
       const ctrl = this.filterForm.get('date')!;
       const matches = this.allMatches();
       const uniqueDates = new Set(matches.map(m => m.date?.toString().substring(0, 10)));
-      (matches.length > 0 && uniqueDates.size <= 1) ? ctrl.disable({ emitEvent: false }) : ctrl.enable({ emitEvent: false });
+      if (matches.length > 0 && uniqueDates.size <= 1) {
+        ctrl.disable({ emitEvent: false });
+      } else {
+        ctrl.enable({ emitEvent: false });
+      }
     });
   }
 

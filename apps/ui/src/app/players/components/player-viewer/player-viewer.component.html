@@ -250,7 +250,7 @@
           <span class="info-label">Peso</span>
           <span class="info-value">{{ player.medicalData.weight }} kg</span>
         </div>
-        } @if (player.medicalData.torgIndex != null) {
+        } @if (player.medicalData.torgIndex !== null && player.medicalData.torgIndex !== undefined) {
         <div class="info-item">
           <span class="info-label">Índice de Torg</span>
           <span class="info-value">{{ player.medicalData.torgIndex }}</span>
@@ -368,7 +368,7 @@
           <span class="match-history-info">
             {{ m.tournament?.name }} · {{ getMatchCategoryLabel(m) }}
             @if (m.opponent) { vs {{ m.opponent }} }
-            @if (m.result?.homeScore != null && m.result?.awayScore != null) {
+            @if (m.result?.homeScore !== null && m.result?.homeScore !== undefined && m.result?.awayScore !== null && m.result?.awayScore !== undefined) {
               <span class="match-history-result">
                 {{ m.isHome ? m.result!.homeScore + '-' + m.result!.awayScore : m.result!.awayScore + '-' + m.result!.homeScore }}
               </span>

@@ -1,4 +1,4 @@
-<app-widget-shell icon="sports" title="Mis próximos partidos" [loading]="loading()" height="380px">
+<ltrc-widget-shell icon="sports" title="Mis próximos partidos" [loading]="loading()" height="380px">
   @if (!loading()) {
     @if (grouped.length === 0) {
       <p class="no-matches">No estás convocado a partidos próximos.</p>
@@ -32,4 +32,4 @@
       }
     }
   }
-</app-widget-shell>
+</ltrc-widget-shell>

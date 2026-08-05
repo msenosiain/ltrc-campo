@@ -46,12 +46,12 @@ describe('MatchesListComponent', () => {
     component.paginator = {
       pageIndex: 0,
       pageSize: 10,
-      page: { subscribe: () => ({ unsubscribe: () => {} }) },
+      page: { subscribe: () => ({ unsubscribe: () => { /* noop */ } }) },
     } as any;
     component.sort = {
       active: '',
       direction: '',
-      sortChange: { subscribe: () => ({ unsubscribe: () => {} }) },
+      sortChange: { subscribe: () => ({ unsubscribe: () => { /* noop */ } }) },
     } as any;
 
     fixture.detectChanges();

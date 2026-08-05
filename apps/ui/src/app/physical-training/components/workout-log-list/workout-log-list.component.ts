@@ -5,7 +5,6 @@ import {
   Component,
   DestroyRef,
   inject,
-  OnDestroy,
   ViewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -72,7 +71,7 @@ class WorkoutLogDataSource implements DataSource<WorkoutLog> {
   templateUrl: './workout-log-list.component.html',
   styleUrl: './workout-log-list.component.scss',
 })
-export class WorkoutLogListComponent implements AfterViewInit, OnDestroy {
+export class WorkoutLogListComponent implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly workoutLogsService = inject(WorkoutLogsService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -94,8 +93,6 @@ export class WorkoutLogListComponent implements AfterViewInit, OnDestroy {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadPage());
   }
-
-  ngOnDestroy(): void {}
 
   private loadPage(): void {
     const filters: Record<string, unknown> = {};

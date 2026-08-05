@@ -113,7 +113,7 @@ export class PollPanelComponent implements OnInit, OnChanges {
     if (!key) return;
     this.pollsService.getResults(key)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: (r) => this.results.set(r), error: () => {} });
+      .subscribe({ next: (r) => this.results.set(r), error: () => { /* ignore */ } });
   }
 
   private startAutoRefresh(): void {
@@ -124,7 +124,7 @@ export class PollPanelComponent implements OnInit, OnChanges {
         switchMap(() => this.pollsService.getResults(this.pollKey)),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe({ next: (r) => this.results.set(r), error: () => {} });
+      .subscribe({ next: (r) => this.results.set(r), error: () => { /* ignore */ } });
   }
 
   copyResults(): void {
@@ -140,7 +140,7 @@ export class PollPanelComponent implements OnInit, OnChanges {
   private generateQr(): void {
     QRCode.toDataURL(this.votingUrl, { width: 200, margin: 1, color: { dark: '#1a1a2e', light: '#ffffff' } })
       .then((url) => this.qrDataUrl.set(url))
-      .catch(() => {});
+      .catch(() => { /* ignore */ });
   }
 
   startCreate(): void {

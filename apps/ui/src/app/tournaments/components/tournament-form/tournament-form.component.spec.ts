@@ -92,7 +92,7 @@ describe('TournamentFormComponent', () => {
   });
 
   it('should emit cancel', () => {
-    const emitSpy = jest.spyOn(component.cancel, 'emit');
+    const emitSpy = jest.spyOn(component.formCancel, 'emit');
     component.onCancel();
     expect(emitSpy).toHaveBeenCalled();
   });

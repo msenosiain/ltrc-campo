@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { BehaviorSubject, Observable, tap, throwError } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
@@ -28,7 +28,10 @@ export class AuthService {
   private userSubject = new BehaviorSubject<User | null>(null);
   user$ = this.userSubject.asObservable();
 
-  constructor(private http: HttpClient, private router: Router) {
+  private http = inject(HttpClient);
+  private router = inject(Router);
+
+  constructor() {
     const token = localStorage.getItem(this.accessTokenKey);
     if (token) {
       try {

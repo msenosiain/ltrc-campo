@@ -1,4 +1,4 @@
-import { Component, forwardRef, inject, Input, OnDestroy } from '@angular/core';
+import { Component, forwardRef, inject, Input } from '@angular/core';
 import {
   ControlValueAccessor,
   NG_VALIDATORS,
@@ -36,7 +36,7 @@ export interface PhotoValue {
   styleUrl: './player-photo-field.component.scss',
 })
 export class PlayerPhotoFieldComponent
-  implements ControlValueAccessor, Validator, OnDestroy
+  implements ControlValueAccessor, Validator
 {
   private dialog = inject(MatDialog);
 
@@ -46,8 +46,8 @@ export class PlayerPhotoFieldComponent
   disabled = false;
   touched = false;
 
-  private onChange: (value: PhotoValue | null) => void = () => {};
-  private onTouched: () => void = () => {};
+  private onChange: (value: PhotoValue | null) => void = () => { /* noop until registerOnChange */ };
+  private onTouched: () => void = () => { /* noop until registerOnTouched */ };
 
   get showError(): boolean {
     return this.touched && this.required && !this.value;
@@ -109,6 +109,4 @@ export class PlayerPhotoFieldComponent
       this.onTouched();
     }
   }
-
-  ngOnDestroy(): void {}
 }

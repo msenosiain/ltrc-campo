@@ -186,7 +186,7 @@ export class PlayerFeesSettingsComponent implements OnInit {
 
     this.adminService.getFamilies()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: (f) => { this.families.set(f); this.familyPage.set(0); }, error: () => {} });
+      .subscribe({ next: (f) => { this.families.set(f); this.familyPage.set(0); }, error: () => { /* ignore */ } });
   }
 
   // ── Configs ───────────────────────────────────────────────────────────────

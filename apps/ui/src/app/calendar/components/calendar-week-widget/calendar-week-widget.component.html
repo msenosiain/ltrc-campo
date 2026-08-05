@@ -1,4 +1,4 @@
-<app-widget-shell icon="calendar_month" title="Calendario" [loading]="loading()" height="460px">
+<ltrc-widget-shell icon="calendar_month" title="Calendario" [loading]="loading()" height="460px">
   <ng-container widget-actions>
     @if (showFilterButton) {
       <button mat-stroked-button (click)="openFilters()" [class.active]="hasFilters">
@@ -78,4 +78,4 @@
       </mat-accordion>
     }
   }
-</app-widget-shell>
+</ltrc-widget-shell>

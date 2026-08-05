@@ -93,7 +93,7 @@ export class VotingPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (results) => this.results.set(results),
-        error: () => {},
+        error: () => { /* ignore */ },
       });
   }
 

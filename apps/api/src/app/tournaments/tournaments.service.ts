@@ -102,10 +102,14 @@ export class TournamentsService {
     if (!tournament) throw new NotFoundException('Tournament not found');
 
     for (const att of tournament.attachments ?? []) {
-      await this.gridFsService.deleteFile(ATTACHMENTS_BUCKET, att.fileId).catch(() => {});
+      await this.gridFsService.deleteFile(ATTACHMENTS_BUCKET, att.fileId).catch(() => {
+        // ignore: best-effort cleanup
+      });
     }
     if (tournament.logoFileId) {
-      await this.gridFsService.deleteFile(LOGO_BUCKET, tournament.logoFileId).catch(() => {});
+      await this.gridFsService.deleteFile(LOGO_BUCKET, tournament.logoFileId).catch(() => {
+        // ignore: best-effort cleanup
+      });
     }
 
     return tournament.deleteOne();
@@ -122,7 +126,9 @@ export class TournamentsService {
     if (!tournament) throw new NotFoundException('Tournament not found');
 
     if (tournament.logoFileId) {
-      await this.gridFsService.deleteFile(LOGO_BUCKET, tournament.logoFileId).catch(() => {});
+      await this.gridFsService.deleteFile(LOGO_BUCKET, tournament.logoFileId).catch(() => {
+        // ignore: best-effort cleanup
+      });
     }
 
     const fileId = await this.gridFsService.uploadFile(
@@ -143,7 +149,9 @@ export class TournamentsService {
     const tournament = await this.tournamentModel.findById(id);
     if (!tournament) throw new NotFoundException('Tournament not found');
     if (tournament.logoFileId) {
-      await this.gridFsService.deleteFile(LOGO_BUCKET, tournament.logoFileId).catch(() => {});
+      await this.gridFsService.deleteFile(LOGO_BUCKET, tournament.logoFileId).catch(() => {
+        // ignore: best-effort cleanup
+      });
       tournament.logoFileId = undefined;
       return tournament.save();
     }

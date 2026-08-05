@@ -132,7 +132,7 @@ export class PlayerViewerComponent implements OnInit {
       if (!isPlayer) return;
       this.playersService.getMyPlayer().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (myPlayer) => this.isOwnProfile.set(myPlayer.id === player.id),
-        error: () => {},
+        error: () => { /* ignore */ },
       });
     });
   }
@@ -164,7 +164,7 @@ export class PlayerViewerComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (rows) => this.eligibilityStatus.set(rows[0] ?? null),
-        error: () => {},
+        error: () => { /* ignore */ },
       });
   }
 

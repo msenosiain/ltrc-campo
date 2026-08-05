@@ -104,7 +104,7 @@ export class MatchFormComponent implements OnInit, OnChanges {
   @Input() submitting = false;
 
   @Output() readonly formSubmit = new EventEmitter<MatchFormValue>();
-  @Output() readonly cancel = new EventEmitter<void>();
+  @Output() readonly formCancel = new EventEmitter<void>();
 
   readonly statusOptions = matchStatusOptions;
   readonly sportOptions = sportOptions;
@@ -352,7 +352,7 @@ export class MatchFormComponent implements OnInit, OnChanges {
   }
 
   onCancel(): void {
-    this.cancel.emit();
+    this.formCancel.emit();
   }
 
   onSubmit(): void {

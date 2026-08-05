@@ -35,7 +35,7 @@
     <mat-progress-bar mode="indeterminate" />
   }
 
-  @if (assignments.length === 0 && !(loading$ | async)) {
+  @if (assignments.length === 0 && (loading$ | async) === false) {
     <div class="empty-state">
       <mat-icon>person_add</mat-icon>
       <p>No hay jugadoras asignadas. Buscá jugadoras arriba para agregarlas.</p>
@@ -47,7 +47,12 @@
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>Nombre</th>
         <td mat-cell *matCellDef="let row">
-          <a class="player-link" (click)="viewPlayer(row); $event.stopPropagation()">
+          <a
+            class="player-link"
+            tabindex="0"
+            (click)="viewPlayer(row); $event.stopPropagation()"
+            (keydown.enter)="viewPlayer(row); $event.stopPropagation()"
+          >
             {{ getPlayerField(row, 'name') }}
           </a>
         </td>

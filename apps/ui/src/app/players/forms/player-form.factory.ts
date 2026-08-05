@@ -53,7 +53,7 @@ export function buildCreatePlayerForm(fb: FormBuilder) {
       neighborhood: fb.nonNullable.control(''),
       phoneNumber: fb.nonNullable.control('', [
         Validators.required,
-        Validators.pattern(/^[\d\s\+\-\(\)]{6,20}$/),
+        Validators.pattern(/^[\d\s+\-()]{6,20}$/),
       ]),
     }),
 

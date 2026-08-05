@@ -120,7 +120,7 @@ export class PlayerFormComponent implements OnInit, OnChanges {
 
   @Output() readonly formSubmitWithPhoto =
     new EventEmitter<PlayerFormSubmitEvent>();
-  @Output() readonly cancel = new EventEmitter<void>();
+  @Output() readonly formCancel = new EventEmitter<void>();
 
   availableSportOptions = sportOptions;
   readonly branchOptions = Object.values(HockeyBranchEnum);
@@ -399,7 +399,7 @@ export class PlayerFormComponent implements OnInit, OnChanges {
   }
 
   onCancel(): void {
-    this.cancel.emit();
+    this.formCancel.emit();
   }
 
   onSubmit(): void {

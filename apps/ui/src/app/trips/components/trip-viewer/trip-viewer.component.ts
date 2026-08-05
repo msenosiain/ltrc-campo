@@ -280,7 +280,11 @@ export class TripViewerComponent implements OnInit {
 
   toggleSelection(p: TripParticipant): void {
     if (!p.id) return;
-    this.selectedIds.has(p.id) ? this.selectedIds.delete(p.id) : this.selectedIds.add(p.id);
+    if (this.selectedIds.has(p.id)) {
+      this.selectedIds.delete(p.id);
+    } else {
+      this.selectedIds.add(p.id);
+    }
   }
 
   get allSelected(): boolean {
@@ -936,9 +940,11 @@ export class TripViewerComponent implements OnInit {
 
   toggleUnassignedSelection(p: TripParticipant): void {
     if (!p.id) return;
-    this.unassignedSelectedIds.has(p.id)
-      ? this.unassignedSelectedIds.delete(p.id)
-      : this.unassignedSelectedIds.add(p.id);
+    if (this.unassignedSelectedIds.has(p.id)) {
+      this.unassignedSelectedIds.delete(p.id);
+    } else {
+      this.unassignedSelectedIds.add(p.id);
+    }
   }
 
   get allUnassignedSelected(): boolean {
