@@ -7,7 +7,7 @@ import { getCategoryLabel } from '../../common/category-options';
 
 const LOGO_PATH = '/escudo.png';
 const MARGIN_L = 14;
-const COLS = 5;
+const COLS = 4;
 const PRIMARY: [number, number, number] = [30, 30, 30];
 
 const XLSX_STYLE = {
@@ -57,13 +57,12 @@ export class TripPassengerExportService {
       [`VIAJE: ${trip.name.toUpperCase()}  —  ${transport.name.toUpperCase()}`],
       [metaParts.join('   ·   ')],
       [],
-      ['N°', 'Apellido y nombre', 'DNI', 'Categoría', 'Rol'],
+      ['N°', 'Apellido y nombre', 'DNI', 'Categoría / Rol'],
       ...participants.map((p, i) => [
         i + 1,
         this.getParticipantName(p),
         this.getParticipantDni(p) ?? '',
         this.getParticipantCategory(p),
-        this.getParticipantRole(p),
       ]),
     ];
 
@@ -73,11 +72,11 @@ export class TripPassengerExportService {
       { s: { r: 0, c: 0 }, e: { r: 0, c: COLS - 1 } },
       { s: { r: 1, c: 0 }, e: { r: 1, c: COLS - 1 } },
     ];
-    ws['!cols'] = [{ wch: 5 }, { wch: 36 }, { wch: 15 }, { wch: 22 }, { wch: 12 }];
+    ws['!cols'] = [{ wch: 5 }, { wch: 36 }, { wch: 15 }, { wch: 30 }];
 
     this.applyXlsxStyle(ws, 'A1', XLSX_STYLE.title);
     this.applyXlsxStyle(ws, 'A2', XLSX_STYLE.info);
-    for (const col of ['A', 'B', 'C', 'D', 'E']) {
+    for (const col of ['A', 'B', 'C', 'D']) {
       this.applyXlsxStyle(ws, `${col}4`, XLSX_STYLE.colHeader);
     }
 
@@ -197,13 +196,12 @@ export class TripPassengerExportService {
     // ── Tabla ─────────────────────────────────────────────────────────────
     autoTable(doc, {
       startY: y,
-      head: [['N°', 'Apellido y nombre', 'DNI', 'Categoría', 'Rol']],
+      head: [['N°', 'Apellido y nombre', 'DNI', 'Categoría / Rol']],
       body: participants.map((p, i) => [
         i + 1,
         this.getParticipantName(p),
         this.getParticipantDni(p) ?? '',
         this.getParticipantCategory(p),
-        this.getParticipantRole(p),
       ]),
       theme: 'grid',
       styles:         { fontSize: 9, cellPadding: 3, textColor: PRIMARY, lineColor: [200, 200, 200], lineWidth: 0.3 },
@@ -212,8 +210,7 @@ export class TripPassengerExportService {
         0: { cellWidth: 10, halign: 'center' },
         1: { cellWidth: 70 },
         2: { cellWidth: 28 },
-        3: { cellWidth: 42 },
-        4: { cellWidth: 28 },
+        3: { cellWidth: 70 },
       },
       margin: { left: MARGIN_L, right: MARGIN_L },
     });
@@ -255,13 +252,13 @@ export class TripPassengerExportService {
       const cat = (p.player as any)?.category;
       return cat ? getCategoryLabel(cat) : '';
     }
-    return p.category ? getCategoryLabel(p.category) : '';
-  }
-
-  private getParticipantRole(p: TripParticipant): string {
-    if (p.type === TripParticipantTypeEnum.STAFF) return 'Staff';
-    if (p.type === TripParticipantTypeEnum.EXTERNAL) return p.externalRole || 'Padre/Externo';
-    return '';
+    if (p.type === TripParticipantTypeEnum.STAFF) {
+      return p.category ? `Staff — ${getCategoryLabel(p.category)}` : 'Staff';
+    }
+    if (p.category) {
+      return p.externalRole ? `${p.externalRole} — ${getCategoryLabel(p.category)}` : getCategoryLabel(p.category);
+    }
+    return p.externalRole ?? '';
   }
 
   private async loadLogo(): Promise<string | null> {
