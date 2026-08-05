@@ -620,6 +620,14 @@ export class TripViewerComponent implements OnInit {
     this.selectedUser = event.option.value as User;
   }
 
+  get canSubmitParticipant(): boolean {
+    if (this.addParticipantForm.invalid) return false;
+    const type = this.addParticipantForm.get('type')!.value;
+    if (type === TripParticipantTypeEnum.PLAYER) return !!this.selectedPlayer?.id;
+    if (type === TripParticipantTypeEnum.STAFF) return !!this.selectedUser?.id;
+    return true;
+  }
+
   submitAddParticipant(): void {
     if (!this.trip?.id || this.addParticipantForm.invalid) return;
     const v = this.addParticipantForm.getRawValue();

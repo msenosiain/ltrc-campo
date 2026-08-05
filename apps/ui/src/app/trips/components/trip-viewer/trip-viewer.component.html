@@ -210,6 +210,7 @@
                 <mat-autocomplete
                   #playerAuto="matAutocomplete"
                   [displayWith]="displayPlayerFn"
+                  [requireSelection]="true"
                   (optionSelected)="onPlayerSelected($event)"
                 >
                   @for (player of playerSuggestions; track player.id) {
@@ -236,6 +237,7 @@
                 <mat-autocomplete
                   #userAuto="matAutocomplete"
                   [displayWith]="displayUserFn"
+                  [requireSelection]="true"
                   (optionSelected)="onUserSelected($event)"
                 >
                   @for (user of userSuggestions; track user.id) {
@@ -269,7 +271,13 @@
           </mat-card-content>
           <mat-card-actions align="end">
             <button mat-stroked-button type="button" (click)="toggleAddParticipant()">Cancelar</button>
-            <button mat-flat-button color="primary" type="button" (click)="submitAddParticipant()">
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="!canSubmitParticipant"
+              (click)="submitAddParticipant()"
+            >
               Agregar
             </button>
           </mat-card-actions>

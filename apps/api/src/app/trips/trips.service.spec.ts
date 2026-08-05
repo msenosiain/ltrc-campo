@@ -6,6 +6,7 @@ import { TripsService } from './trips.service';
 import { TripEntity } from './schemas/trip.entity';
 import { PaymentEntity } from '../payments/schemas/payment.entity';
 import { UsersService } from '../users/users.service';
+import { PlayersService } from '../players/players.service';
 import {
   RoleEnum,
   TripParticipantStatusEnum,
@@ -77,6 +78,10 @@ const mockUsersService = {
   findById: jest.fn(),
 };
 
+const mockPlayersService = {
+  findOne: jest.fn(),
+};
+
 // ── suite ─────────────────────────────────────────────────────────────────────
 
 describe('TripsService', () => {
@@ -91,10 +96,12 @@ describe('TripsService', () => {
         { provide: getModelToken(TripEntity.name), useValue: mockTripModel },
         { provide: getModelToken(PaymentEntity.name), useValue: mockPaymentModel },
         { provide: UsersService, useValue: mockUsersService },
+        { provide: PlayersService, useValue: mockPlayersService },
       ],
     }).compile();
 
     service = module.get(TripsService);
+    mockPlayersService.findOne.mockResolvedValue({ _id: 'player-doc' } as any);
   });
 
   it('should be defined', () => expect(service).toBeDefined());
@@ -230,6 +237,17 @@ describe('TripsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should throw NotFoundException when playerId does not correspond to an existing player', async () => {
+      mockTripModel.findById.mockResolvedValueOnce(makeTrip());
+      mockPlayersService.findOne.mockRejectedValueOnce(new NotFoundException('Player not found'));
+      await expect(
+        service.addParticipant('trip-1', {
+          type: TripParticipantTypeEnum.PLAYER,
+          playerId: 'eeeeeeeeeeeeeeeeeeeeeeee',
+        } as any)
+      ).rejects.toThrow(NotFoundException);
+    });
+
     it('should throw BadRequestException when externalName missing for external', async () => {
       mockTripModel.findById.mockResolvedValueOnce(makeTrip());
       await expect(
@@ -316,6 +334,22 @@ describe('TripsService', () => {
     it('should throw NotFoundException when trip not found', async () => {
       mockTripModel.findById.mockResolvedValueOnce(null);
       await expect(service.bulkAddParticipants('bad-id', [])).rejects.toThrow(NotFoundException);
+    });
+
+    it('should skip players that do not correspond to an existing player', async () => {
+      const trip = makeTrip({ participants: [] });
+      const populated = makeTrip();
+      mockTripModel.findById
+        .mockResolvedValueOnce(trip)
+        .mockReturnValue({ populate: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue(populated) });
+      mockPlayersService.findOne.mockRejectedValueOnce(new NotFoundException('Player not found'));
+
+      await service.bulkAddParticipants('trip-1', [
+        { type: TripParticipantTypeEnum.PLAYER, playerId: 'ffffffffffffffffffffffff' } as any,
+      ]);
+
+      expect(trip.participants).toHaveLength(0);
+      expect(trip.save).toHaveBeenCalled();
     });
   });
 

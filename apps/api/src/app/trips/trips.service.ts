@@ -26,6 +26,7 @@ import {
 } from '@ltrc-campo/shared-api-model';
 import { User } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
+import { PlayersService } from '../players/players.service';
 import { PaymentEntity } from '../payments/schemas/payment.entity';
 
 const POPULATE_FIELDS = [
@@ -42,6 +43,7 @@ export class TripsService {
     @InjectModel(PaymentEntity.name)
     private readonly paymentModel: Model<PaymentEntity>,
     private readonly usersService: UsersService,
+    private readonly playersService: PlayersService,
   ) {}
 
   /**
@@ -156,6 +158,7 @@ export class TripsService {
         (p) => p.player?.toString() === dto.playerId
       );
       if (alreadyAdded) throw new BadRequestException('El jugador ya está en el viaje');
+      await this.playersService.findOne(dto.playerId);
       participant.player = new Types.ObjectId(dto.playerId);
     } else if (dto.type === TripParticipantTypeEnum.STAFF) {
       if (!dto.userId) throw new BadRequestException('userId requerido');
@@ -197,6 +200,11 @@ export class TripsService {
       if (dto.type === TripParticipantTypeEnum.PLAYER) {
         if (!dto.playerId) continue;
         if (existingPlayerIds.has(dto.playerId)) continue;
+        try {
+          await this.playersService.findOne(dto.playerId);
+        } catch {
+          continue;
+        }
         existingPlayerIds.add(dto.playerId);
         trip.participants.push({
           type: dto.type,
