@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
+  CategoryEnum,
   TripParticipantStatusEnum,
   TripParticipantTypeEnum,
 } from '@ltrc-campo/shared-api-model';
@@ -42,6 +43,11 @@ export class AddParticipantDto {
   @IsOptional()
   @IsString()
   readonly externalRole?: string;
+
+  /** Solo aplica cuando type = STAFF o EXTERNAL; categoría a la que acompaña/pertenece en este viaje */
+  @IsOptional()
+  @IsEnum(CategoryEnum)
+  readonly category?: CategoryEnum;
 
   @IsOptional()
   @IsEnum(TripParticipantStatusEnum)

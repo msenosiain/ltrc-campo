@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
+  CategoryEnum,
   PaginatedResponse,
   PaginationQuery,
   Trip,
@@ -34,6 +35,8 @@ export interface AddParticipantPayload {
   externalName?: string;
   externalDni?: string;
   externalRole?: string;
+  /** Solo aplica cuando type = STAFF o EXTERNAL; categoría a la que acompaña/pertenece en este viaje */
+  category?: CategoryEnum;
   status?: TripParticipantStatusEnum;
   costAssigned?: number;
   specialNeeds?: string;

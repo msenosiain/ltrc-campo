@@ -164,11 +164,13 @@ export class TripsService {
       if (!dto.userId) throw new BadRequestException('userId requerido');
       await this.assertStaffInCallerScope(dto.userId, caller);
       participant.user = new Types.ObjectId(dto.userId);
+      participant.category = dto.category;
     } else {
       if (!dto.externalName) throw new BadRequestException('externalName requerido');
       participant.externalName = dto.externalName;
       participant.externalDni = dto.externalDni;
       participant.externalRole = dto.externalRole;
+      participant.category = dto.category;
     }
 
     if (dto.accompanyingParticipantId) {

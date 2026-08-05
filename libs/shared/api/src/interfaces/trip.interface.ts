@@ -41,6 +41,8 @@ export interface TripParticipant {
   readonly externalName?: string;
   readonly externalDni?: string;
   readonly externalRole?: string;
+  /** Categoría a la que pertenece/acompaña en este viaje (opcional, staff o external) */
+  readonly category?: CategoryEnum;
   readonly status: TripParticipantStatusEnum;
   readonly costAssigned: number;
   readonly payments: PaymentEntry[];

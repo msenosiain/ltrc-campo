@@ -56,6 +56,7 @@ const TripParticipantSchema = new Schema(
     externalName: { type: String },
     externalDni: { type: String },
     externalRole: { type: String },
+    category: { type: String, enum: Object.values(CategoryEnum) },
     status: {
       type: String,
       enum: Object.values(TripParticipantStatusEnum),

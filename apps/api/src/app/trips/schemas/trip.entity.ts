@@ -36,6 +36,8 @@ export class TripParticipantEntity {
   externalName?: string;
   externalDni?: string;
   externalRole?: string;
+  /** Categoría a la que pertenece/acompaña en este viaje (opcional, staff o external) */
+  category?: CategoryEnum;
   status!: TripParticipantStatusEnum;
   costAssigned!: number;
   payments!: PaymentEntryEntity[];

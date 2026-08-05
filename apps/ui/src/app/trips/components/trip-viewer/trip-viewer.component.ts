@@ -198,9 +198,14 @@ export class TripViewerComponent implements OnInit {
     categoryOptions.map((c, i) => [c.id as string, i])
   );
 
+  private participantCategoryValue(p: TripParticipant): string | undefined {
+    if (p.type === TripParticipantTypeEnum.PLAYER) return (p.player as any)?.category;
+    if (p.type === TripParticipantTypeEnum.STAFF) return p.category ?? (p as any).user?.categories?.[0];
+    return p.category;
+  }
+
   private categoryIndex(p: TripParticipant): number {
-    const cat = (p.player as any)?.category ?? p.externalRole ?? (p as any).user?.categories?.[0];
-    return this.categoryOrder.get(cat) ?? 999;
+    return this.categoryOrder.get(this.participantCategoryValue(p) ?? '') ?? 999;
   }
 
   get filteredParticipants(): TripParticipant[] {
@@ -213,9 +218,8 @@ export class TripViewerComponent implements OnInit {
           !(this.getParticipantDni(p) ?? '').includes(term)) return false;
         if (this.participantTypeFilter && p.type !== this.participantTypeFilter) return false;
         if (this.participantStatusFilter && p.status !== this.participantStatusFilter) return false;
-        if (this.participantCategoryFilter) {
-          const cat = (p.player as any)?.category ?? p.externalRole ?? (p as any).user?.categories?.[0];
-          if (cat !== this.participantCategoryFilter) return false;
+        if (this.participantCategoryFilter && this.participantCategoryValue(p) !== this.participantCategoryFilter) {
+          return false;
         }
         return true;
       })
@@ -335,10 +339,15 @@ export class TripViewerComponent implements OnInit {
     externalName: [''],
     externalDni: [''],
     externalRole: [''],
+    category: [null as CategoryEnum | null],
     status: [TripParticipantStatusEnum.PENDING as TripParticipantStatusEnum],
     costAssigned: [null as number | null],
     specialNeeds: [''],
   });
+
+  get participantCategoryOptions(): CategoryEnum[] {
+    return this.trip?.categories?.length ? this.trip.categories : categoryOptions.map((c) => c.id as CategoryEnum);
+  }
 
   // Typeahead jugador
   readonly playerSearchCtrl = new FormControl<Player | string | null>(null);
@@ -464,7 +473,7 @@ export class TripViewerComponent implements OnInit {
       .subscribe((type) => {
         this.clearParticipantSelections();
         const defaultCost = type === TripParticipantTypeEnum.STAFF ? 0 : (this.trip?.costPerPerson ?? null);
-        this.addParticipantForm.patchValue({ costAssigned: defaultCost }, { emitEvent: false });
+        this.addParticipantForm.patchValue({ costAssigned: defaultCost, category: null }, { emitEvent: false });
       });
   }
 
@@ -507,7 +516,10 @@ export class TripViewerComponent implements OnInit {
       return cat ? getCategoryLabel(cat) : '';
     }
     if (p.type === TripParticipantTypeEnum.STAFF) {
-      return p.externalRole ?? 'Staff';
+      return p.category ? `Staff — ${getCategoryLabel(p.category)}` : 'Staff';
+    }
+    if (p.category) {
+      return p.externalRole ? `${p.externalRole} — ${getCategoryLabel(p.category)}` : getCategoryLabel(p.category);
     }
     return p.externalRole ?? '';
   }
@@ -685,10 +697,12 @@ export class TripViewerComponent implements OnInit {
       payload.playerId = this.selectedPlayer!.id!;
     } else if (v.type === TripParticipantTypeEnum.STAFF) {
       payload.userId = this.selectedUser!.id!;
+      payload.category = v.category ?? undefined;
     } else {
       payload.externalName = v.externalName || undefined;
       payload.externalDni = v.externalDni || undefined;
       payload.externalRole = v.externalRole || undefined;
+      payload.category = v.category ?? undefined;
     }
 
     this.tripsService

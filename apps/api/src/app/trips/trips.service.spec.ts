@@ -255,6 +255,17 @@ describe('TripsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should store the optional category on an external participant', async () => {
+      const trip = makeTrip();
+      mockTripModel.findById.mockResolvedValueOnce(trip).mockReturnValue(populatedMock);
+      await service.addParticipant('trip-1', {
+        type: TripParticipantTypeEnum.EXTERNAL,
+        externalName: 'Juan Pérez',
+        category: 'M18',
+      } as any);
+      expect(trip.participants[0].category).toBe('M18');
+    });
+
     it('should throw NotFoundException when trip not found', async () => {
       mockTripModel.findById.mockResolvedValueOnce(null);
       await expect(
@@ -274,6 +285,18 @@ describe('TripsService', () => {
       );
       expect(result).toBe(populatedTrip);
       expect(mockUsersService.findById).not.toHaveBeenCalled();
+    });
+
+    it('should store the optional category on a staff participant', async () => {
+      const trip = makeTrip();
+      mockTripModel.findById.mockResolvedValueOnce(trip).mockReturnValue(populatedMock);
+      const caller = { roles: [RoleEnum.ADMIN] } as any;
+      await service.addParticipant(
+        'trip-1',
+        { type: TripParticipantTypeEnum.STAFF, userId: 'bbbbbbbbbbbbbbbbbbbbbbbb', category: 'M18' } as any,
+        caller
+      );
+      expect(trip.participants[0].category).toBe('M18');
     });
 
     it('should add a staff participant when caller category matches staff category', async () => {

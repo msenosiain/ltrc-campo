@@ -210,7 +210,6 @@
                 <mat-autocomplete
                   #playerAuto="matAutocomplete"
                   [displayWith]="displayPlayerFn"
-                  [requireSelection]="true"
                   (optionSelected)="onPlayerSelected($event)"
                 >
                   @for (player of playerSuggestions; track player.id) {
@@ -237,13 +236,22 @@
                 <mat-autocomplete
                   #userAuto="matAutocomplete"
                   [displayWith]="displayUserFn"
-                  [requireSelection]="true"
                   (optionSelected)="onUserSelected($event)"
                 >
                   @for (user of userSuggestions; track user.id) {
                     <mat-option [value]="user">{{ user.name }}</mat-option>
                   }
                 </mat-autocomplete>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Categoría (opcional)</mat-label>
+                <mat-select formControlName="category">
+                  <mat-option [value]="null">Sin categoría</mat-option>
+                  @for (cat of participantCategoryOptions; track cat) {
+                    <mat-option [value]="cat">{{ getCategoryLabel(cat) }}</mat-option>
+                  }
+                </mat-select>
               </mat-form-field>
             }
 
@@ -260,6 +268,15 @@
                 <mat-form-field appearance="outline">
                   <mat-label>Rol / descripción</mat-label>
                   <input matInput formControlName="externalRole" placeholder="Padre de..." />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Categoría (opcional)</mat-label>
+                  <mat-select formControlName="category">
+                    <mat-option [value]="null">Sin categoría</mat-option>
+                    @for (cat of participantCategoryOptions; track cat) {
+                      <mat-option [value]="cat">{{ getCategoryLabel(cat) }}</mat-option>
+                    }
+                  </mat-select>
                 </mat-form-field>
               </div>
             }
