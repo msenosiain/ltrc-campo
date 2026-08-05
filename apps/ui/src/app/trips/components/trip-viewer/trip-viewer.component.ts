@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { concat, EMPTY, of, Subject } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, expand, filter, last, map, reduce, switchMap, takeWhile } from 'rxjs/operators';
@@ -72,6 +73,7 @@ import {
 } from '../../trip-options';
 import { getErrorMessage } from '../../../common/utils/error-message';
 import { AddAllPlayersDialogComponent, AddAllPlayersDialogData, AddAllPlayersDialogResult } from '../add-all-players-dialog/add-all-players-dialog.component';
+import { APP_NAME } from '../../../common/app-title-strategy';
 
 @Component({
   selector: 'ltrc-trip-viewer',
@@ -106,6 +108,7 @@ import { AddAllPlayersDialogComponent, AddAllPlayersDialogData, AddAllPlayersDia
 export class TripViewerComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly titleService = inject(Title);
   private readonly tripsService = inject(TripsService);
   private readonly transportPdfService = inject(TripTransportPdfService);
   private readonly passengerExportService = inject(TripPassengerExportService);
@@ -486,6 +489,7 @@ export class TripViewerComponent implements OnInit {
         next: (trip) => {
           this.trip = trip;
           this.loading.set(false);
+          this.titleService.setTitle(`${trip.name} - ${APP_NAME}`);
           // Inicializar costo por defecto en form
           this.addParticipantForm.patchValue({ costAssigned: trip.costPerPerson });
         },
