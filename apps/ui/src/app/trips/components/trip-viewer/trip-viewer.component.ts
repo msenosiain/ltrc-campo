@@ -175,7 +175,17 @@ export class TripViewerComponent implements OnInit {
   readonly participantStatusOptions = participantStatusOptions;
   readonly transportTypeOptions = transportTypeOptions;
 
-  trip?: Trip;
+  private _trip?: Trip;
+  get trip(): Trip | undefined {
+    return this._trip;
+  }
+  set trip(value: Trip | undefined) {
+    this._trip = value;
+    if (this.unassignedCategoryFilter && !this.unassignedCategories.includes(this.unassignedCategoryFilter)) {
+      this.unassignedCategoryFilter = '';
+      this.unassignedPage = 0;
+    }
+  }
   loading = signal(false);
 
   readonly participantColumns = [
@@ -451,7 +461,6 @@ export class TripViewerComponent implements OnInit {
             size: 20,
             filters: {
               searchTerm: term,
-              ...(this.trip?.categories?.length && { categories: this.trip.categories }),
             },
           })
         ),
