@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   CategoryEnum,
+  LodgingTypeEnum,
   PaginatedResponse,
   PaginationQuery,
   Trip,
@@ -64,6 +65,16 @@ export interface AddTransportPayload {
   capacity: number;
   company?: string;
   departureTime?: string;
+  notes?: string;
+}
+
+export interface AddLodgingPayload {
+  name: string;
+  type: LodgingTypeEnum;
+  capacity: number;
+  contactName?: string;
+  phone?: string;
+  address?: string;
   notes?: string;
 }
 
@@ -197,6 +208,40 @@ export class TripsService {
     return this.http.patch<Trip>(
       `${this.baseUrl}/${tripId}/participants/${participantId}/transport`,
       { transportId }
+    );
+  }
+
+  // ── Alojamientos ─────────────────────────────────────────────────────────
+
+  addLodging(tripId: string, payload: AddLodgingPayload): Observable<Trip> {
+    return this.http.post<Trip>(`${this.baseUrl}/${tripId}/lodgings`, payload);
+  }
+
+  updateLodging(
+    tripId: string,
+    lodgingId: string,
+    payload: Partial<AddLodgingPayload>
+  ): Observable<Trip> {
+    return this.http.patch<Trip>(
+      `${this.baseUrl}/${tripId}/lodgings/${lodgingId}`,
+      payload
+    );
+  }
+
+  removeLodging(tripId: string, lodgingId: string): Observable<Trip> {
+    return this.http.delete<Trip>(
+      `${this.baseUrl}/${tripId}/lodgings/${lodgingId}`
+    );
+  }
+
+  moveParticipantLodging(
+    tripId: string,
+    participantId: string,
+    payload: { lodgingId?: string | null; roomNumber?: string | null }
+  ): Observable<Trip> {
+    return this.http.patch<Trip>(
+      `${this.baseUrl}/${tripId}/participants/${participantId}/lodging`,
+      payload
     );
   }
 

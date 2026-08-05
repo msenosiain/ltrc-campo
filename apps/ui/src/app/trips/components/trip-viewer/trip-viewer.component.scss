@@ -194,15 +194,33 @@
 
     mat-form-field { flex: 1; min-width: 160px; }
   }
+}
 
-  .full-width { width: 100%; }
+.wide-form-card {
+  width: 100%;
+  max-width: none;
 
-  mat-card-actions {
+  .form-row {
     display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 8px 16px 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 4px;
+
+    mat-form-field { flex: 1; min-width: 160px; }
   }
+}
+
+.full-width {
+  width: 100%;
+
+  textarea { min-height: 60px; resize: vertical; }
+}
+
+mat-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 16px 16px;
 }
 
 .participant-filters {
@@ -466,6 +484,21 @@
 .move-select {
   font-size: 0.85rem;
   min-width: 140px;
+}
+
+.room-input {
+  font-size: 0.85rem;
+  width: 64px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: transparent;
+  color: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--mat-sys-primary);
+  }
 }
 
 .option-meta {

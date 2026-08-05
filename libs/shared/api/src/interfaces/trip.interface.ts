@@ -1,6 +1,7 @@
 import { Document } from 'mongoose';
 import {
   CategoryEnum,
+  LodgingTypeEnum,
   SportEnum,
   TransportTypeEnum,
   TripParticipantStatusEnum,
@@ -29,6 +30,17 @@ export interface TripTransport {
   readonly notes?: string;
 }
 
+export interface TripLodging {
+  readonly id?: string;
+  readonly type: LodgingTypeEnum;
+  readonly name: string;
+  readonly contactName?: string;
+  readonly phone?: string;
+  readonly address?: string;
+  readonly capacity: number;
+  readonly notes?: string;
+}
+
 export interface TripParticipant {
   readonly id?: string;
   readonly type: TripParticipantTypeEnum;
@@ -50,6 +62,10 @@ export interface TripParticipant {
   /** ID del TripTransport asignado */
   readonly transportId?: string;
   readonly seatNumber?: number;
+  /** ID del TripLodging asignado */
+  readonly lodgingId?: string;
+  /** Solo aplica cuando el lodging es de tipo HOTEL */
+  readonly roomNumber?: string;
   readonly documentationOk?: boolean;
   /** ID de otro TripParticipant al que acompaña (para EXTERNAL) */
   readonly accompanyingParticipantId?: string;
@@ -70,6 +86,7 @@ export interface Trip extends Document {
   readonly description?: string;
   readonly participants: TripParticipant[];
   readonly transports: TripTransport[];
+  readonly lodgings: TripLodging[];
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }

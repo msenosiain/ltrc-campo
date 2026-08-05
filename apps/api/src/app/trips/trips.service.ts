@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { TripEntity, TripParticipantEntity, TripTransportEntity } from './schemas/trip.entity';
+import { TripEntity, TripLodgingEntity, TripParticipantEntity, TripTransportEntity } from './schemas/trip.entity';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { TripFilterDto } from './dto/trip-filter.dto';
@@ -11,6 +11,9 @@ import { RecordPaymentDto } from './dto/record-payment.dto';
 import { AddTransportDto } from './dto/add-transport.dto';
 import { UpdateTransportDto } from './dto/update-transport.dto';
 import { MoveParticipantDto } from './dto/move-participant.dto';
+import { AddLodgingDto } from './dto/add-lodging.dto';
+import { UpdateLodgingDto } from './dto/update-lodging.dto';
+import { MoveParticipantLodgingDto } from './dto/move-participant-lodging.dto';
 import { PaginationDto } from '../shared/pagination.dto';
 import {
   CategoryEnum,
@@ -696,6 +699,90 @@ export class TripsService {
     for (const p of trip.participants) {
       const tid = assignments.get(p._id.toString());
       p.transportId = tid ? new Types.ObjectId(tid) : undefined;
+    }
+
+    if (caller) trip.updatedBy = (caller as any)._id;
+    await trip.save();
+    return this.findOne(id);
+  }
+
+  // ── Alojamientos ─────────────────────────────────────────────────────────
+
+  async addLodging(id: string, dto: AddLodgingDto, caller?: User) {
+    const trip = await this.tripModel.findById(id);
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    trip.lodgings.push(dto as unknown as TripLodgingEntity);
+    if (caller) trip.updatedBy = (caller as any)._id;
+    await trip.save();
+    return this.findOne(id);
+  }
+
+  async updateLodging(
+    id: string,
+    lodgingId: string,
+    dto: UpdateLodgingDto,
+    caller?: User
+  ) {
+    const trip = await this.tripModel.findById(id);
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    const lodging = (trip.lodgings as any).id(lodgingId);
+    if (!lodging) throw new NotFoundException('Alojamiento no encontrado');
+
+    Object.assign(lodging, dto);
+    if (caller) trip.updatedBy = (caller as any)._id;
+    await trip.save();
+    return this.findOne(id);
+  }
+
+  async removeLodging(id: string, lodgingId: string, caller?: User) {
+    const trip = await this.tripModel.findById(id);
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    const lodging = (trip.lodgings as any).id(lodgingId);
+    if (!lodging) throw new NotFoundException('Alojamiento no encontrado');
+
+    // Limpiar asignaciones de participantes a este alojamiento
+    const lid = new Types.ObjectId(lodgingId);
+    for (const p of trip.participants) {
+      if (p.lodgingId?.equals(lid)) {
+        p.lodgingId = undefined;
+        p.roomNumber = undefined;
+      }
+    }
+
+    lodging.deleteOne();
+    if (caller) trip.updatedBy = (caller as any)._id;
+    await trip.save();
+    return this.findOne(id);
+  }
+
+  async moveParticipantLodging(
+    id: string,
+    participantId: string,
+    dto: MoveParticipantLodgingDto,
+    caller?: User
+  ) {
+    const trip = await this.tripModel.findById(id);
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    const participant = (trip.participants as any).id(participantId);
+    if (!participant) throw new NotFoundException('Participante no encontrado');
+
+    if (dto.lodgingId !== undefined) {
+      if (dto.lodgingId) {
+        const lodging = (trip.lodgings as any).id(dto.lodgingId);
+        if (!lodging) throw new NotFoundException('Alojamiento no encontrado');
+        participant.lodgingId = new Types.ObjectId(dto.lodgingId);
+      } else {
+        participant.lodgingId = undefined;
+      }
+      participant.roomNumber = undefined;
+    }
+
+    if (dto.roomNumber !== undefined) {
+      participant.roomNumber = dto.roomNumber || undefined;
     }
 
     if (caller) trip.updatedBy = (caller as any)._id;

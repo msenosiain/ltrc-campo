@@ -2,6 +2,7 @@ import { Schema, Types } from 'mongoose';
 import { TripEntity } from './trip.entity';
 import {
   CategoryEnum,
+  LodgingTypeEnum,
   SportEnum,
   TransportTypeEnum,
   TripParticipantStatusEnum,
@@ -48,6 +49,20 @@ const TripTransportSchema = new Schema(
 );
 withVirtualId(TripTransportSchema);
 
+const TripLodgingSchema = new Schema(
+  {
+    type: { type: String, enum: Object.values(LodgingTypeEnum), required: true },
+    name: { type: String, required: true },
+    contactName: { type: String },
+    phone: { type: String },
+    address: { type: String },
+    capacity: { type: Number, required: true },
+    notes: { type: String },
+  },
+  { _id: true }
+);
+withVirtualId(TripLodgingSchema);
+
 const TripParticipantSchema = new Schema(
   {
     type: { type: String, enum: Object.values(TripParticipantTypeEnum), required: true },
@@ -67,6 +82,8 @@ const TripParticipantSchema = new Schema(
     specialNeeds: { type: String },
     transportId: { type: Types.ObjectId },
     seatNumber: { type: Number },
+    lodgingId: { type: Types.ObjectId },
+    roomNumber: { type: String },
     documentationOk: { type: Boolean, default: false },
     accompanyingParticipantId: { type: Types.ObjectId },
   },
@@ -93,6 +110,7 @@ export const TripSchema = new Schema<TripEntity>(
     description: { type: String },
     participants: { type: [TripParticipantSchema], default: [] },
     transports: { type: [TripTransportSchema], default: [] },
+    lodgings: { type: [TripLodgingSchema], default: [] },
     createdBy: { type: Types.ObjectId, ref: 'User' },
     updatedBy: { type: Types.ObjectId, ref: 'User' },
   },

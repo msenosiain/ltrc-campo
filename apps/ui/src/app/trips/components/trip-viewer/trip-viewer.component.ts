@@ -35,6 +35,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   CategoryEnum,
+  LodgingTypeEnum,
   PaymentEntityTypeEnum,
   Player,
   PlayerAvailabilityEnum,
@@ -43,6 +44,7 @@ import {
   SportEnum,
   TransportTypeEnum,
   Trip,
+  TripLodging,
   TripParticipant,
   TripParticipantStatusEnum,
   TripParticipantTypeEnum,
@@ -50,7 +52,7 @@ import {
   CATEGORY_AGE_RANK,
 } from '@ltrc-campo/shared-api-model';
 import { PaymentLinksPanelComponent } from '../../../payments/components/payment-links-panel/payment-links-panel.component';
-import { TripsService, AddParticipantPayload, AddTransportPayload } from '../../services/trips.service';
+import { TripsService, AddParticipantPayload, AddTransportPayload, AddLodgingPayload } from '../../services/trips.service';
 import { TripTransportPdfService } from '../../services/trip-transport-pdf.service';
 import { TripPassengerExportService } from '../../services/trip-passenger-export.service';
 import { ConfirmDialogComponent } from '../../../common/components/confirm-dialog/confirm-dialog.component';
@@ -63,10 +65,12 @@ import { PlayersService } from '../../../players/services/players.service';
 import { UsersService } from '../../../users/services/users.service';
 import { User } from '../../../users/User.interface';
 import {
+  getLodgingTypeLabel,
   getParticipantStatusLabel,
   getParticipantTypeLabel,
   getTransportTypeLabel,
   getTripStatusLabel,
+  lodgingTypeOptions,
   participantStatusOptions,
   participantTypeOptions,
   transportTypeOptions,
@@ -174,6 +178,9 @@ export class TripViewerComponent implements OnInit {
   readonly participantTypeOptions = participantTypeOptions;
   readonly participantStatusOptions = participantStatusOptions;
   readonly transportTypeOptions = transportTypeOptions;
+  readonly lodgingTypeOptions = lodgingTypeOptions;
+  readonly LodgingTypeEnum = LodgingTypeEnum;
+  getLodgingTypeLabel = getLodgingTypeLabel;
 
   private _trip?: Trip;
   get trip(): Trip | undefined {
@@ -184,6 +191,24 @@ export class TripViewerComponent implements OnInit {
     if (this.unassignedCategoryFilter && !this.unassignedCategories.includes(this.unassignedCategoryFilter)) {
       this.unassignedCategoryFilter = '';
       this.unassignedPage = 0;
+    }
+    if (this.unassignedTypeFilter && !this.unassignedTypes.includes(this.unassignedTypeFilter)) {
+      this.unassignedTypeFilter = '';
+      this.unassignedPage = 0;
+    }
+    if (
+      this.unassignedLodgingCategoryFilter &&
+      !this.unassignedLodgingCategories.includes(this.unassignedLodgingCategoryFilter)
+    ) {
+      this.unassignedLodgingCategoryFilter = '';
+      this.unassignedLodgingPage = 0;
+    }
+    if (
+      this.unassignedLodgingTypeFilter &&
+      !this.unassignedLodgingTypes.includes(this.unassignedLodgingTypeFilter)
+    ) {
+      this.unassignedLodgingTypeFilter = '';
+      this.unassignedLodgingPage = 0;
     }
   }
   loading = signal(false);
@@ -389,6 +414,7 @@ export class TripViewerComponent implements OnInit {
   // ── Estado tab Sin Asignar ────────────────────────────────────────────────
   unassignedSearch = '';
   unassignedCategoryFilter = '';
+  unassignedTypeFilter: TripParticipantTypeEnum | '' = '';
   unassignedPage = 0;
   readonly UNASSIGNED_PAGE_SIZE = 15;
   readonly unassignedSelectedIds = new Set<string>();
@@ -409,6 +435,38 @@ export class TripViewerComponent implements OnInit {
     capacity: [null as number | null, [Validators.required, Validators.min(1)]],
     company: [''],
     departureTime: [''],
+    notes: [''],
+  });
+
+  // ── Estado alojamientos ───────────────────────────────────────────────────
+  showAddLodging = false;
+  editingLodgingId: string | null = null;
+
+  // ── Estado tab Sin Asignar (alojamiento) ──────────────────────────────────
+  unassignedLodgingSearch = '';
+  unassignedLodgingCategoryFilter = '';
+  unassignedLodgingTypeFilter: TripParticipantTypeEnum | '' = '';
+  unassignedLodgingPage = 0;
+  readonly unassignedLodgingSelectedIds = new Set<string>();
+  bulkAssigningLodging = false;
+
+  addLodgingForm = this.fb.group({
+    name: ['', Validators.required],
+    type: [LodgingTypeEnum.HOST_FAMILY as LodgingTypeEnum, Validators.required],
+    capacity: [null as number | null, [Validators.required, Validators.min(1)]],
+    contactName: [''],
+    phone: [''],
+    address: [''],
+    notes: [''],
+  });
+
+  editLodgingForm = this.fb.group({
+    name: ['', Validators.required],
+    type: [LodgingTypeEnum.HOST_FAMILY as LodgingTypeEnum, Validators.required],
+    capacity: [null as number | null, [Validators.required, Validators.min(1)]],
+    contactName: [''],
+    phone: [''],
+    address: [''],
     notes: [''],
   });
 
@@ -931,13 +989,20 @@ export class TripViewerComponent implements OnInit {
     return [...new Set(all)].sort((a, b) => a.localeCompare(b, 'es'));
   }
 
+  get unassignedTypes(): TripParticipantTypeEnum[] {
+    const all = new Set(this.getUnassignedParticipants().map((p) => p.type));
+    return participantTypeOptions.map((o) => o.id).filter((id) => all.has(id));
+  }
+
   get filteredUnassignedParticipants(): TripParticipant[] {
     const term = this.unassignedSearch.toLowerCase().trim();
     const cat = this.unassignedCategoryFilter;
+    const type = this.unassignedTypeFilter;
     return this.getUnassignedParticipants().filter(
       (p) =>
         (!term || this.getParticipantName(p).toLowerCase().includes(term)) &&
-        (!cat || this.getParticipantCategory(p) === cat)
+        (!cat || this.getParticipantCategory(p) === cat) &&
+        (!type || p.type === type)
     );
   }
 
@@ -966,6 +1031,12 @@ export class TripViewerComponent implements OnInit {
 
   onUnassignedCategoryChange(cat: string): void {
     this.unassignedCategoryFilter = cat;
+    this.unassignedPage = 0;
+    this.unassignedSelectedIds.clear();
+  }
+
+  onUnassignedTypeChange(type: TripParticipantTypeEnum | ''): void {
+    this.unassignedTypeFilter = type;
     this.unassignedPage = 0;
     this.unassignedSelectedIds.clear();
   }
@@ -1024,6 +1095,133 @@ export class TripViewerComponent implements OnInit {
         error: (err) => {
           this.bulkAssigning = false;
           this.snackBar.open(getErrorMessage(err, 'Error al asignar transporte'), 'Cerrar', { duration: 4000 });
+        },
+      });
+  }
+
+  // ── Tab Sin Asignar (alojamiento) ───────────────────────────────────────
+
+  getUnassignedForLodgingParticipants(): TripParticipant[] {
+    return (
+      this.trip?.participants.filter(
+        (p) => !p.lodgingId && p.status === TripParticipantStatusEnum.CONFIRMED
+      ) ?? []
+    );
+  }
+
+  get unassignedLodgingCategories(): string[] {
+    const all = this.getUnassignedForLodgingParticipants()
+      .map((p) => this.getParticipantCategory(p))
+      .filter(Boolean);
+    return [...new Set(all)].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  get unassignedLodgingTypes(): TripParticipantTypeEnum[] {
+    const all = new Set(this.getUnassignedForLodgingParticipants().map((p) => p.type));
+    return participantTypeOptions.map((o) => o.id).filter((id) => all.has(id));
+  }
+
+  get filteredUnassignedLodgingParticipants(): TripParticipant[] {
+    const term = this.unassignedLodgingSearch.toLowerCase().trim();
+    const cat = this.unassignedLodgingCategoryFilter;
+    const type = this.unassignedLodgingTypeFilter;
+    return this.getUnassignedForLodgingParticipants().filter(
+      (p) =>
+        (!term || this.getParticipantName(p).toLowerCase().includes(term)) &&
+        (!cat || this.getParticipantCategory(p) === cat) &&
+        (!type || p.type === type)
+    );
+  }
+
+  get pagedUnassignedLodgingParticipants(): TripParticipant[] {
+    const start = this.unassignedLodgingPage * this.UNASSIGNED_PAGE_SIZE;
+    return this.filteredUnassignedLodgingParticipants.slice(start, start + this.UNASSIGNED_PAGE_SIZE);
+  }
+
+  get totalUnassignedLodgingPages(): number {
+    return Math.ceil(this.filteredUnassignedLodgingParticipants.length / this.UNASSIGNED_PAGE_SIZE);
+  }
+
+  get unassignedLodgingPaginatorLabel(): string {
+    const total = this.filteredUnassignedLodgingParticipants.length;
+    if (total === 0) return '0 pasajeros';
+    const start = this.unassignedLodgingPage * this.UNASSIGNED_PAGE_SIZE + 1;
+    const end = Math.min(start + this.UNASSIGNED_PAGE_SIZE - 1, total);
+    return `${start}–${end} de ${total}`;
+  }
+
+  onUnassignedLodgingSearchChange(term: string): void {
+    this.unassignedLodgingSearch = term;
+    this.unassignedLodgingPage = 0;
+    this.unassignedLodgingSelectedIds.clear();
+  }
+
+  onUnassignedLodgingCategoryChange(cat: string): void {
+    this.unassignedLodgingCategoryFilter = cat;
+    this.unassignedLodgingPage = 0;
+    this.unassignedLodgingSelectedIds.clear();
+  }
+
+  onUnassignedLodgingTypeChange(type: TripParticipantTypeEnum | ''): void {
+    this.unassignedLodgingTypeFilter = type;
+    this.unassignedLodgingPage = 0;
+    this.unassignedLodgingSelectedIds.clear();
+  }
+
+  isUnassignedLodgingSelected(p: TripParticipant): boolean {
+    return !!p.id && this.unassignedLodgingSelectedIds.has(p.id);
+  }
+
+  toggleUnassignedLodgingSelection(p: TripParticipant): void {
+    if (!p.id) return;
+    if (this.unassignedLodgingSelectedIds.has(p.id)) {
+      this.unassignedLodgingSelectedIds.delete(p.id);
+    } else {
+      this.unassignedLodgingSelectedIds.add(p.id);
+    }
+  }
+
+  get allUnassignedLodgingSelected(): boolean {
+    const visible = this.pagedUnassignedLodgingParticipants;
+    return visible.length > 0 && visible.every((p) => p.id && this.unassignedLodgingSelectedIds.has(p.id));
+  }
+
+  get someUnassignedLodgingSelected(): boolean {
+    return this.unassignedLodgingSelectedIds.size > 0 && !this.allUnassignedLodgingSelected;
+  }
+
+  toggleAllUnassignedLodging(): void {
+    if (this.allUnassignedLodgingSelected) {
+      this.pagedUnassignedLodgingParticipants.forEach((p) => p.id && this.unassignedLodgingSelectedIds.delete(p.id));
+    } else {
+      this.pagedUnassignedLodgingParticipants.forEach((p) => p.id && this.unassignedLodgingSelectedIds.add(p.id));
+    }
+  }
+
+  clearUnassignedLodgingSelection(): void {
+    this.unassignedLodgingSelectedIds.clear();
+  }
+
+  bulkAssignToLodging(lodgingId: string): void {
+    if (!this.trip?.id || this.unassignedLodgingSelectedIds.size === 0) return;
+    this.bulkAssigningLodging = true;
+    const ids = [...this.unassignedLodgingSelectedIds];
+    concat(...ids.map((id) => this.tripsService.moveParticipantLodging(this.trip!.id!, id, { lodgingId })))
+      .pipe(last(), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (trip) => {
+          this.trip = trip;
+          this.unassignedLodgingSelectedIds.clear();
+          this.bulkAssigningLodging = false;
+          this.snackBar.open(
+            `${ids.length} pasajero${ids.length !== 1 ? 's' : ''} asignado${ids.length !== 1 ? 's' : ''}`,
+            'Cerrar',
+            { duration: 3000 }
+          );
+        },
+        error: (err) => {
+          this.bulkAssigningLodging = false;
+          this.snackBar.open(getErrorMessage(err, 'Error al asignar alojamiento'), 'Cerrar', { duration: 4000 });
         },
       });
   }
@@ -1209,6 +1407,123 @@ export class TripViewerComponent implements OnInit {
       });
   }
 
+  // ── Alojamientos ─────────────────────────────────────────────────────────
+
+  getLodgingOccupancy(l: TripLodging): number {
+    return this.trip?.participants.filter((p) => p.lodgingId === l.id).length ?? 0;
+  }
+
+  isLodgingFull(l: TripLodging): boolean {
+    return this.getLodgingOccupancy(l) >= l.capacity;
+  }
+
+  getParticipantsForLodging(lodgingId: string): TripParticipant[] {
+    return (this.trip?.participants.filter((p) => p.lodgingId === lodgingId) ?? [])
+      .slice()
+      .sort((a, b) => {
+        const rankA = CATEGORY_AGE_RANK[(a.player as any)?.category as CategoryEnum] ?? 999;
+        const rankB = CATEGORY_AGE_RANK[(b.player as any)?.category as CategoryEnum] ?? 999;
+        if (rankA !== rankB) return rankA - rankB;
+        return this.getParticipantName(a).localeCompare(this.getParticipantName(b), 'es');
+      });
+  }
+
+  toggleAddLodging(): void {
+    this.showAddLodging = !this.showAddLodging;
+    if (!this.showAddLodging) {
+      this.addLodgingForm.reset({ type: LodgingTypeEnum.HOST_FAMILY, capacity: null });
+    }
+  }
+
+  submitAddLodging(): void {
+    if (!this.trip?.id || this.addLodgingForm.invalid) return;
+    const v = this.addLodgingForm.getRawValue();
+    const payload: AddLodgingPayload = {
+      name: v.name!,
+      type: v.type!,
+      capacity: v.capacity!,
+      contactName: v.contactName || undefined,
+      phone: v.phone || undefined,
+      address: v.address || undefined,
+      notes: v.notes || undefined,
+    };
+    this.tripsService
+      .addLodging(this.trip.id, payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (trip) => {
+          this.trip = trip;
+          this.toggleAddLodging();
+        },
+        error: (err) =>
+          this.snackBar.open(getErrorMessage(err, 'Error al agregar alojamiento'), 'Cerrar', {
+            duration: 4000,
+          }),
+      });
+  }
+
+  startEditLodging(l: TripLodging): void {
+    this.editingLodgingId = l.id ?? null;
+    this.editLodgingForm.patchValue({
+      name: l.name,
+      type: l.type,
+      capacity: l.capacity,
+      contactName: l.contactName ?? '',
+      phone: l.phone ?? '',
+      address: l.address ?? '',
+      notes: l.notes ?? '',
+    });
+  }
+
+  cancelEditLodging(): void {
+    this.editingLodgingId = null;
+  }
+
+  submitEditLodging(): void {
+    if (!this.trip?.id || !this.editingLodgingId || this.editLodgingForm.invalid) return;
+    const v = this.editLodgingForm.getRawValue();
+    this.tripsService
+      .updateLodging(this.trip.id, this.editingLodgingId, {
+        name: v.name!,
+        type: v.type!,
+        capacity: v.capacity!,
+        contactName: v.contactName || undefined,
+        phone: v.phone || undefined,
+        address: v.address || undefined,
+        notes: v.notes || undefined,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (trip) => {
+          this.trip = trip;
+          this.cancelEditLodging();
+        },
+        error: (err) =>
+          this.snackBar.open(getErrorMessage(err, 'Error al actualizar alojamiento'), 'Cerrar', {
+            duration: 4000,
+          }),
+      });
+  }
+
+  removeLodging(l: TripLodging): void {
+    if (!this.trip?.id) return;
+    this.dialog
+      .open(ConfirmDialogComponent, {
+        data: {
+          title: 'Eliminar alojamiento',
+          message: `¿Eliminar "${l.name}"? Los participantes asignados quedarán sin alojamiento.`,
+          confirmLabel: 'Eliminar',
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter((confirmed) => !!confirmed),
+        switchMap(() => this.tripsService.removeLodging(this.trip!.id!, l.id!)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({ next: (trip) => (this.trip = trip) });
+  }
+
   // ── Exportación pasajeros ─────────────────────────────────────────────────
 
   exportAllExcel(): void {
@@ -1246,6 +1561,35 @@ export class TripViewerComponent implements OnInit {
         next: (trip) => (this.trip = trip),
         error: (err) =>
           this.snackBar.open(getErrorMessage(err, 'Error al asignar transporte'), 'Cerrar', {
+            duration: 4000,
+          }),
+      });
+  }
+
+  assignLodging(p: TripParticipant, value: string): void {
+    if (!this.trip?.id || !p.id) return;
+    const lodgingId = value === this.UNASSIGN_SENTINEL ? null : value;
+    this.tripsService
+      .moveParticipantLodging(this.trip.id, p.id, { lodgingId })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (trip) => (this.trip = trip),
+        error: (err) =>
+          this.snackBar.open(getErrorMessage(err, 'Error al asignar alojamiento'), 'Cerrar', {
+            duration: 4000,
+          }),
+      });
+  }
+
+  updateRoomNumber(p: TripParticipant, roomNumber: string): void {
+    if (!this.trip?.id || !p.id) return;
+    this.tripsService
+      .moveParticipantLodging(this.trip.id, p.id, { roomNumber: roomNumber.trim() || null })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (trip) => (this.trip = trip),
+        error: (err) =>
+          this.snackBar.open(getErrorMessage(err, 'Error al actualizar habitación'), 'Cerrar', {
             duration: 4000,
           }),
       });

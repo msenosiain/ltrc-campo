@@ -581,7 +581,7 @@
 
         <!-- Formulario agregar transporte -->
         @if (showAddTransport) {
-          <mat-card class="add-card" [formGroup]="addTransportForm">
+          <mat-card class="add-card wide-form-card" [formGroup]="addTransportForm">
             <mat-card-content>
               <div class="form-row">
                 <mat-form-field appearance="outline">
@@ -600,6 +600,8 @@
                   <mat-label>Capacidad</mat-label>
                   <input matInput type="number" formControlName="capacity" min="1" />
                 </mat-form-field>
+              </div>
+              <div class="form-row">
                 <mat-form-field appearance="outline">
                   <mat-label>Empresa / proveedor</mat-label>
                   <input matInput formControlName="company" />
@@ -608,9 +610,11 @@
                   <mat-label>Hora de salida</mat-label>
                   <input matInput type="time" formControlName="departureTime" />
                 </mat-form-field>
-                <mat-form-field appearance="outline">
+              </div>
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Notas</mat-label>
-                  <input matInput formControlName="notes" />
+                  <textarea matInput formControlName="notes" rows="3"></textarea>
                 </mat-form-field>
               </div>
             </mat-card-content>
@@ -681,35 +685,41 @@
 
                   <!-- Formulario edición inline -->
                   @if (editingTransportId === t.id) {
-                    <div class="form-row" [formGroup]="editTransportForm">
-                      <mat-form-field appearance="outline">
-                        <mat-label>Nombre</mat-label>
-                        <input matInput formControlName="name" />
-                      </mat-form-field>
-                      <mat-form-field appearance="outline">
-                        <mat-label>Tipo</mat-label>
-                        <mat-select formControlName="type">
-                          @for (opt of transportTypeOptions; track opt.id) {
-                            <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
-                          }
-                        </mat-select>
-                      </mat-form-field>
-                      <mat-form-field appearance="outline">
-                        <mat-label>Capacidad</mat-label>
-                        <input matInput type="number" formControlName="capacity" min="1" />
-                      </mat-form-field>
-                      <mat-form-field appearance="outline">
-                        <mat-label>Empresa</mat-label>
-                        <input matInput formControlName="company" />
-                      </mat-form-field>
-                      <mat-form-field appearance="outline">
-                        <mat-label>Hora salida</mat-label>
-                        <input matInput type="time" formControlName="departureTime" />
-                      </mat-form-field>
-                      <mat-form-field appearance="outline">
-                        <mat-label>Notas</mat-label>
-                        <input matInput formControlName="notes" />
-                      </mat-form-field>
+                    <div class="wide-form-card" [formGroup]="editTransportForm">
+                      <div class="form-row">
+                        <mat-form-field appearance="outline">
+                          <mat-label>Nombre</mat-label>
+                          <input matInput formControlName="name" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>Tipo</mat-label>
+                          <mat-select formControlName="type">
+                            @for (opt of transportTypeOptions; track opt.id) {
+                              <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+                            }
+                          </mat-select>
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>Capacidad</mat-label>
+                          <input matInput type="number" formControlName="capacity" min="1" />
+                        </mat-form-field>
+                      </div>
+                      <div class="form-row">
+                        <mat-form-field appearance="outline">
+                          <mat-label>Empresa</mat-label>
+                          <input matInput formControlName="company" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>Hora salida</mat-label>
+                          <input matInput type="time" formControlName="departureTime" />
+                        </mat-form-field>
+                      </div>
+                      <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                          <mat-label>Notas</mat-label>
+                          <textarea matInput formControlName="notes" rows="3"></textarea>
+                        </mat-form-field>
+                      </div>
                     </div>
                   }
 
@@ -783,17 +793,24 @@
                         <mat-icon matSuffix>search</mat-icon>
                       }
                     </mat-form-field>
-                    @if (unassignedCategories.length > 1) {
-                      <mat-form-field appearance="outline" class="pfilter-category">
-                        <mat-label>Categoría</mat-label>
-                        <mat-select [value]="unassignedCategoryFilter" (selectionChange)="onUnassignedCategoryChange($event.value)">
-                          <mat-option value="">Todas</mat-option>
-                          @for (cat of unassignedCategories; track cat) {
-                            <mat-option [value]="cat">{{ cat }}</mat-option>
-                          }
-                        </mat-select>
-                      </mat-form-field>
-                    }
+                    <mat-form-field appearance="outline" class="pfilter-category">
+                      <mat-label>Tipo</mat-label>
+                      <mat-select [value]="unassignedTypeFilter" (selectionChange)="onUnassignedTypeChange($event.value)">
+                        <mat-option value="">Todos</mat-option>
+                        @for (t of unassignedTypes; track t) {
+                          <mat-option [value]="t">{{ getParticipantTypeLabel(t) }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="pfilter-category">
+                      <mat-label>Categoría</mat-label>
+                      <mat-select [value]="unassignedCategoryFilter" (selectionChange)="onUnassignedCategoryChange($event.value)">
+                        <mat-option value="">Todas</mat-option>
+                        @for (cat of unassignedCategories; track cat) {
+                          <mat-option [value]="cat">{{ cat }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
                   </div>
 
                   <!-- Barra bulk -->
@@ -874,6 +891,382 @@
                                 <mat-option [value]="transport.id" [disabled]="isTransportFull(transport)">
                                   {{ transport.name }}
                                   @if (isTransportFull(transport)) { (lleno) }
+                                </mat-option>
+                              }
+                            </mat-select>
+                          </ng-container>
+                        }
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="['select', 'name', 'type', 'category', 'move']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['select', 'name', 'type', 'category', 'move']"></tr>
+                  </table>
+                </div>
+              </mat-tab>
+            }
+
+          </mat-tab-group>
+        }
+
+      </div>
+    </mat-tab>
+
+    <!-- Tab: Alojamientos -->
+    <mat-tab label="Alojamientos ({{ trip.lodgings.length }})">
+      <div class="tab-content">
+
+        <!-- Acciones -->
+        <div class="transport-actions">
+          <button
+            *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]"
+            mat-flat-button
+            color="primary"
+            (click)="toggleAddLodging()"
+          >
+            <mat-icon>{{ showAddLodging ? 'close' : 'home' }}</mat-icon>
+            {{ showAddLodging ? 'Cancelar' : 'Agregar alojamiento' }}
+          </button>
+        </div>
+
+        <!-- Formulario agregar alojamiento -->
+        @if (showAddLodging) {
+          <mat-card class="add-card wide-form-card" [formGroup]="addLodgingForm">
+            <mat-card-content>
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput formControlName="name" placeholder="Familia Pérez, Hotel Amérian..." />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo</mat-label>
+                  <mat-select formControlName="type">
+                    @for (opt of lodgingTypeOptions; track opt.id) {
+                      <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Capacidad</mat-label>
+                  <input matInput type="number" formControlName="capacity" min="1" />
+                </mat-form-field>
+              </div>
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Contacto</mat-label>
+                  <input matInput formControlName="contactName" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Teléfono</mat-label>
+                  <input matInput formControlName="phone" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Dirección</mat-label>
+                  <input matInput formControlName="address" />
+                </mat-form-field>
+              </div>
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Notas</mat-label>
+                  <textarea matInput formControlName="notes" rows="3"></textarea>
+                </mat-form-field>
+              </div>
+            </mat-card-content>
+            <mat-card-actions align="end">
+              <button mat-stroked-button type="button" (click)="toggleAddLodging()">Cancelar</button>
+              <button mat-flat-button color="primary" type="button" [disabled]="addLodgingForm.invalid" (click)="submitAddLodging()">
+                Agregar
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        }
+
+        @if (trip.lodgings.length === 0 && !showAddLodging) {
+          <p class="empty-message">No hay alojamientos registrados.</p>
+        }
+
+        <!-- Sub-tabs por alojamiento -->
+        @if (trip.lodgings.length > 0 || getUnassignedForLodgingParticipants().length > 0) {
+          <mat-tab-group class="transport-subtabs" animationDuration="150ms">
+
+            @for (l of trip.lodgings; track l.id) {
+              <mat-tab>
+                <ng-template mat-tab-label>
+                  <span class="transport-tab-label">
+                    {{ l.name }}
+                    <span class="transport-tab-badge" [class.transport-tab-badge--full]="getLodgingOccupancy(l) >= l.capacity">
+                      {{ getLodgingOccupancy(l) }}/{{ l.capacity }}
+                    </span>
+                  </span>
+                </ng-template>
+
+                <div class="transport-tab-content">
+
+                  <!-- Info + acciones del alojamiento -->
+                  <div class="transport-tab-header">
+                    <div class="transport-tab-header__meta">
+                      <span class="transport-type-badge">{{ getLodgingTypeLabel(l.type) }}</span>
+                      @if (l.contactName) {
+                        <span class="transport-meta">{{ l.contactName }}</span>
+                      }
+                      @if (l.phone) {
+                        <span class="transport-meta">
+                          <mat-icon class="inline-icon">phone</mat-icon> {{ l.phone }}
+                        </span>
+                      }
+                      @if (l.address) {
+                        <span class="transport-meta">{{ l.address }}</span>
+                      }
+                      @if (l.notes && editingLodgingId !== l.id) {
+                        <span class="transport-meta transport-meta--notes">{{ l.notes }}</span>
+                      }
+                    </div>
+                    <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
+                      @if (editingLodgingId !== l.id) {
+                        <button mat-icon-button (click)="startEditLodging(l)" matTooltip="Editar">
+                          <mat-icon>edit</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" (click)="removeLodging(l)" matTooltip="Eliminar">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      } @else {
+                        <button mat-icon-button color="primary" [disabled]="editLodgingForm.invalid" (click)="submitEditLodging()" matTooltip="Guardar">
+                          <mat-icon>save</mat-icon>
+                        </button>
+                        <button mat-icon-button (click)="cancelEditLodging()" matTooltip="Cancelar">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      }
+                    </ng-container>
+                  </div>
+
+                  <!-- Formulario edición inline -->
+                  @if (editingLodgingId === l.id) {
+                    <div class="wide-form-card" [formGroup]="editLodgingForm">
+                      <div class="form-row">
+                        <mat-form-field appearance="outline">
+                          <mat-label>Nombre</mat-label>
+                          <input matInput formControlName="name" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>Tipo</mat-label>
+                          <mat-select formControlName="type">
+                            @for (opt of lodgingTypeOptions; track opt.id) {
+                              <mat-option [value]="opt.id">{{ opt.label }}</mat-option>
+                            }
+                          </mat-select>
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>Capacidad</mat-label>
+                          <input matInput type="number" formControlName="capacity" min="1" />
+                        </mat-form-field>
+                      </div>
+                      <div class="form-row">
+                        <mat-form-field appearance="outline">
+                          <mat-label>Contacto</mat-label>
+                          <input matInput formControlName="contactName" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>Teléfono</mat-label>
+                          <input matInput formControlName="phone" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>Dirección</mat-label>
+                          <input matInput formControlName="address" />
+                        </mat-form-field>
+                      </div>
+                      <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                          <mat-label>Notas</mat-label>
+                          <textarea matInput formControlName="notes" rows="3"></textarea>
+                        </mat-form-field>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Tabla de pasajeros -->
+                  @if (getParticipantsForLodging(l.id!).length > 0) {
+                    <table mat-table [dataSource]="getParticipantsForLodging(l.id!)" class="transport-participants-table">
+                      <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef>Pasajero</th>
+                        <td mat-cell *matCellDef="let p">{{ getParticipantName(p) }}</td>
+                      </ng-container>
+                      <ng-container matColumnDef="type">
+                        <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                        <td mat-cell *matCellDef="let p">{{ getParticipantTypeLabel(p.type) }}</td>
+                      </ng-container>
+                      <ng-container matColumnDef="category">
+                        <th mat-header-cell *matHeaderCellDef>Categoría</th>
+                        <td mat-cell *matCellDef="let p">
+                          <span class="transport-cat">{{ getParticipantCategory(p) }}</span>
+                        </td>
+                      </ng-container>
+                      <ng-container matColumnDef="room">
+                        <th mat-header-cell *matHeaderCellDef>Habitación</th>
+                        <td mat-cell *matCellDef="let p">
+                          @if (l.type === LodgingTypeEnum.HOTEL) {
+                            <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]; else roomReadOnly">
+                              <input
+                                class="room-input"
+                                [value]="p.roomNumber ?? ''"
+                                placeholder="N°"
+                                (change)="updateRoomNumber(p, $any($event.target).value)"
+                              />
+                            </ng-container>
+                            <ng-template #roomReadOnly>{{ p.roomNumber }}</ng-template>
+                          }
+                        </td>
+                      </ng-container>
+                      <ng-container matColumnDef="move">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let p">
+                          <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
+                            <mat-select placeholder="Mover a…" class="move-select" (selectionChange)="assignLodging(p, $event.value)">
+                              <mat-option [value]="UNASSIGN_SENTINEL">Sin asignar</mat-option>
+                              @for (lodging of trip.lodgings; track lodging.id) {
+                                @if (lodging.id !== l.id) {
+                                  <mat-option [value]="lodging.id" [disabled]="isLodgingFull(lodging)">
+                                    {{ lodging.name }}
+                                    @if (isLodgingFull(lodging)) { (lleno) }
+                                  </mat-option>
+                                }
+                              }
+                            </mat-select>
+                          </ng-container>
+                        </td>
+                      </ng-container>
+                      <tr mat-header-row *matHeaderRowDef="['name', 'type', 'category', 'room', 'move']"></tr>
+                      <tr mat-row *matRowDef="let row; columns: ['name', 'type', 'category', 'room', 'move']"></tr>
+                    </table>
+                  } @else {
+                    <p class="empty-message">Sin pasajeros asignados.</p>
+                  }
+
+                </div>
+              </mat-tab>
+            }
+
+            <!-- Sub-tab: Sin asignar -->
+            @if (getUnassignedForLodgingParticipants().length > 0) {
+              <mat-tab>
+                <ng-template mat-tab-label>
+                  <span class="transport-tab-label">
+                    Sin asignar
+                    <span class="transport-tab-badge transport-tab-badge--warn">
+                      {{ getUnassignedForLodgingParticipants().length }}
+                    </span>
+                  </span>
+                </ng-template>
+                <div class="transport-tab-content">
+
+                  <!-- Búsqueda y filtros -->
+                  <div class="participant-filters">
+                    <mat-form-field appearance="outline" class="pfilter-search">
+                      <mat-label>Buscar</mat-label>
+                      <input matInput [value]="unassignedLodgingSearch" (input)="onUnassignedLodgingSearchChange($any($event.target).value)" placeholder="Nombre" />
+                      @if (unassignedLodgingSearch) {
+                        <button mat-icon-button matSuffix type="button" (click)="onUnassignedLodgingSearchChange('')"><mat-icon>close</mat-icon></button>
+                      } @else {
+                        <mat-icon matSuffix>search</mat-icon>
+                      }
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="pfilter-category">
+                      <mat-label>Tipo</mat-label>
+                      <mat-select [value]="unassignedLodgingTypeFilter" (selectionChange)="onUnassignedLodgingTypeChange($event.value)">
+                        <mat-option value="">Todos</mat-option>
+                        @for (t of unassignedLodgingTypes; track t) {
+                          <mat-option [value]="t">{{ getParticipantTypeLabel(t) }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="pfilter-category">
+                      <mat-label>Categoría</mat-label>
+                      <mat-select [value]="unassignedLodgingCategoryFilter" (selectionChange)="onUnassignedLodgingCategoryChange($event.value)">
+                        <mat-option value="">Todas</mat-option>
+                        @for (cat of unassignedLodgingCategories; track cat) {
+                          <mat-option [value]="cat">{{ cat }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+
+                  <!-- Barra bulk -->
+                  @if (unassignedLodgingSelectedIds.size > 0) {
+                    <div class="bulk-action-bar" *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
+                      <span class="bulk-action-bar__count">{{ unassignedLodgingSelectedIds.size }} seleccionado{{ unassignedLodgingSelectedIds.size !== 1 ? 's' : '' }}</span>
+                      <span class="bulk-action-bar__sep">·</span>
+                      <span class="bulk-action-bar__label">Asignar a:</span>
+                      <mat-select placeholder="Alojamiento…" class="move-select" [disabled]="bulkAssigningLodging" (selectionChange)="bulkAssignToLodging($event.value)">
+                        @for (lodging of trip.lodgings; track lodging.id) {
+                          <mat-option [value]="lodging.id" [disabled]="isLodgingFull(lodging)">
+                            {{ lodging.name }}
+                            @if (isLodgingFull(lodging)) { (lleno) }
+                          </mat-option>
+                        }
+                      </mat-select>
+                      <button mat-icon-button matTooltip="Deseleccionar todos" [disabled]="bulkAssigningLodging" (click)="clearUnassignedLodgingSelection()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+                  }
+
+                  <!-- Paginación -->
+                  @if (filteredUnassignedLodgingParticipants.length > 0) {
+                    <div class="participant-paginator">
+                      <span class="participant-paginator__label">{{ unassignedLodgingPaginatorLabel }}</span>
+                      @if (totalUnassignedLodgingPages > 1) {
+                        <button mat-icon-button [disabled]="unassignedLodgingPage === 0" (click)="unassignedLodgingPage = unassignedLodgingPage - 1">
+                          <mat-icon>chevron_left</mat-icon>
+                        </button>
+                        <span class="participant-paginator__pages">{{ unassignedLodgingPage + 1 }} / {{ totalUnassignedLodgingPages }}</span>
+                        <button mat-icon-button [disabled]="unassignedLodgingPage >= totalUnassignedLodgingPages - 1" (click)="unassignedLodgingPage = unassignedLodgingPage + 1">
+                          <mat-icon>chevron_right</mat-icon>
+                        </button>
+                      }
+                    </div>
+                  }
+
+                  <table mat-table [dataSource]="pagedUnassignedLodgingParticipants" class="transport-participants-table">
+                    <ng-container matColumnDef="select">
+                      <th mat-header-cell *matHeaderCellDef>
+                        <mat-checkbox
+                          *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]"
+                          [checked]="allUnassignedLodgingSelected"
+                          [indeterminate]="someUnassignedLodgingSelected"
+                          (change)="toggleAllUnassignedLodging()"
+                        />
+                      </th>
+                      <td mat-cell *matCellDef="let p">
+                        <mat-checkbox
+                          *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]"
+                          [checked]="isUnassignedLodgingSelected(p)"
+                          (change)="toggleUnassignedLodgingSelection(p)"
+                        />
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="name">
+                      <th mat-header-cell *matHeaderCellDef>Pasajero</th>
+                      <td mat-cell *matCellDef="let p">{{ getParticipantName(p) }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="type">
+                      <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                      <td mat-cell *matCellDef="let p">{{ getParticipantTypeLabel(p.type) }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="category">
+                      <th mat-header-cell *matHeaderCellDef>Categoría</th>
+                      <td mat-cell *matCellDef="let p">
+                        <span class="transport-cat">{{ getParticipantCategory(p) }}</span>
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="move">
+                      <th mat-header-cell *matHeaderCellDef></th>
+                      <td mat-cell *matCellDef="let p">
+                        @if (trip.lodgings.length > 0) {
+                          <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
+                            <mat-select placeholder="Asignar a…" class="move-select" (selectionChange)="assignLodging(p, $event.value)">
+                              @for (lodging of trip.lodgings; track lodging.id) {
+                                <mat-option [value]="lodging.id" [disabled]="isLodgingFull(lodging)">
+                                  {{ lodging.name }}
+                                  @if (isLodgingFull(lodging)) { (lleno) }
                                 </mat-option>
                               }
                             </mat-select>

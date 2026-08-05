@@ -1,6 +1,7 @@
 import { Document, Types } from 'mongoose';
 import {
   CategoryEnum,
+  LodgingTypeEnum,
   SportEnum,
   TransportTypeEnum,
   TripParticipantStatusEnum,
@@ -28,6 +29,17 @@ export class TripTransportEntity {
   notes?: string;
 }
 
+export class TripLodgingEntity {
+  _id!: Types.ObjectId;
+  type!: LodgingTypeEnum;
+  name!: string;
+  contactName?: string;
+  phone?: string;
+  address?: string;
+  capacity!: number;
+  notes?: string;
+}
+
 export class TripParticipantEntity {
   _id!: Types.ObjectId;
   type!: TripParticipantTypeEnum;
@@ -44,6 +56,8 @@ export class TripParticipantEntity {
   specialNeeds?: string;
   transportId?: Types.ObjectId;
   seatNumber?: number;
+  lodgingId?: Types.ObjectId;
+  roomNumber?: string;
   documentationOk?: boolean;
   accompanyingParticipantId?: Types.ObjectId;
 }
@@ -63,6 +77,7 @@ export class TripEntity extends Document {
   description?: string;
   participants!: TripParticipantEntity[];
   transports!: TripTransportEntity[];
+  lodgings!: TripLodgingEntity[];
   createdBy?: Types.ObjectId;
   updatedBy?: Types.ObjectId;
   createdAt!: Date;

@@ -24,6 +24,9 @@ import { RecordPaymentDto } from './dto/record-payment.dto';
 import { AddTransportDto } from './dto/add-transport.dto';
 import { UpdateTransportDto } from './dto/update-transport.dto';
 import { MoveParticipantDto } from './dto/move-participant.dto';
+import { AddLodgingDto } from './dto/add-lodging.dto';
+import { UpdateLodgingDto } from './dto/update-lodging.dto';
+import { MoveParticipantLodgingDto } from './dto/move-participant-lodging.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginationDto } from '../shared/pagination.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -236,6 +239,64 @@ export class TripsController {
     @Req() req: Request
   ) {
     return this.tripsService.moveParticipant(
+      id,
+      participantId,
+      dto,
+      (req as any).user
+    );
+  }
+
+  // ── Alojamientos ─────────────────────────────────────────────────────────
+
+  @Post(':id/lodgings')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
+  addLodging(
+    @Param('id') id: string,
+    @Body() dto: AddLodgingDto,
+    @Req() req: Request
+  ) {
+    return this.tripsService.addLodging(id, dto, (req as any).user);
+  }
+
+  @Patch(':id/lodgings/:lodgingId')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
+  updateLodging(
+    @Param('id') id: string,
+    @Param('lodgingId') lodgingId: string,
+    @Body() dto: UpdateLodgingDto,
+    @Req() req: Request
+  ) {
+    return this.tripsService.updateLodging(
+      id,
+      lodgingId,
+      dto,
+      (req as any).user
+    );
+  }
+
+  @Delete(':id/lodgings/:lodgingId')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
+  removeLodging(
+    @Param('id') id: string,
+    @Param('lodgingId') lodgingId: string,
+    @Req() req: Request
+  ) {
+    return this.tripsService.removeLodging(
+      id,
+      lodgingId,
+      (req as any).user
+    );
+  }
+
+  @Patch(':id/participants/:participantId/lodging')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
+  moveParticipantLodging(
+    @Param('id') id: string,
+    @Param('participantId') participantId: string,
+    @Body() dto: MoveParticipantLodgingDto,
+    @Req() req: Request
+  ) {
+    return this.tripsService.moveParticipantLodging(
       id,
       participantId,
       dto,

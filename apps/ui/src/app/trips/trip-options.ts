@@ -1,4 +1,5 @@
 import {
+  LodgingTypeEnum,
   TransportTypeEnum,
   TripParticipantStatusEnum,
   TripParticipantTypeEnum,
@@ -24,6 +25,11 @@ export const transportTypeOptions: TripOption<TransportTypeEnum>[] = [
   { id: TransportTypeEnum.OTHER, label: 'Otro' },
 ];
 
+export const lodgingTypeOptions: TripOption<LodgingTypeEnum>[] = [
+  { id: LodgingTypeEnum.HOST_FAMILY, label: 'Familia anfitriona' },
+  { id: LodgingTypeEnum.HOTEL, label: 'Hotel' },
+];
+
 export const participantTypeOptions: TripOption<TripParticipantTypeEnum>[] = [
   { id: TripParticipantTypeEnum.PLAYER, label: 'Jugador' },
   { id: TripParticipantTypeEnum.STAFF, label: 'Staff' },
@@ -41,6 +47,10 @@ export function getTripStatusLabel(status: TripStatusEnum): string {
 
 export function getTransportTypeLabel(type: TransportTypeEnum): string {
   return transportTypeOptions.find((o) => o.id === type)?.label ?? type;
+}
+
+export function getLodgingTypeLabel(type: LodgingTypeEnum): string {
+  return lodgingTypeOptions.find((o) => o.id === type)?.label ?? type;
 }
 
 export function getParticipantTypeLabel(type: TripParticipantTypeEnum): string {
