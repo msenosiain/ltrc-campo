@@ -4,7 +4,6 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { CATEGORY_AGE_RANK, Trip, TripParticipant, TripParticipantStatusEnum, TripParticipantTypeEnum, TripTransport } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../common/category-options';
-import { getParticipantTypeLabel } from '../trip-options';
 
 const LOGO_PATH = '/escudo.png';
 const MARGIN_L = 14;
@@ -58,13 +57,13 @@ export class TripPassengerExportService {
       [`VIAJE: ${trip.name.toUpperCase()}  —  ${transport.name.toUpperCase()}`],
       [metaParts.join('   ·   ')],
       [],
-      ['N°', 'Apellido y nombre', 'DNI', 'Categoría / Rol', 'Tipo'],
+      ['N°', 'Apellido y nombre', 'DNI', 'Categoría', 'Rol'],
       ...participants.map((p, i) => [
         i + 1,
         this.getParticipantName(p),
         this.getParticipantDni(p) ?? '',
         this.getParticipantCategory(p),
-        getParticipantTypeLabel(p.type),
+        this.getParticipantRole(p),
       ]),
     ];
 
@@ -198,13 +197,13 @@ export class TripPassengerExportService {
     // ── Tabla ─────────────────────────────────────────────────────────────
     autoTable(doc, {
       startY: y,
-      head: [['N°', 'Apellido y nombre', 'DNI', 'Categoría / Rol', 'Tipo']],
+      head: [['N°', 'Apellido y nombre', 'DNI', 'Categoría', 'Rol']],
       body: participants.map((p, i) => [
         i + 1,
         this.getParticipantName(p),
         this.getParticipantDni(p) ?? '',
         this.getParticipantCategory(p),
-        getParticipantTypeLabel(p.type),
+        this.getParticipantRole(p),
       ]),
       theme: 'grid',
       styles:         { fontSize: 9, cellPadding: 3, textColor: PRIMARY, lineColor: [200, 200, 200], lineWidth: 0.3 },
@@ -256,8 +255,13 @@ export class TripPassengerExportService {
       const cat = (p.player as any)?.category;
       return cat ? getCategoryLabel(cat) : '';
     }
-    if (p.type === TripParticipantTypeEnum.STAFF) return p.externalRole ?? 'Staff';
-    return p.externalRole ?? '';
+    return p.category ? getCategoryLabel(p.category) : '';
+  }
+
+  private getParticipantRole(p: TripParticipant): string {
+    if (p.type === TripParticipantTypeEnum.STAFF) return 'Staff';
+    if (p.type === TripParticipantTypeEnum.EXTERNAL) return p.externalRole || 'Padre/Externo';
+    return '';
   }
 
   private async loadLogo(): Promise<string | null> {
