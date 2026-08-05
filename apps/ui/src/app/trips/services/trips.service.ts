@@ -76,6 +76,7 @@ export interface AddLodgingPayload {
   phone?: string;
   address?: string;
   notes?: string;
+  category?: CategoryEnum;
 }
 
 @Injectable({ providedIn: 'root' })

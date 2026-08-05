@@ -58,6 +58,7 @@ const TripLodgingSchema = new Schema(
     address: { type: String },
     capacity: { type: Number, required: true },
     notes: { type: String },
+    category: { type: String, enum: Object.values(CategoryEnum) },
   },
   { _id: true }
 );

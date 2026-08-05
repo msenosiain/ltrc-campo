@@ -39,6 +39,8 @@ export interface TripLodging {
   readonly address?: string;
   readonly capacity: number;
   readonly notes?: string;
+  /** Categoría del viaje a la que pertenece (aplica a familias anfitrionas) */
+  readonly category?: CategoryEnum;
 }
 
 export interface TripParticipant {

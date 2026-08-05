@@ -458,6 +458,7 @@ export class TripViewerComponent implements OnInit {
     phone: [''],
     address: [''],
     notes: [''],
+    category: [null as CategoryEnum | null],
   });
 
   editLodgingForm = this.fb.group({
@@ -468,6 +469,7 @@ export class TripViewerComponent implements OnInit {
     phone: [''],
     address: [''],
     notes: [''],
+    category: [null as CategoryEnum | null],
   });
 
   ngOnInit(): void {
@@ -1431,7 +1433,7 @@ export class TripViewerComponent implements OnInit {
   toggleAddLodging(): void {
     this.showAddLodging = !this.showAddLodging;
     if (!this.showAddLodging) {
-      this.addLodgingForm.reset({ type: LodgingTypeEnum.HOST_FAMILY, capacity: null });
+      this.addLodgingForm.reset({ type: LodgingTypeEnum.HOST_FAMILY, capacity: null, category: null });
     }
   }
 
@@ -1446,6 +1448,7 @@ export class TripViewerComponent implements OnInit {
       phone: v.phone || undefined,
       address: v.address || undefined,
       notes: v.notes || undefined,
+      category: v.type === LodgingTypeEnum.HOST_FAMILY ? v.category ?? undefined : undefined,
     };
     this.tripsService
       .addLodging(this.trip.id, payload)
@@ -1472,6 +1475,7 @@ export class TripViewerComponent implements OnInit {
       phone: l.phone ?? '',
       address: l.address ?? '',
       notes: l.notes ?? '',
+      category: l.category ?? null,
     });
   }
 
@@ -1491,6 +1495,7 @@ export class TripViewerComponent implements OnInit {
         phone: v.phone || undefined,
         address: v.address || undefined,
         notes: v.notes || undefined,
+        category: v.type === LodgingTypeEnum.HOST_FAMILY ? v.category ?? undefined : undefined,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -1522,6 +1527,69 @@ export class TripViewerComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({ next: (trip) => (this.trip = trip) });
+  }
+
+  get hotelLodgings(): TripLodging[] {
+    return this.trip?.lodgings.filter((l) => l.type === LodgingTypeEnum.HOTEL) ?? [];
+  }
+
+  /** Familias anfitrionas visibles para el usuario actual: managers/coaches solo ven las de sus categorías */
+  get familyLodgings(): TripLodging[] {
+    const all = this.trip?.lodgings.filter((l) => l.type === LodgingTypeEnum.HOST_FAMILY) ?? [];
+    const scope = this.scopedCategories();
+    if (!scope) return all;
+    return all.filter((l) => !l.category || scope.has(l.category));
+  }
+
+  familySearch = '';
+  familyCategoryFilter: CategoryEnum | '' = '';
+
+  onFamilySearchChange(term: string): void {
+    this.familySearch = term;
+  }
+
+  onFamilyCategoryChange(cat: CategoryEnum | ''): void {
+    this.familyCategoryFilter = cat;
+  }
+
+  get filteredFamilyLodgings(): TripLodging[] {
+    const term = this.familySearch.toLowerCase().trim();
+    const cat = this.familyCategoryFilter;
+    return this.familyLodgings.filter(
+      (l) =>
+        (!term || l.name.toLowerCase().includes(term) || (l.contactName ?? '').toLowerCase().includes(term)) &&
+        (!cat || l.category === cat)
+    );
+  }
+
+  // ── Buscador de alojamiento (autocompletar) ────────────────────────────────
+
+  private readonly lodgingSearchTerms = new Map<string, string>();
+
+  getLodgingSearchTerm(p: TripParticipant): string {
+    return this.lodgingSearchTerms.get(p.id!) ?? '';
+  }
+
+  setLodgingSearchTerm(p: TripParticipant, value: string): void {
+    this.lodgingSearchTerms.set(p.id!, value);
+  }
+
+  clearLodgingSearchTerm(p: TripParticipant): void {
+    this.lodgingSearchTerms.delete(p.id!);
+  }
+
+  filterLodgings(term: string): TripLodging[] {
+    const lodgings = this.trip?.lodgings ?? [];
+    const t = term.toLowerCase().trim();
+    if (!t) return lodgings;
+    return lodgings.filter((l) => l.name.toLowerCase().includes(t));
+  }
+
+  bulkLodgingSearchTerm = '';
+
+  onBulkLodgingSelected(lodgingId: string): void {
+    this.bulkAssignToLodging(lodgingId);
+    this.bulkLodgingSearchTerm = '';
   }
 
   // ── Exportación pasajeros ─────────────────────────────────────────────────
@@ -1569,6 +1637,7 @@ export class TripViewerComponent implements OnInit {
   assignLodging(p: TripParticipant, value: string): void {
     if (!this.trip?.id || !p.id) return;
     const lodgingId = value === this.UNASSIGN_SENTINEL ? null : value;
+    this.clearLodgingSearchTerm(p);
     this.tripsService
       .moveParticipantLodging(this.trip.id, p.id, { lodgingId })
       .pipe(takeUntilDestroyed(this.destroyRef))

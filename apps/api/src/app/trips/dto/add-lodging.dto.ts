@@ -7,7 +7,7 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { LodgingTypeEnum } from '@ltrc-campo/shared-api-model';
+import { CategoryEnum, LodgingTypeEnum } from '@ltrc-campo/shared-api-model';
 
 export class AddLodgingDto {
   @IsNotEmpty()
@@ -37,4 +37,8 @@ export class AddLodgingDto {
   @IsOptional()
   @IsString()
   readonly notes?: string;
+
+  @IsOptional()
+  @IsEnum(CategoryEnum)
+  readonly category?: CategoryEnum;
 }

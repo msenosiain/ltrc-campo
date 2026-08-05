@@ -506,6 +506,139 @@ mat-card-actions {
   color: var(--mat-sys-on-surface-variant);
 }
 
+.lodging-autocomplete-input {
+  font-size: 0.85rem;
+  min-width: 180px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: transparent;
+  color: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--mat-sys-primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.lodging-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.family-table {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.family-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.6fr 1.2fr 0.5fr 2.2fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  font-size: 0.88rem;
+
+  &:first-of-type { border-top: none; }
+
+  &--header {
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--mat-sys-on-surface-variant);
+    background: var(--mat-sys-surface-variant);
+  }
+
+  &--edit {
+    display: block;
+    background: rgba(0, 0, 0, 0.02);
+  }
+}
+
+.family-row__name {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+
+  .transport-meta--notes { font-weight: 400; margin-top: 2px; }
+}
+
+.family-row__contact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.family-row__players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.family-row__actions {
+  display: flex;
+  gap: 2px;
+  justify-self: end;
+}
+
+.family-row__edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.player-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--mat-sys-surface-variant);
+  color: var(--mat-sys-on-surface-variant);
+  border-radius: 12px;
+  padding: 2px 4px 2px 10px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+.empty-hint {
+  font-size: 0.82rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
+
 .add-all-group {
   display: flex;
   align-items: center;

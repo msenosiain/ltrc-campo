@@ -38,6 +38,7 @@ export class TripLodgingEntity {
   address?: string;
   capacity!: number;
   notes?: string;
+  category?: CategoryEnum;
 }
 
 export class TripParticipantEntity {
