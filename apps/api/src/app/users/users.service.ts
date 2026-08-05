@@ -57,6 +57,20 @@ export class UsersService {
       queryFilters['roles'] = filters.role;
     }
 
+    if (filters.excludePlayers) {
+      queryFilters['roles'] = {
+        $in: [
+          RoleEnum.ADMIN,
+          RoleEnum.MANAGER,
+          RoleEnum.COORDINATOR,
+          RoleEnum.COACH,
+          RoleEnum.TRAINER,
+          RoleEnum.ANALYST,
+          RoleEnum.KINE,
+        ],
+      };
+    }
+
     if (filters.sport) {
       queryFilters['sports'] = { $in: [filters.sport] };
     }

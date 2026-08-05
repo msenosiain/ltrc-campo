@@ -461,6 +461,7 @@ export class TripViewerComponent implements OnInit {
             size: 20,
             filters: {
               searchTerm: term,
+              excludePlayers: true,
             },
           })
         ),

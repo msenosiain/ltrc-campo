@@ -1,10 +1,14 @@
-import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { CategoryEnum, RoleEnum, SportEnum } from '@ltrc-campo/shared-api-model';
 
 export class UserFiltersDto {
   @IsOptional()
   @IsString()
   searchTerm?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  excludePlayers?: boolean;
 
   @IsOptional()
   @IsEnum(RoleEnum)
