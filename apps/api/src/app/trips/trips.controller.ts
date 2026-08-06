@@ -83,6 +83,20 @@ export class TripsController {
     return this.tripsService.bulkUpdateStatus(id, dto.participantIds, dto.status, (req as any).user);
   }
 
+  @Patch(':id/participants/bulk-lodging')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
+  bulkMoveParticipantsLodging(
+    @Param('id') id: string,
+    @Body() dto: BulkMoveParticipantsLodgingDto,
+    @Req() req: Request
+  ) {
+    return this.tripsService.bulkMoveParticipantsLodging(
+      id,
+      dto,
+      (req as any).user
+    );
+  }
+
   @Post(':id/participants/bulk')
   @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER)
   bulkAddParticipants(
@@ -300,20 +314,6 @@ export class TripsController {
     return this.tripsService.moveParticipantLodging(
       id,
       participantId,
-      dto,
-      (req as any).user
-    );
-  }
-
-  @Patch(':id/participants/bulk-lodging')
-  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
-  bulkMoveParticipantsLodging(
-    @Param('id') id: string,
-    @Body() dto: BulkMoveParticipantsLodgingDto,
-    @Req() req: Request
-  ) {
-    return this.tripsService.bulkMoveParticipantsLodging(
-      id,
       dto,
       (req as any).user
     );
