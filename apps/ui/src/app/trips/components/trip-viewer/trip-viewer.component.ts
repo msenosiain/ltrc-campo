@@ -420,6 +420,8 @@ export class TripViewerComponent implements OnInit {
   readonly UNASSIGNED_PAGE_SIZE = 15;
   readonly unassignedSelectedIds = new Set<string>();
   bulkAssigning = false;
+  unassignedSortColumn: 'name' | 'type' | 'category' | null = null;
+  unassignedSortDirection: 'asc' | 'desc' = 'asc';
 
   addTransportForm = this.fb.group({
     name: ['', Validators.required],
@@ -450,6 +452,8 @@ export class TripViewerComponent implements OnInit {
   unassignedLodgingPage = 0;
   readonly unassignedLodgingSelectedIds = new Set<string>();
   bulkAssigningLodging = false;
+  unassignedLodgingSortColumn: 'name' | 'type' | 'category' | null = null;
+  unassignedLodgingSortDirection: 'asc' | 'desc' = 'asc';
 
   addLodgingForm = this.fb.group({
     name: ['', Validators.required],
@@ -1001,16 +1005,26 @@ export class TripViewerComponent implements OnInit {
     return participantTypeOptions.map((o) => o.id).filter((id) => all.has(id));
   }
 
+  toggleUnassignedSort(column: 'name' | 'type' | 'category'): void {
+    if (this.unassignedSortColumn === column) {
+      this.unassignedSortDirection = this.unassignedSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.unassignedSortColumn = column;
+      this.unassignedSortDirection = 'asc';
+    }
+  }
+
   get filteredUnassignedParticipants(): TripParticipant[] {
     const term = this.unassignedSearch.toLowerCase().trim();
     const cat = this.unassignedCategoryFilter;
     const type = this.unassignedTypeFilter;
-    return this.getUnassignedParticipants().filter(
+    const list = this.getUnassignedParticipants().filter(
       (p) =>
         (!term || this.getParticipantName(p).toLowerCase().includes(term)) &&
         (!cat || this.getParticipantCategory(p) === cat) &&
         (!type || p.type === type)
     );
+    return this.applySort(list, this.unassignedSortColumn, this.unassignedSortDirection);
   }
 
   get pagedUnassignedParticipants(): TripParticipant[] {
@@ -1129,16 +1143,26 @@ export class TripViewerComponent implements OnInit {
     return participantTypeOptions.map((o) => o.id).filter((id) => all.has(id));
   }
 
+  toggleUnassignedLodgingSort(column: 'name' | 'type' | 'category'): void {
+    if (this.unassignedLodgingSortColumn === column) {
+      this.unassignedLodgingSortDirection = this.unassignedLodgingSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.unassignedLodgingSortColumn = column;
+      this.unassignedLodgingSortDirection = 'asc';
+    }
+  }
+
   get filteredUnassignedLodgingParticipants(): TripParticipant[] {
     const term = this.unassignedLodgingSearch.toLowerCase().trim();
     const cat = this.unassignedLodgingCategoryFilter;
     const type = this.unassignedLodgingTypeFilter;
-    return this.getUnassignedForLodgingParticipants().filter(
+    const list = this.getUnassignedForLodgingParticipants().filter(
       (p) =>
         (!term || this.getParticipantName(p).toLowerCase().includes(term)) &&
         (!cat || this.getParticipantCategory(p) === cat) &&
         (!type || p.type === type)
     );
+    return this.applySort(list, this.unassignedLodgingSortColumn, this.unassignedLodgingSortDirection);
   }
 
   get pagedUnassignedLodgingParticipants(): TripParticipant[] {
@@ -1601,13 +1625,25 @@ export class TripViewerComponent implements OnInit {
     }
   }
 
-  private hotelSortValue(p: TripParticipant, column: 'name' | 'type' | 'category' | 'room'): string {
+  private getParticipantSortValue(p: TripParticipant, column: 'name' | 'type' | 'category' | 'room'): string {
     switch (column) {
       case 'name': return this.getParticipantName(p);
       case 'type': return getParticipantTypeLabel(p.type);
       case 'category': return this.getParticipantCategory(p);
       case 'room': return p.roomNumber ?? '';
     }
+  }
+
+  private applySort<T extends 'name' | 'type' | 'category' | 'room'>(
+    list: TripParticipant[],
+    column: T | null,
+    direction: 'asc' | 'desc'
+  ): TripParticipant[] {
+    if (!column) return list;
+    const dir = direction === 'asc' ? 1 : -1;
+    return list
+      .slice()
+      .sort((a, b) => this.getParticipantSortValue(a, column).localeCompare(this.getParticipantSortValue(b, column), 'es') * dir);
   }
 
   getFilteredParticipantsForLodging(lodgingId: string): TripParticipant[] {
@@ -1620,10 +1656,7 @@ export class TripViewerComponent implements OnInit {
         (!type || p.type === type) &&
         (!cat || this.getParticipantCategory(p) === cat)
     );
-    if (!this.hotelSortColumn) return list;
-    const column = this.hotelSortColumn;
-    const dir = this.hotelSortDirection === 'asc' ? 1 : -1;
-    return list.slice().sort((a, b) => this.hotelSortValue(a, column).localeCompare(this.hotelSortValue(b, column), 'es') * dir);
+    return this.applySort(list, this.hotelSortColumn, this.hotelSortDirection);
   }
 
   isHotelParticipantSelected(p: TripParticipant): boolean {
