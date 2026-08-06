@@ -289,7 +289,7 @@ export class TripPassengerExportService {
     };
 
     const drawLodgingBlock = (l: TripLodging, showRoom: boolean): void => {
-      const participants = this.getConfirmedForLodging(trip, l.id!);
+      const participants = this.getConfirmedForLodging(trip, l.id!, showRoom);
       ensureSpace(20);
 
       doc.setFont('helvetica', 'bold');
@@ -382,10 +382,19 @@ export class TripPassengerExportService {
     return sortedKeys.map((k) => [k ? (k as CategoryEnum) : undefined, map.get(k)!]);
   }
 
-  private getConfirmedForLodging(trip: Trip, lodgingId: string): TripParticipant[] {
+  private getConfirmedForLodging(trip: Trip, lodgingId: string, sortByRoom = false): TripParticipant[] {
     return trip.participants
       .filter((p) => p.lodgingId === lodgingId && p.status === TripParticipantStatusEnum.CONFIRMED)
       .sort((a, b) => {
+        if (sortByRoom) {
+          const roomA = a.roomNumber ?? '';
+          const roomB = b.roomNumber ?? '';
+          if (roomA !== roomB) {
+            if (!roomA) return 1;
+            if (!roomB) return -1;
+            return roomA.localeCompare(roomB, 'es', { numeric: true });
+          }
+        }
         const rankA = CATEGORY_AGE_RANK[(a.player as any)?.category as keyof typeof CATEGORY_AGE_RANK] ?? 999;
         const rankB = CATEGORY_AGE_RANK[(b.player as any)?.category as keyof typeof CATEGORY_AGE_RANK] ?? 999;
         if (rankA !== rankB) return rankA - rankB;
