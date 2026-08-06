@@ -410,6 +410,7 @@ export class TripViewerComponent implements OnInit {
   editingTransportId: string | null = null;
   generatingTransportPdf = false;
   generatingPassengerPdf = false;
+  generatingLodgingsPdf = false;
 
   // ── Estado tab Sin Asignar ────────────────────────────────────────────────
   unassignedSearch = '';
@@ -456,6 +457,8 @@ export class TripViewerComponent implements OnInit {
     capacity: [null as number | null, [Validators.required, Validators.min(1)]],
     contactName: [''],
     phone: [''],
+    contactName2: [''],
+    phone2: [''],
     address: [''],
     notes: [''],
     category: [null as CategoryEnum | null],
@@ -467,6 +470,8 @@ export class TripViewerComponent implements OnInit {
     capacity: [null as number | null, [Validators.required, Validators.min(1)]],
     contactName: [''],
     phone: [''],
+    contactName2: [''],
+    phone2: [''],
     address: [''],
     notes: [''],
     category: [null as CategoryEnum | null],
@@ -1204,12 +1209,13 @@ export class TripViewerComponent implements OnInit {
     this.unassignedLodgingSelectedIds.clear();
   }
 
-  bulkAssignToLodging(lodgingId: string): void {
+  bulkAssignToLodging(lodgingId: string | null): void {
     if (!this.trip?.id || this.unassignedLodgingSelectedIds.size === 0) return;
     this.bulkAssigningLodging = true;
     const ids = [...this.unassignedLodgingSelectedIds];
-    concat(...ids.map((id) => this.tripsService.moveParticipantLodging(this.trip!.id!, id, { lodgingId })))
-      .pipe(last(), takeUntilDestroyed(this.destroyRef))
+    this.tripsService
+      .bulkMoveParticipantsLodging(this.trip.id, ids, lodgingId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (trip) => {
           this.trip = trip;
@@ -1440,12 +1446,18 @@ export class TripViewerComponent implements OnInit {
   submitAddLodging(): void {
     if (!this.trip?.id || this.addLodgingForm.invalid) return;
     const v = this.addLodgingForm.getRawValue();
+    if (v.type === LodgingTypeEnum.HOST_FAMILY && (!v.contactName || !v.phone)) {
+      this.snackBar.open('El contacto y el teléfono son obligatorios para familias anfitrionas', 'Cerrar', { duration: 3000 });
+      return;
+    }
     const payload: AddLodgingPayload = {
       name: v.name!,
       type: v.type!,
       capacity: v.capacity!,
       contactName: v.contactName || undefined,
       phone: v.phone || undefined,
+      contactName2: v.contactName2 || undefined,
+      phone2: v.phone2 || undefined,
       address: v.address || undefined,
       notes: v.notes || undefined,
       category: v.type === LodgingTypeEnum.HOST_FAMILY ? v.category ?? undefined : undefined,
@@ -1473,6 +1485,8 @@ export class TripViewerComponent implements OnInit {
       capacity: l.capacity,
       contactName: l.contactName ?? '',
       phone: l.phone ?? '',
+      contactName2: l.contactName2 ?? '',
+      phone2: l.phone2 ?? '',
       address: l.address ?? '',
       notes: l.notes ?? '',
       category: l.category ?? null,
@@ -1486,6 +1500,10 @@ export class TripViewerComponent implements OnInit {
   submitEditLodging(): void {
     if (!this.trip?.id || !this.editingLodgingId || this.editLodgingForm.invalid) return;
     const v = this.editLodgingForm.getRawValue();
+    if (v.type === LodgingTypeEnum.HOST_FAMILY && (!v.contactName || !v.phone)) {
+      this.snackBar.open('El contacto y el teléfono son obligatorios para familias anfitrionas', 'Cerrar', { duration: 3000 });
+      return;
+    }
     this.tripsService
       .updateLodging(this.trip.id, this.editingLodgingId, {
         name: v.name!,
@@ -1493,6 +1511,8 @@ export class TripViewerComponent implements OnInit {
         capacity: v.capacity!,
         contactName: v.contactName || undefined,
         phone: v.phone || undefined,
+        contactName2: v.contactName2 || undefined,
+        phone2: v.phone2 || undefined,
         address: v.address || undefined,
         notes: v.notes || undefined,
         category: v.type === LodgingTypeEnum.HOST_FAMILY ? v.category ?? undefined : undefined,
@@ -1533,6 +1553,72 @@ export class TripViewerComponent implements OnInit {
     return this.trip?.lodgings.filter((l) => l.type === LodgingTypeEnum.HOTEL) ?? [];
   }
 
+  // ── Selección múltiple dentro de un hotel ───────────────────────────────
+
+  readonly hotelParticipantSelectedIds = new Set<string>();
+  bulkRemovingFromHotel = false;
+
+  isHotelParticipantSelected(p: TripParticipant): boolean {
+    return !!p.id && this.hotelParticipantSelectedIds.has(p.id);
+  }
+
+  toggleHotelParticipantSelection(p: TripParticipant): void {
+    if (!p.id) return;
+    if (this.hotelParticipantSelectedIds.has(p.id)) {
+      this.hotelParticipantSelectedIds.delete(p.id);
+    } else {
+      this.hotelParticipantSelectedIds.add(p.id);
+    }
+  }
+
+  allHotelParticipantsSelected(lodgingId: string): boolean {
+    const list = this.getParticipantsForLodging(lodgingId);
+    return list.length > 0 && list.every((p) => p.id && this.hotelParticipantSelectedIds.has(p.id));
+  }
+
+  someHotelParticipantsSelected(lodgingId: string): boolean {
+    const list = this.getParticipantsForLodging(lodgingId);
+    return list.some((p) => p.id && this.hotelParticipantSelectedIds.has(p.id)) && !this.allHotelParticipantsSelected(lodgingId);
+  }
+
+  toggleAllHotelParticipants(lodgingId: string): void {
+    const list = this.getParticipantsForLodging(lodgingId);
+    if (this.allHotelParticipantsSelected(lodgingId)) {
+      list.forEach((p) => p.id && this.hotelParticipantSelectedIds.delete(p.id));
+    } else {
+      list.forEach((p) => p.id && this.hotelParticipantSelectedIds.add(p.id));
+    }
+  }
+
+  clearHotelParticipantSelection(): void {
+    this.hotelParticipantSelectedIds.clear();
+  }
+
+  bulkRemoveFromHotel(): void {
+    if (!this.trip?.id || this.hotelParticipantSelectedIds.size === 0) return;
+    this.bulkRemovingFromHotel = true;
+    const ids = [...this.hotelParticipantSelectedIds];
+    this.tripsService
+      .bulkMoveParticipantsLodging(this.trip.id, ids, null)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (trip) => {
+          this.trip = trip;
+          this.hotelParticipantSelectedIds.clear();
+          this.bulkRemovingFromHotel = false;
+          this.snackBar.open(
+            `${ids.length} pasajero${ids.length !== 1 ? 's' : ''} pasado${ids.length !== 1 ? 's' : ''} a sin asignar`,
+            'Cerrar',
+            { duration: 3000 }
+          );
+        },
+        error: (err) => {
+          this.bulkRemovingFromHotel = false;
+          this.snackBar.open(getErrorMessage(err, 'Error al quitar del hotel'), 'Cerrar', { duration: 4000 });
+        },
+      });
+  }
+
   /** Familias anfitrionas visibles para el usuario actual: managers/coaches solo ven las de sus categorías */
   get familyLodgings(): TripLodging[] {
     const all = this.trip?.lodgings.filter((l) => l.type === LodgingTypeEnum.HOST_FAMILY) ?? [];
@@ -1542,10 +1628,15 @@ export class TripViewerComponent implements OnInit {
   }
 
   familySearch = '';
+  familyPlayerSearch = '';
   familyCategoryFilter: CategoryEnum | '' = '';
 
   onFamilySearchChange(term: string): void {
     this.familySearch = term;
+  }
+
+  onFamilyPlayerSearchChange(term: string): void {
+    this.familyPlayerSearch = term;
   }
 
   onFamilyCategoryChange(cat: CategoryEnum | ''): void {
@@ -1554,12 +1645,19 @@ export class TripViewerComponent implements OnInit {
 
   get filteredFamilyLodgings(): TripLodging[] {
     const term = this.familySearch.toLowerCase().trim();
+    const playerTerm = this.familyPlayerSearch.toLowerCase().trim();
     const cat = this.familyCategoryFilter;
-    return this.familyLodgings.filter(
-      (l) =>
-        (!term || l.name.toLowerCase().includes(term) || (l.contactName ?? '').toLowerCase().includes(term)) &&
-        (!cat || l.category === cat)
-    );
+    return this.familyLodgings.filter((l) => {
+      if (cat && l.category !== cat) return false;
+      if (term && !(l.name.toLowerCase().includes(term) || (l.contactName ?? '').toLowerCase().includes(term))) {
+        return false;
+      }
+      if (playerTerm) {
+        const players = this.getParticipantsForLodging(l.id!);
+        if (!players.some((p) => this.getParticipantName(p).toLowerCase().includes(playerTerm))) return false;
+      }
+      return true;
+    });
   }
 
   // ── Buscador de alojamiento (autocompletar) ────────────────────────────────
@@ -1585,6 +1683,10 @@ export class TripViewerComponent implements OnInit {
     return lodgings.filter((l) => l.name.toLowerCase().includes(t));
   }
 
+  getLodgingName = (lodgingId: string): string => {
+    return this.trip?.lodgings.find((l) => l.id === lodgingId)?.name ?? '';
+  };
+
   bulkLodgingSearchTerm = '';
 
   onBulkLodgingSelected(lodgingId: string): void {
@@ -1604,6 +1706,14 @@ export class TripViewerComponent implements OnInit {
     this.generatingPassengerPdf = true;
     this.passengerExportService.generatePdf(this.trip).finally(() => {
       this.generatingPassengerPdf = false;
+    });
+  }
+
+  exportLodgingsPdf(): void {
+    if (!this.trip) return;
+    this.generatingLodgingsPdf = true;
+    this.passengerExportService.generateLodgingsPdf(this.trip).finally(() => {
+      this.generatingLodgingsPdf = false;
     });
   }
 

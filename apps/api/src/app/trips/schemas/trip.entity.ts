@@ -35,6 +35,8 @@ export class TripLodgingEntity {
   name!: string;
   contactName?: string;
   phone?: string;
+  contactName2?: string;
+  phone2?: string;
   address?: string;
   capacity!: number;
   notes?: string;

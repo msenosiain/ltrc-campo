@@ -74,6 +74,8 @@ export interface AddLodgingPayload {
   capacity: number;
   contactName?: string;
   phone?: string;
+  contactName2?: string;
+  phone2?: string;
   address?: string;
   notes?: string;
   category?: CategoryEnum;
@@ -244,6 +246,17 @@ export class TripsService {
       `${this.baseUrl}/${tripId}/participants/${participantId}/lodging`,
       payload
     );
+  }
+
+  bulkMoveParticipantsLodging(
+    tripId: string,
+    participantIds: string[],
+    lodgingId: string | null
+  ): Observable<Trip> {
+    return this.http.patch<Trip>(`${this.baseUrl}/${tripId}/participants/bulk-lodging`, {
+      participantIds,
+      lodgingId,
+    });
   }
 
   // ── Public (no auth) ──────────────────────────────────────────────────────

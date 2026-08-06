@@ -36,6 +36,9 @@ export interface TripLodging {
   readonly name: string;
   readonly contactName?: string;
   readonly phone?: string;
+  /** Segundo contacto (aplica a familias anfitrionas) */
+  readonly contactName2?: string;
+  readonly phone2?: string;
   readonly address?: string;
   readonly capacity: number;
   readonly notes?: string;

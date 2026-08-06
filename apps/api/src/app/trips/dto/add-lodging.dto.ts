@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   Min,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CategoryEnum, LodgingTypeEnum } from '@ltrc-campo/shared-api-model';
@@ -22,13 +23,23 @@ export class AddLodgingDto {
   @Min(1)
   readonly capacity!: number;
 
-  @IsOptional()
+  @ValidateIf((o) => o.type === LodgingTypeEnum.HOST_FAMILY)
+  @IsNotEmpty({ message: 'El contacto es obligatorio para familias anfitrionas' })
   @IsString()
   readonly contactName?: string;
 
-  @IsOptional()
+  @ValidateIf((o) => o.type === LodgingTypeEnum.HOST_FAMILY)
+  @IsNotEmpty({ message: 'El teléfono es obligatorio para familias anfitrionas' })
   @IsString()
   readonly phone?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly contactName2?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly phone2?: string;
 
   @IsOptional()
   @IsString()

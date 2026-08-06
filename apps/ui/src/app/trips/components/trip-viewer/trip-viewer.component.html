@@ -945,10 +945,6 @@
                     }
                   </mat-select>
                 </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Capacidad</mat-label>
-                  <input matInput type="number" formControlName="capacity" min="1" />
-                </mat-form-field>
                 @if (addLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY) {
                   <mat-form-field appearance="outline">
                     <mat-label>Categoría</mat-label>
@@ -961,19 +957,37 @@
                 }
               </div>
               <div class="form-row">
-                <mat-form-field appearance="outline">
-                  <mat-label>Contacto</mat-label>
-                  <input matInput formControlName="contactName" />
+                <mat-form-field appearance="outline" style="flex: 1;">
+                  <mat-label>Capacidad</mat-label>
+                  <input matInput type="number" formControlName="capacity" min="1" />
                 </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Teléfono</mat-label>
-                  <input matInput formControlName="phone" />
-                </mat-form-field>
-                <mat-form-field appearance="outline">
+                <mat-form-field appearance="outline" style="flex: 4;">
                   <mat-label>Dirección</mat-label>
                   <input matInput formControlName="address" />
                 </mat-form-field>
               </div>
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ addLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY ? 'Contacto *' : 'Contacto' }}</mat-label>
+                  <input matInput formControlName="contactName" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ addLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY ? 'Teléfono *' : 'Teléfono' }}</mat-label>
+                  <input matInput formControlName="phone" />
+                </mat-form-field>
+              </div>
+              @if (addLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY) {
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Contacto 2</mat-label>
+                    <input matInput formControlName="contactName2" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Teléfono 2</mat-label>
+                    <input matInput formControlName="phone2" />
+                  </mat-form-field>
+                </div>
+              }
               <div class="form-row">
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Notas</mat-label>
@@ -1066,10 +1080,6 @@
                             }
                           </mat-select>
                         </mat-form-field>
-                        <mat-form-field appearance="outline">
-                          <mat-label>Capacidad</mat-label>
-                          <input matInput type="number" formControlName="capacity" min="1" />
-                        </mat-form-field>
                         @if (editLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY) {
                           <mat-form-field appearance="outline">
                             <mat-label>Categoría</mat-label>
@@ -1082,19 +1092,37 @@
                         }
                       </div>
                       <div class="form-row">
-                        <mat-form-field appearance="outline">
-                          <mat-label>Contacto</mat-label>
-                          <input matInput formControlName="contactName" />
+                        <mat-form-field appearance="outline" style="flex: 1;">
+                          <mat-label>Capacidad</mat-label>
+                          <input matInput type="number" formControlName="capacity" min="1" />
                         </mat-form-field>
-                        <mat-form-field appearance="outline">
-                          <mat-label>Teléfono</mat-label>
-                          <input matInput formControlName="phone" />
-                        </mat-form-field>
-                        <mat-form-field appearance="outline">
+                        <mat-form-field appearance="outline" style="flex: 4;">
                           <mat-label>Dirección</mat-label>
                           <input matInput formControlName="address" />
                         </mat-form-field>
                       </div>
+                      <div class="form-row">
+                        <mat-form-field appearance="outline">
+                          <mat-label>{{ editLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY ? 'Contacto *' : 'Contacto' }}</mat-label>
+                          <input matInput formControlName="contactName" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>{{ editLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY ? 'Teléfono *' : 'Teléfono' }}</mat-label>
+                          <input matInput formControlName="phone" />
+                        </mat-form-field>
+                      </div>
+                      @if (editLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY) {
+                        <div class="form-row">
+                          <mat-form-field appearance="outline">
+                            <mat-label>Contacto 2</mat-label>
+                            <input matInput formControlName="contactName2" />
+                          </mat-form-field>
+                          <mat-form-field appearance="outline">
+                            <mat-label>Teléfono 2</mat-label>
+                            <input matInput formControlName="phone2" />
+                          </mat-form-field>
+                        </div>
+                      }
                       <div class="form-row">
                         <mat-form-field appearance="outline" class="full-width">
                           <mat-label>Notas</mat-label>
@@ -1106,7 +1134,36 @@
 
                   <!-- Tabla de pasajeros -->
                   @if (getParticipantsForLodging(l.id!).length > 0) {
+                    @if (hotelParticipantSelectedIds.size > 0) {
+                      <div class="bulk-action-bar" *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
+                        <span class="bulk-action-bar__count">{{ hotelParticipantSelectedIds.size }} seleccionado{{ hotelParticipantSelectedIds.size !== 1 ? 's' : '' }}</span>
+                        <span class="bulk-action-bar__sep">·</span>
+                        <button mat-stroked-button type="button" [disabled]="bulkRemovingFromHotel" (click)="bulkRemoveFromHotel()">
+                          <mat-icon>logout</mat-icon> Quitar del hotel
+                        </button>
+                        <button mat-icon-button matTooltip="Deseleccionar todos" [disabled]="bulkRemovingFromHotel" (click)="clearHotelParticipantSelection()">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </div>
+                    }
                     <table mat-table [dataSource]="getParticipantsForLodging(l.id!)" class="transport-participants-table">
+                      <ng-container matColumnDef="select">
+                        <th mat-header-cell *matHeaderCellDef>
+                          <mat-checkbox
+                            *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]"
+                            [checked]="allHotelParticipantsSelected(l.id!)"
+                            [indeterminate]="someHotelParticipantsSelected(l.id!)"
+                            (change)="toggleAllHotelParticipants(l.id!)"
+                          />
+                        </th>
+                        <td mat-cell *matCellDef="let p">
+                          <mat-checkbox
+                            *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]"
+                            [checked]="isHotelParticipantSelected(p)"
+                            (change)="toggleHotelParticipantSelection(p)"
+                          />
+                        </td>
+                      </ng-container>
                       <ng-container matColumnDef="name">
                         <th mat-header-cell *matHeaderCellDef>Pasajero</th>
                         <td mat-cell *matCellDef="let p">{{ getParticipantName(p) }}</td>
@@ -1153,8 +1210,8 @@
                           </ng-container>
                         </td>
                       </ng-container>
-                      <tr mat-header-row *matHeaderRowDef="['name', 'type', 'category', 'room', 'move']"></tr>
-                      <tr mat-row *matRowDef="let row; columns: ['name', 'type', 'category', 'room', 'move']"></tr>
+                      <tr mat-header-row *matHeaderRowDef="['select', 'name', 'type', 'category', 'room', 'move']"></tr>
+                      <tr mat-row *matRowDef="let row; columns: ['select', 'name', 'type', 'category', 'room', 'move']"></tr>
                     </table>
                   } @else {
                     <p class="empty-message">Sin pasajeros asignados.</p>
@@ -1174,6 +1231,15 @@
                       <input matInput [value]="familySearch" (input)="onFamilySearchChange($any($event.target).value)" placeholder="Nombre o contacto" />
                       @if (familySearch) {
                         <button mat-icon-button matSuffix type="button" (click)="onFamilySearchChange('')"><mat-icon>close</mat-icon></button>
+                      } @else {
+                        <mat-icon matSuffix>search</mat-icon>
+                      }
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="pfilter-search">
+                      <mat-label>Buscar jugador alojado</mat-label>
+                      <input matInput [value]="familyPlayerSearch" (input)="onFamilyPlayerSearchChange($any($event.target).value)" placeholder="Nombre del jugador" />
+                      @if (familyPlayerSearch) {
+                        <button mat-icon-button matSuffix type="button" (click)="onFamilyPlayerSearchChange('')"><mat-icon>close</mat-icon></button>
                       } @else {
                         <mat-icon matSuffix>search</mat-icon>
                       }
@@ -1200,7 +1266,7 @@
             </div>
             @for (l of filteredFamilyLodgings; track l.id) {
               @if (editingLodgingId === l.id) {
-                <div class="family-row family-row--edit" [formGroup]="editLodgingForm">
+                <div class="family-row family-row--edit wide-form-card" [formGroup]="editLodgingForm">
                   <div class="form-row">
                     <mat-form-field appearance="outline">
                       <mat-label>Nombre</mat-label>
@@ -1214,10 +1280,6 @@
                         }
                       </mat-select>
                     </mat-form-field>
-                    <mat-form-field appearance="outline">
-                      <mat-label>Capacidad</mat-label>
-                      <input matInput type="number" formControlName="capacity" min="1" />
-                    </mat-form-field>
                     @if (editLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY) {
                       <mat-form-field appearance="outline">
                         <mat-label>Categoría</mat-label>
@@ -1230,19 +1292,37 @@
                     }
                   </div>
                   <div class="form-row">
-                    <mat-form-field appearance="outline">
-                      <mat-label>Contacto</mat-label>
-                      <input matInput formControlName="contactName" />
+                    <mat-form-field appearance="outline" style="flex: 1;">
+                      <mat-label>Capacidad</mat-label>
+                      <input matInput type="number" formControlName="capacity" min="1" />
                     </mat-form-field>
-                    <mat-form-field appearance="outline">
-                      <mat-label>Teléfono</mat-label>
-                      <input matInput formControlName="phone" />
-                    </mat-form-field>
-                    <mat-form-field appearance="outline">
+                    <mat-form-field appearance="outline" style="flex: 4;">
                       <mat-label>Dirección</mat-label>
                       <input matInput formControlName="address" />
                     </mat-form-field>
                   </div>
+                  <div class="form-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ editLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY ? 'Contacto *' : 'Contacto' }}</mat-label>
+                      <input matInput formControlName="contactName" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ editLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY ? 'Teléfono *' : 'Teléfono' }}</mat-label>
+                      <input matInput formControlName="phone" />
+                    </mat-form-field>
+                  </div>
+                  @if (editLodgingForm.get('type')?.value === LodgingTypeEnum.HOST_FAMILY) {
+                    <div class="form-row">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Contacto 2</mat-label>
+                        <input matInput formControlName="contactName2" />
+                      </mat-form-field>
+                      <mat-form-field appearance="outline">
+                        <mat-label>Teléfono 2</mat-label>
+                        <input matInput formControlName="phone2" />
+                      </mat-form-field>
+                    </div>
+                  }
                   <div class="form-row">
                     <mat-form-field appearance="outline" class="full-width">
                       <mat-label>Notas</mat-label>
@@ -1268,9 +1348,19 @@
                     @if (l.category) { {{ getCategoryLabel(l.category) }} } @else { <span class="empty-hint">—</span> }
                   </div>
                   <div class="family-row__contact">
-                    @if (l.contactName) { <span>{{ l.contactName }}</span> }
-                    @if (l.phone) { <span><mat-icon class="inline-icon">phone</mat-icon>{{ l.phone }}</span> }
-                    @if (!l.contactName && !l.phone) { <span class="empty-hint">—</span> }
+                    @if (l.contactName || l.phone) {
+                      <span>
+                        @if (l.contactName) { {{ l.contactName }} }
+                        @if (l.phone) { <mat-icon class="inline-icon">phone</mat-icon>{{ l.phone }} }
+                      </span>
+                    }
+                    @if (l.contactName2 || l.phone2) {
+                      <span>
+                        @if (l.contactName2) { {{ l.contactName2 }} }
+                        @if (l.phone2) { <mat-icon class="inline-icon">phone</mat-icon>{{ l.phone2 }} }
+                      </span>
+                    }
+                    @if (!l.contactName && !l.phone && !l.contactName2 && !l.phone2) { <span class="empty-hint">—</span> }
                   </div>
                   <div class="family-row__capacity">
                     <span class="transport-tab-badge" [class.transport-tab-badge--full]="isLodgingFull(l)">
@@ -1371,7 +1461,7 @@
                   [matAutocomplete]="bulkLodgingAuto"
                   (input)="bulkLodgingSearchTerm = $any($event.target).value"
                 />
-                <mat-autocomplete #bulkLodgingAuto="matAutocomplete" (optionSelected)="onBulkLodgingSelected($event.option.value)">
+                <mat-autocomplete #bulkLodgingAuto="matAutocomplete" [displayWith]="getLodgingName" (optionSelected)="onBulkLodgingSelected($event.option.value)">
                   @for (lodging of filterLodgings(bulkLodgingSearchTerm); track lodging.id) {
                     <mat-option [value]="lodging.id" [disabled]="isLodgingFull(lodging)">
                       {{ lodging.name }} ({{ getLodgingOccupancy(lodging) }}/{{ lodging.capacity }})
@@ -1445,7 +1535,7 @@
                         [matAutocomplete]="rowLodgingAuto"
                         (input)="setLodgingSearchTerm(p, $any($event.target).value)"
                       />
-                      <mat-autocomplete #rowLodgingAuto="matAutocomplete" (optionSelected)="assignLodging(p, $event.option.value)">
+                      <mat-autocomplete #rowLodgingAuto="matAutocomplete" [displayWith]="getLodgingName" (optionSelected)="assignLodging(p, $event.option.value)">
                         @for (lodging of filterLodgings(getLodgingSearchTerm(p)); track lodging.id) {
                           <mat-option [value]="lodging.id" [disabled]="isLodgingFull(lodging)">
                             {{ lodging.name }} ({{ getLodgingOccupancy(lodging) }}/{{ lodging.capacity }})
@@ -1538,6 +1628,27 @@
                 </div>
               </div>
             }
+          </div>
+        }
+
+        @if (trip.lodgings.length > 0) {
+          <mat-divider />
+          <div class="export-section">
+            <p class="export-subtitle">Listado de familias anfitrionas y pasajeros de hoteles, agrupado por tipo de alojamiento.</p>
+            <div class="export-row export-row--all">
+              <div class="export-row__info">
+                <span class="export-transport-name">Alojamientos</span>
+                <span class="export-transport-meta">
+                  {{ hotelLodgings.length }} hotel{{ hotelLodgings.length !== 1 ? 'es' : '' }} · {{ familyLodgings.length }} familia{{ familyLodgings.length !== 1 ? 's' : '' }} anfitriona{{ familyLodgings.length !== 1 ? 's' : '' }}
+                </span>
+              </div>
+              <div class="export-row__actions">
+                <button mat-stroked-button [disabled]="generatingLodgingsPdf" (click)="exportLodgingsPdf()">
+                  <mat-icon>print</mat-icon>
+                  {{ generatingLodgingsPdf ? 'Generando…' : 'PDF' }}
+                </button>
+              </div>
+            </div>
           </div>
         }
       </div>

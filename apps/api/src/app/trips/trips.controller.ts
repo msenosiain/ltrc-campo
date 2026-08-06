@@ -27,6 +27,7 @@ import { MoveParticipantDto } from './dto/move-participant.dto';
 import { AddLodgingDto } from './dto/add-lodging.dto';
 import { UpdateLodgingDto } from './dto/update-lodging.dto';
 import { MoveParticipantLodgingDto } from './dto/move-participant-lodging.dto';
+import { BulkMoveParticipantsLodgingDto } from './dto/bulk-move-participants-lodging.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginationDto } from '../shared/pagination.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -299,6 +300,20 @@ export class TripsController {
     return this.tripsService.moveParticipantLodging(
       id,
       participantId,
+      dto,
+      (req as any).user
+    );
+  }
+
+  @Patch(':id/participants/bulk-lodging')
+  @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER, RoleEnum.COACH)
+  bulkMoveParticipantsLodging(
+    @Param('id') id: string,
+    @Body() dto: BulkMoveParticipantsLodgingDto,
+    @Req() req: Request
+  ) {
+    return this.tripsService.bulkMoveParticipantsLodging(
+      id,
       dto,
       (req as any).user
     );

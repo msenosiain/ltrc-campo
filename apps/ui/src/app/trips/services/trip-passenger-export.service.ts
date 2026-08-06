@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx-js-style';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { CATEGORY_AGE_RANK, Trip, TripParticipant, TripParticipantStatusEnum, TripParticipantTypeEnum, TripTransport } from '@ltrc-campo/shared-api-model';
+import { CATEGORY_AGE_RANK, LodgingTypeEnum, Trip, TripLodging, TripParticipant, TripParticipantStatusEnum, TripParticipantTypeEnum, TripTransport } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../common/category-options';
 
 const LOGO_PATH = '/escudo.png';
@@ -222,7 +222,152 @@ export class TripPassengerExportService {
     doc.text('lostordos.com.ar', pageW / 2, pageH - 5, { align: 'center' });
   }
 
+  // ── PDF de alojamientos ─────────────────────────────────────────────────────
+
+  async generateLodgingsPdf(trip: Trip): Promise<void> {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const logoBase64 = await this.loadLogo();
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+
+    const drawHeader = (): number => {
+      const logoSize = 16;
+      if (logoBase64) doc.addImage(logoBase64, 'PNG', MARGIN_L, 10, logoSize, logoSize);
+
+      const textX = MARGIN_L + logoSize + 4;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(...PRIMARY);
+      doc.text('LOS TORDOS RUGBY CLUB', textX, 16);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      doc.text('LISTADO DE ALOJAMIENTOS', textX, 22);
+
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.4);
+      doc.line(MARGIN_L, 30, pageW - MARGIN_L, 30);
+
+      doc.setFontSize(8.5);
+      doc.setTextColor(...PRIMARY);
+      doc.setFont('helvetica', 'bold');
+      const lw = doc.getTextWidth('Viaje: ');
+      doc.text('Viaje: ', MARGIN_L, 37);
+      doc.setFont('helvetica', 'normal');
+      doc.text(trip.name, MARGIN_L + lw, 37);
+
+      const now = new Date().toLocaleDateString('es-AR');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(160, 160, 160);
+      doc.text(`Generado: ${now}`, pageW - MARGIN_L, 16, { align: 'right' });
+
+      return 44;
+    };
+
+    let y = drawHeader();
+
+    const ensureSpace = (needed: number): void => {
+      if (y + needed > pageH - 15) {
+        doc.addPage();
+        y = drawHeader();
+      }
+    };
+
+    const drawSectionTitle = (title: string): void => {
+      ensureSpace(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...PRIMARY);
+      doc.text(title, MARGIN_L, y);
+      y += 3;
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      doc.line(MARGIN_L, y, pageW - MARGIN_L, y);
+      y += 6;
+    };
+
+    const drawLodgingBlock = (l: TripLodging, showRoom: boolean): void => {
+      const participants = this.getConfirmedForLodging(trip, l.id!);
+      ensureSpace(20);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...PRIMARY);
+      doc.text(`${l.name}  (${participants.length}/${l.capacity})`, MARGIN_L, y);
+      y += 4.5;
+
+      const metaParts = [l.contactName, l.phone, l.contactName2, l.phone2, l.address, l.category ? getCategoryLabel(l.category) : undefined]
+        .filter((v): v is string => !!v);
+      if (metaParts.length) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text(metaParts.join('   ·   '), MARGIN_L, y);
+        y += 5;
+      } else {
+        y += 1;
+      }
+
+      if (participants.length === 0) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8.5);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Sin pasajeros asignados.', MARGIN_L, y);
+        y += 8;
+        return;
+      }
+
+      const head = showRoom
+        ? [['N°', 'Apellido y nombre', 'DNI', 'Categoría', 'Habitación']]
+        : [['N°', 'Apellido y nombre', 'DNI', 'Categoría']];
+
+      autoTable(doc, {
+        startY: y,
+        head,
+        body: participants.map((p, i) => {
+          const row: (string | number)[] = [i + 1, this.getParticipantName(p), this.getParticipantDni(p) ?? '', this.getParticipantCategory(p)];
+          if (showRoom) row.push(p.roomNumber ?? '');
+          return row;
+        }),
+        theme: 'grid',
+        styles: { fontSize: 8.5, cellPadding: 2.5, textColor: PRIMARY, lineColor: [200, 200, 200], lineWidth: 0.3 },
+        headStyles: { fillColor: [90, 90, 90], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 8 },
+        margin: { left: MARGIN_L, right: MARGIN_L },
+      });
+
+      y = (doc as any).lastAutoTable.finalY + 8;
+    };
+
+    const hotels = (trip.lodgings ?? []).filter((l) => l.type === LodgingTypeEnum.HOTEL);
+    const families = (trip.lodgings ?? []).filter((l) => l.type === LodgingTypeEnum.HOST_FAMILY);
+
+    if (hotels.length) {
+      drawSectionTitle('HOTELES');
+      hotels.forEach((l) => drawLodgingBlock(l, true));
+    }
+
+    if (families.length) {
+      drawSectionTitle('FAMILIAS ANFITRIONAS');
+      families.forEach((l) => drawLodgingBlock(l, false));
+    }
+
+    doc.save(`alojamientos-${this.slugify(trip.name)}.pdf`);
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
+
+  private getConfirmedForLodging(trip: Trip, lodgingId: string): TripParticipant[] {
+    return trip.participants
+      .filter((p) => p.lodgingId === lodgingId && p.status === TripParticipantStatusEnum.CONFIRMED)
+      .sort((a, b) => {
+        const rankA = CATEGORY_AGE_RANK[(a.player as any)?.category as keyof typeof CATEGORY_AGE_RANK] ?? 999;
+        const rankB = CATEGORY_AGE_RANK[(b.player as any)?.category as keyof typeof CATEGORY_AGE_RANK] ?? 999;
+        if (rankA !== rankB) return rankA - rankB;
+        return this.getParticipantName(a).localeCompare(this.getParticipantName(b), 'es');
+      });
+  }
 
   private getConfirmedInTransport(trip: Trip, transportId: string): TripParticipant[] {
     return trip.participants

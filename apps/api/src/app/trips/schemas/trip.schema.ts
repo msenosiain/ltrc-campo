@@ -55,6 +55,8 @@ const TripLodgingSchema = new Schema(
     name: { type: String, required: true },
     contactName: { type: String },
     phone: { type: String },
+    contactName2: { type: String },
+    phone2: { type: String },
     address: { type: String },
     capacity: { type: Number, required: true },
     notes: { type: String },
