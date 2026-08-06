@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx-js-style';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { CATEGORY_AGE_RANK, LodgingTypeEnum, Trip, TripLodging, TripParticipant, TripParticipantStatusEnum, TripParticipantTypeEnum, TripTransport } from '@ltrc-campo/shared-api-model';
+import { CATEGORY_AGE_RANK, CategoryEnum, LodgingTypeEnum, Trip, TripLodging, TripParticipant, TripParticipantStatusEnum, TripParticipantTypeEnum, TripTransport } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../common/category-options';
 
 const LOGO_PATH = '/escudo.png';
@@ -349,14 +349,38 @@ export class TripPassengerExportService {
     }
 
     if (families.length) {
-      drawSectionTitle('FAMILIAS ANFITRIONAS');
-      families.forEach((l) => drawLodgingBlock(l, false));
+      const groups = this.groupFamiliesByCategory(families);
+      groups.forEach(([category, group], idx) => {
+        if (idx > 0 || hotels.length > 0) {
+          doc.addPage();
+          y = drawHeader();
+        }
+        const title = category ? `FAMILIAS ANFITRIONAS — ${getCategoryLabel(category).toUpperCase()}` : 'FAMILIAS ANFITRIONAS — SIN CATEGORÍA';
+        drawSectionTitle(title);
+        group.forEach((l) => drawLodgingBlock(l, false));
+      });
     }
 
     doc.save(`alojamientos-${this.slugify(trip.name)}.pdf`);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+
+  /** Agrupa familias por categoría, ordenadas por edad (rank), con "sin categoría" al final */
+  private groupFamiliesByCategory(families: TripLodging[]): [CategoryEnum | undefined, TripLodging[]][] {
+    const map = new Map<string, TripLodging[]>();
+    for (const l of families) {
+      const key = l.category ?? '';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(l);
+    }
+    const sortedKeys = [...map.keys()].sort((a, b) => {
+      if (!a) return 1;
+      if (!b) return -1;
+      return (CATEGORY_AGE_RANK[a as CategoryEnum] ?? 999) - (CATEGORY_AGE_RANK[b as CategoryEnum] ?? 999);
+    });
+    return sortedKeys.map((k) => [k ? (k as CategoryEnum) : undefined, map.get(k)!]);
+  }
 
   private getConfirmedForLodging(trip: Trip, lodgingId: string): TripParticipant[] {
     return trip.participants
