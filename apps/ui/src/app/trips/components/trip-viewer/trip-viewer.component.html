@@ -1134,6 +1134,35 @@
 
                   <!-- Tabla de pasajeros -->
                   @if (getParticipantsForLodging(l.id!).length > 0) {
+                    <div class="participant-filters">
+                      <mat-form-field appearance="outline" class="pfilter-search">
+                        <mat-label>Buscar</mat-label>
+                        <input matInput [value]="hotelParticipantSearch" (input)="onHotelParticipantSearchChange($any($event.target).value)" placeholder="Nombre" />
+                        @if (hotelParticipantSearch) {
+                          <button mat-icon-button matSuffix type="button" (click)="onHotelParticipantSearchChange('')"><mat-icon>close</mat-icon></button>
+                        } @else {
+                          <mat-icon matSuffix>search</mat-icon>
+                        }
+                      </mat-form-field>
+                      <mat-form-field appearance="outline" class="pfilter-category">
+                        <mat-label>Tipo</mat-label>
+                        <mat-select [value]="hotelParticipantTypeFilter" (selectionChange)="onHotelParticipantTypeChange($event.value)">
+                          <mat-option value="">Todos</mat-option>
+                          @for (t of getHotelParticipantTypes(l.id!); track t) {
+                            <mat-option [value]="t">{{ getParticipantTypeLabel(t) }}</mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+                      <mat-form-field appearance="outline" class="pfilter-category">
+                        <mat-label>Categoría</mat-label>
+                        <mat-select [value]="hotelParticipantCategoryFilter" (selectionChange)="onHotelParticipantCategoryChange($event.value)">
+                          <mat-option value="">Todas</mat-option>
+                          @for (cat of getHotelParticipantCategories(l.id!); track cat) {
+                            <mat-option [value]="cat">{{ cat }}</mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
                     @if (hotelParticipantSelectedIds.size > 0) {
                       <div class="bulk-action-bar" *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]">
                         <span class="bulk-action-bar__count">{{ hotelParticipantSelectedIds.size }} seleccionado{{ hotelParticipantSelectedIds.size !== 1 ? 's' : '' }}</span>
@@ -1146,7 +1175,7 @@
                         </button>
                       </div>
                     }
-                    <table mat-table [dataSource]="getParticipantsForLodging(l.id!)" class="transport-participants-table">
+                    <table mat-table [dataSource]="getFilteredParticipantsForLodging(l.id!)" class="transport-participants-table">
                       <ng-container matColumnDef="select">
                         <th mat-header-cell *matHeaderCellDef>
                           <mat-checkbox
@@ -1165,21 +1194,41 @@
                         </td>
                       </ng-container>
                       <ng-container matColumnDef="name">
-                        <th mat-header-cell *matHeaderCellDef>Pasajero</th>
+                        <th mat-header-cell *matHeaderCellDef class="sortable-header" (click)="toggleHotelSort('name')">
+                          Pasajero
+                          @if (hotelSortColumn === 'name') {
+                            <mat-icon class="inline-icon">{{ hotelSortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+                          }
+                        </th>
                         <td mat-cell *matCellDef="let p">{{ getParticipantName(p) }}</td>
                       </ng-container>
                       <ng-container matColumnDef="type">
-                        <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                        <th mat-header-cell *matHeaderCellDef class="sortable-header" (click)="toggleHotelSort('type')">
+                          Tipo
+                          @if (hotelSortColumn === 'type') {
+                            <mat-icon class="inline-icon">{{ hotelSortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+                          }
+                        </th>
                         <td mat-cell *matCellDef="let p">{{ getParticipantTypeLabel(p.type) }}</td>
                       </ng-container>
                       <ng-container matColumnDef="category">
-                        <th mat-header-cell *matHeaderCellDef>Categoría</th>
+                        <th mat-header-cell *matHeaderCellDef class="sortable-header" (click)="toggleHotelSort('category')">
+                          Categoría
+                          @if (hotelSortColumn === 'category') {
+                            <mat-icon class="inline-icon">{{ hotelSortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+                          }
+                        </th>
                         <td mat-cell *matCellDef="let p">
                           <span class="transport-cat">{{ getParticipantCategory(p) }}</span>
                         </td>
                       </ng-container>
                       <ng-container matColumnDef="room">
-                        <th mat-header-cell *matHeaderCellDef>Habitación</th>
+                        <th mat-header-cell *matHeaderCellDef class="sortable-header" (click)="toggleHotelSort('room')">
+                          Habitación
+                          @if (hotelSortColumn === 'room') {
+                            <mat-icon class="inline-icon">{{ hotelSortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+                          }
+                        </th>
                         <td mat-cell *matCellDef="let p">
                           <ng-container *ltrcAllowedRoles="[RoleEnum.ADMIN, RoleEnum.COORDINATOR, RoleEnum.MANAGER]; else roomReadOnly">
                             <input

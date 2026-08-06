@@ -481,6 +481,23 @@ mat-card-actions {
   color: var(--mat-sys-on-surface-variant);
 }
 
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+
+  .inline-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    vertical-align: text-bottom;
+    margin-left: 2px;
+  }
+
+  &:hover {
+    color: var(--mat-sys-primary);
+  }
+}
+
 .move-select {
   font-size: 0.85rem;
   min-width: 140px;

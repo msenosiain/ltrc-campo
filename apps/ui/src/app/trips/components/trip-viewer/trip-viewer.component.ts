@@ -11,8 +11,8 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { concat, EMPTY, of, Subject } from 'rxjs';
-import { catchError, debounceTime, distinctUntilChanged, expand, filter, last, map, reduce, switchMap, takeWhile } from 'rxjs/operators';
+import { EMPTY, of, Subject } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, expand, filter, map, reduce, switchMap, takeWhile } from 'rxjs/operators';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -1082,12 +1082,13 @@ export class TripViewerComponent implements OnInit {
     this.unassignedSelectedIds.clear();
   }
 
-  bulkAssignToTransport(transportId: string): void {
+  bulkAssignToTransport(transportId: string | null): void {
     if (!this.trip?.id || this.unassignedSelectedIds.size === 0) return;
     this.bulkAssigning = true;
     const ids = [...this.unassignedSelectedIds];
-    concat(...ids.map((id) => this.tripsService.moveParticipant(this.trip!.id!, id, transportId)))
-      .pipe(last(), takeUntilDestroyed(this.destroyRef))
+    this.tripsService
+      .bulkMoveParticipantsTransport(this.trip.id, ids, transportId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (trip) => {
           this.trip = trip;
@@ -1558,6 +1559,73 @@ export class TripViewerComponent implements OnInit {
   readonly hotelParticipantSelectedIds = new Set<string>();
   bulkRemovingFromHotel = false;
 
+  // ── Filtros dentro de la tabla de pasajeros del hotel ───────────────────
+
+  hotelParticipantSearch = '';
+  hotelParticipantTypeFilter: TripParticipantTypeEnum | '' = '';
+  hotelParticipantCategoryFilter = '';
+
+  onHotelParticipantSearchChange(term: string): void {
+    this.hotelParticipantSearch = term;
+  }
+
+  onHotelParticipantTypeChange(type: TripParticipantTypeEnum | ''): void {
+    this.hotelParticipantTypeFilter = type;
+  }
+
+  onHotelParticipantCategoryChange(cat: string): void {
+    this.hotelParticipantCategoryFilter = cat;
+  }
+
+  getHotelParticipantTypes(lodgingId: string): TripParticipantTypeEnum[] {
+    const all = new Set(this.getParticipantsForLodging(lodgingId).map((p) => p.type));
+    return participantTypeOptions.map((o) => o.id).filter((id) => all.has(id));
+  }
+
+  getHotelParticipantCategories(lodgingId: string): string[] {
+    const all = this.getParticipantsForLodging(lodgingId).map((p) => this.getParticipantCategory(p)).filter(Boolean);
+    return [...new Set(all)].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  // ── Orden de la tabla de pasajeros del hotel ────────────────────────────
+
+  hotelSortColumn: 'name' | 'type' | 'category' | 'room' | null = null;
+  hotelSortDirection: 'asc' | 'desc' = 'asc';
+
+  toggleHotelSort(column: 'name' | 'type' | 'category' | 'room'): void {
+    if (this.hotelSortColumn === column) {
+      this.hotelSortDirection = this.hotelSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.hotelSortColumn = column;
+      this.hotelSortDirection = 'asc';
+    }
+  }
+
+  private hotelSortValue(p: TripParticipant, column: 'name' | 'type' | 'category' | 'room'): string {
+    switch (column) {
+      case 'name': return this.getParticipantName(p);
+      case 'type': return getParticipantTypeLabel(p.type);
+      case 'category': return this.getParticipantCategory(p);
+      case 'room': return p.roomNumber ?? '';
+    }
+  }
+
+  getFilteredParticipantsForLodging(lodgingId: string): TripParticipant[] {
+    const term = this.hotelParticipantSearch.toLowerCase().trim();
+    const type = this.hotelParticipantTypeFilter;
+    const cat = this.hotelParticipantCategoryFilter;
+    const list = this.getParticipantsForLodging(lodgingId).filter(
+      (p) =>
+        (!term || this.getParticipantName(p).toLowerCase().includes(term)) &&
+        (!type || p.type === type) &&
+        (!cat || this.getParticipantCategory(p) === cat)
+    );
+    if (!this.hotelSortColumn) return list;
+    const column = this.hotelSortColumn;
+    const dir = this.hotelSortDirection === 'asc' ? 1 : -1;
+    return list.slice().sort((a, b) => this.hotelSortValue(a, column).localeCompare(this.hotelSortValue(b, column), 'es') * dir);
+  }
+
   isHotelParticipantSelected(p: TripParticipant): boolean {
     return !!p.id && this.hotelParticipantSelectedIds.has(p.id);
   }
@@ -1572,17 +1640,17 @@ export class TripViewerComponent implements OnInit {
   }
 
   allHotelParticipantsSelected(lodgingId: string): boolean {
-    const list = this.getParticipantsForLodging(lodgingId);
+    const list = this.getFilteredParticipantsForLodging(lodgingId);
     return list.length > 0 && list.every((p) => p.id && this.hotelParticipantSelectedIds.has(p.id));
   }
 
   someHotelParticipantsSelected(lodgingId: string): boolean {
-    const list = this.getParticipantsForLodging(lodgingId);
+    const list = this.getFilteredParticipantsForLodging(lodgingId);
     return list.some((p) => p.id && this.hotelParticipantSelectedIds.has(p.id)) && !this.allHotelParticipantsSelected(lodgingId);
   }
 
   toggleAllHotelParticipants(lodgingId: string): void {
-    const list = this.getParticipantsForLodging(lodgingId);
+    const list = this.getFilteredParticipantsForLodging(lodgingId);
     if (this.allHotelParticipantsSelected(lodgingId)) {
       list.forEach((p) => p.id && this.hotelParticipantSelectedIds.delete(p.id));
     } else {

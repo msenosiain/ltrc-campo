@@ -15,6 +15,7 @@ import { AddLodgingDto } from './dto/add-lodging.dto';
 import { UpdateLodgingDto } from './dto/update-lodging.dto';
 import { MoveParticipantLodgingDto } from './dto/move-participant-lodging.dto';
 import { BulkMoveParticipantsLodgingDto } from './dto/bulk-move-participants-lodging.dto';
+import { BulkMoveParticipantsTransportDto } from './dto/bulk-move-participants-transport.dto';
 import { PaginationDto } from '../shared/pagination.dto';
 import {
   CategoryEnum,
@@ -487,6 +488,34 @@ export class TripsService {
     } else {
       participant.transportId = undefined;
       participant.seatNumber = undefined;
+    }
+
+    if (caller) trip.updatedBy = (caller as any)._id;
+    await trip.save();
+    return this.findOne(id);
+  }
+
+  async bulkMoveParticipantsTransport(
+    id: string,
+    dto: BulkMoveParticipantsTransportDto,
+    caller?: User
+  ) {
+    const trip = await this.tripModel.findById(id);
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    let transportObjectId: Types.ObjectId | undefined;
+    if (dto.transportId) {
+      const transport = (trip.transports as any).id(dto.transportId);
+      if (!transport) throw new NotFoundException('Transporte no encontrado');
+      transportObjectId = new Types.ObjectId(dto.transportId);
+    }
+
+    const idSet = new Set(dto.participantIds);
+    for (const p of trip.participants) {
+      if (idSet.has((p as any)._id.toString())) {
+        p.transportId = transportObjectId;
+        p.seatNumber = undefined;
+      }
     }
 
     if (caller) trip.updatedBy = (caller as any)._id;

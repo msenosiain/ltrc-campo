@@ -214,6 +214,17 @@ export class TripsService {
     );
   }
 
+  bulkMoveParticipantsTransport(
+    tripId: string,
+    participantIds: string[],
+    transportId: string | null
+  ): Observable<Trip> {
+    return this.http.patch<Trip>(`${this.baseUrl}/${tripId}/participants/bulk-transport`, {
+      participantIds,
+      transportId,
+    });
+  }
+
   // ── Alojamientos ─────────────────────────────────────────────────────────
 
   addLodging(tripId: string, payload: AddLodgingPayload): Observable<Trip> {
