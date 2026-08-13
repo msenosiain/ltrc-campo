@@ -607,7 +607,9 @@ export class PaymentsReportPdfService {
   private formatDate(date: string | Date): string {
     if (!date) return '—';
     const d = new Date(date);
-    return d.toLocaleDateString('es-AR', { timeZone: 'UTC' });
+    return d.toLocaleDateString('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+    });
   }
 
   private sportCatLabel(sport: string | null, category: string | null): string {

@@ -26,17 +26,15 @@ import { debounceTime } from 'rxjs';
 import { format } from 'date-fns';
 import {
   IPlayerFeeConfig,
-  PaymentEntityTypeEnum,
   PaymentMethodEnum,
   PaymentStatusEnum,
 } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../../common/category-options';
+import { GlobalPaymentsReport } from '../../../payments/services/payments.service';
 import {
-  GlobalPaymentsReport,
-  GlobalReportFilters,
-  PaymentsService,
-} from '../../../payments/services/payments.service';
-import { PlayerFeesAdminService } from '../../../player-fees/services/player-fees-admin.service';
+  PlayerFeeReportFilters,
+  PlayerFeesAdminService,
+} from '../../../player-fees/services/player-fees-admin.service';
 import {
   PlayerFeesReportPdfContext,
   PlayerFeesReportPdfService,
@@ -65,7 +63,6 @@ import {
   styleUrl: './player-fees-report.component.scss',
 })
 export class PlayerFeesReportComponent implements OnInit {
-  private readonly paymentsService = inject(PaymentsService);
   private readonly feesAdminService = inject(PlayerFeesAdminService);
   private readonly pdfService = inject(PlayerFeesReportPdfService);
   private readonly snackBar = inject(MatSnackBar);
@@ -108,6 +105,7 @@ export class PlayerFeesReportComponent implements OnInit {
     'category',
     'concept',
     'method',
+    'reference',
     'amount',
     'status',
   ];
@@ -136,10 +134,9 @@ export class PlayerFeesReportComponent implements OnInit {
     this.search();
   }
 
-  private buildFilters(): GlobalReportFilters {
+  private buildFilters(): PlayerFeeReportFilters {
     const v = this.filterForm.value;
     return {
-      entityType: PaymentEntityTypeEnum.PLAYER_FEE,
       concept: v.concept?.length ? v.concept.join(',') : undefined,
       status: v.status?.length ? v.status.join(',') : undefined,
       method: v.method?.length ? v.method.join(',') : undefined,
@@ -154,8 +151,8 @@ export class PlayerFeesReportComponent implements OnInit {
     if (resetPage) this.page.set(1);
     this.loading.set(true);
 
-    this.paymentsService
-      .getGlobalReport({
+    this.feesAdminService
+      .getPaymentsReport({
         ...this.buildFilters(),
         page: this.page(),
         limit: this.pageSize,
@@ -178,8 +175,8 @@ export class PlayerFeesReportComponent implements OnInit {
   downloadPdf(): void {
     this.generatingPdf.set(true);
     const filters = this.buildFilters();
-    this.paymentsService
-      .getGlobalReport({ ...filters, page: 1, limit: 1000 })
+    this.feesAdminService
+      .getPaymentsReport({ ...filters, page: 1, limit: 1000 })
       .subscribe({
         next: async (allData) => {
           const ctx = this.buildPdfContext(filters);
@@ -205,8 +202,8 @@ export class PlayerFeesReportComponent implements OnInit {
   downloadExcel(): void {
     this.generatingExcel.set(true);
     const filters = this.buildFilters();
-    this.paymentsService
-      .getGlobalReport({ ...filters, page: 1, limit: 1000 })
+    this.feesAdminService
+      .getPaymentsReport({ ...filters, page: 1, limit: 1000 })
       .subscribe({
         next: (allData) => {
           const ctx = this.buildPdfContext(filters);
@@ -230,7 +227,7 @@ export class PlayerFeesReportComponent implements OnInit {
   }
 
   private buildPdfContext(
-    filters: GlobalReportFilters
+    filters: PlayerFeeReportFilters
   ): PlayerFeesReportPdfContext {
     const v = this.filterForm.value;
     return {

@@ -691,7 +691,8 @@ export class PlayerFeesService {
     const mpFeeAdded = config.addMpFee ? Math.round(finalAmount * this.mpFeeRate) : 0;
     const totalAmount = finalAmount + mpFeeAdded;
 
-    const externalReference = uuidv4();
+    const sportPrefix = config.sport === SportEnum.HOCKEY ? 'H' : 'R';
+    const externalReference = `LTRC-DJ-${sportPrefix}-${uuidv4().split('-')[0]}`;
 
     const payment = await this.paymentModel.create({
       playerId: (player as any)._id,
@@ -1044,6 +1045,111 @@ export class PlayerFeesService {
       return { discountPct: 25, discountReason: '2do integrante del grupo familiar' };
     }
     return { discountPct: 50, discountReason: '3er integrante del grupo familiar o más' };
+  }
+
+  // ── Reporte de pagos ─────────────────────────────────────────────────────
+  // Lee directamente de playerfeepayments (no de la colección general "payments",
+  // que solo recibe un registro cuando el pago llega a estado APROBADO).
+
+  async getPaymentsReport(filters: {
+    status?: string;
+    method?: string;
+    concept?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortDir?: string;
+  }) {
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.min(filters.limit ?? 50, 1000);
+    const skip = (page - 1) * limit;
+
+    const SORTABLE_FIELDS: Record<string, string> = {
+      date: 'createdAt',
+      amount: 'finalAmount',
+      status: 'status',
+      method: 'paymentMethod',
+      concept: 'configId',
+    };
+    const sortField = SORTABLE_FIELDS[filters.sortBy ?? ''] ?? 'createdAt';
+    const sortOrder = filters.sortDir === 'asc' ? 1 : -1;
+
+    const query: Record<string, unknown> = {};
+
+    if (filters.status) {
+      const statuses = filters.status.split(',').filter(Boolean);
+      query['status'] = statuses.length === 1 ? statuses[0] : { $in: statuses };
+    }
+    if (filters.method) {
+      const methods = filters.method.split(',').filter(Boolean);
+      query['paymentMethod'] = methods.length === 1 ? methods[0] : { $in: methods };
+    }
+    if (filters.concept) {
+      const labels = filters.concept.split(',').filter(Boolean);
+      const configIds = await this.configModel.find({ label: { $in: labels } }).distinct('_id');
+      query['configId'] = { $in: configIds };
+    }
+    if (filters.dateFrom || filters.dateTo) {
+      // Filtramos por la misma fecha "efectiva" que se muestra en el reporte
+      // (paidAt si existe, si no createdAt), y anclamos el rango al día calendario
+      // en horario de Argentina (UTC-3), no al día calendario en UTC.
+      const effectiveDate = { $ifNull: ['$paidAt', '$createdAt'] };
+      const exprConds: Record<string, unknown>[] = [];
+      if (filters.dateFrom) {
+        exprConds.push({ $gte: [effectiveDate, new Date(`${filters.dateFrom}T00:00:00-03:00`)] });
+      }
+      if (filters.dateTo) {
+        exprConds.push({ $lte: [effectiveDate, new Date(`${filters.dateTo}T23:59:59.999-03:00`)] });
+      }
+      query['$expr'] = { $and: exprConds };
+    }
+
+    const [total, payments, approvedAgg] = await Promise.all([
+      this.paymentModel.countDocuments(query),
+      this.paymentModel
+        .find(query)
+        .populate('playerId', 'name idNumber sport category')
+        .populate('configId', 'label')
+        .sort({ [sortField]: sortOrder, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.paymentModel.aggregate([
+        { $match: { ...query, status: PlayerFeeStatusEnum.APPROVED } },
+        { $group: { _id: null, total: { $sum: '$finalAmount' } } },
+      ]),
+    ]);
+
+    const data = payments.map((p: any) => {
+      const player = p.playerId as any;
+      const config = p.configId as any;
+      const concept = config?.label ?? `Derecho ${p.sport} ${p.season}`;
+      return {
+        id: p._id.toString(),
+        playerName: player?.name ?? '—',
+        playerDni: player?.idNumber ?? '—',
+        playerSport: player?.sport ?? null,
+        playerCategory: player?.category ?? null,
+        entityType: PaymentEntityTypeEnum.PLAYER_FEE,
+        entityLabel: concept,
+        concept,
+        method: p.paymentMethod as PaymentMethodEnum,
+        amount: p.finalAmount,
+        status: p.status as PaymentStatusEnum,
+        date: p.paidAt ?? p.createdAt,
+        mpReference: p.mpExternalReference
+          ? p.mpExternalReference.startsWith('LTRC-DJ-')
+            ? p.mpExternalReference
+            : p.mpExternalReference.slice(-6)
+          : null,
+      };
+    });
+
+    const totalApproved = approvedAgg[0]?.total ?? 0;
+
+    return { data, total, page, limit, totalApproved };
   }
 
   async migratePaymentRecords(): Promise<{ migrated: number; skipped: number }> {

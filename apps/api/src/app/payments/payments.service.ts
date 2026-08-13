@@ -590,7 +590,7 @@ export class PaymentsService {
       method: dto.method,
       status: PaymentStatusEnum.APPROVED,
       concept: dto.concept,
-      date: new Date(dto.date),
+      date: new Date(`${dto.date}T12:00:00Z`),
       notes: dto.notes,
       recordedBy: (caller as any)._id,
     });
@@ -986,13 +986,11 @@ export class PaymentsService {
     }
 
     if (filters.dateFrom || filters.dateTo) {
+      // Anclamos el rango al día calendario en horario de Argentina (UTC-3),
+      // no al día calendario en UTC.
       const dateFilter: Record<string, Date> = {};
-      if (filters.dateFrom) dateFilter['$gte'] = new Date(filters.dateFrom);
-      if (filters.dateTo) {
-        const to = new Date(filters.dateTo);
-        to.setHours(23, 59, 59, 999);
-        dateFilter['$lte'] = to;
-      }
+      if (filters.dateFrom) dateFilter['$gte'] = new Date(`${filters.dateFrom}T00:00:00-03:00`);
+      if (filters.dateTo) dateFilter['$lte'] = new Date(`${filters.dateTo}T23:59:59.999-03:00`);
       query['date'] = dateFilter;
     }
 

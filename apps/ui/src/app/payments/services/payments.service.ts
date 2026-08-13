@@ -109,6 +109,7 @@ export interface GlobalPaymentRow {
   status: string;
   date: string;
   notes?: string;
+  mpReference?: string | null;
 }
 
 export interface GlobalPaymentsReport {

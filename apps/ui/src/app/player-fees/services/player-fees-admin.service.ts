@@ -1,7 +1,20 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { API_CONFIG_TOKEN, ApiConfig } from '../../app.config';
 import { CategoryEnum, IFamilyGroup, IPlayerFeeConfig, IPlayerFeeStatusRow, IPlayerSeasonRecord, SportEnum } from '@ltrc-campo/shared-api-model';
+import { GlobalPaymentsReport } from '../../payments/services/payments.service';
+
+export interface PlayerFeeReportFilters {
+  status?: string;
+  method?: string;
+  concept?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortDir?: string;
+}
 
 export interface PlayerFeeStats {
   total: number;
@@ -78,6 +91,20 @@ export class PlayerFeesAdminService {
 
   getStats(season: string, sport: SportEnum) {
     return this.http.get<PlayerFeeStats>(this.url('stats'), { params: { season, sport } });
+  }
+
+  getPaymentsReport(filters: PlayerFeeReportFilters) {
+    let params = new HttpParams();
+    if (filters.status) params = params.set('status', filters.status);
+    if (filters.method) params = params.set('method', filters.method);
+    if (filters.concept) params = params.set('concept', filters.concept);
+    if (filters.dateFrom) params = params.set('dateFrom', filters.dateFrom);
+    if (filters.dateTo) params = params.set('dateTo', filters.dateTo);
+    if (filters.page) params = params.set('page', String(filters.page));
+    if (filters.limit) params = params.set('limit', String(filters.limit));
+    if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
+    if (filters.sortDir) params = params.set('sortDir', filters.sortDir);
+    return this.http.get<GlobalPaymentsReport>(this.url('report'), { params });
   }
 
   previewManualPayment(playerId: string, season: string, sport: SportEnum) {

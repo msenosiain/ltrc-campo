@@ -170,6 +170,30 @@ export class PlayerFeesController {
     return this.service.migratePaymentRecords();
   }
 
+  // ── Reporte de pagos ──────────────────────────────────────────────────────
+
+  @Get('report')
+  @Roles(RoleEnum.ADMIN, RoleEnum.MANAGER, RoleEnum.COORDINATOR)
+  getPaymentsReport(
+    @Query('status') status?: string,
+    @Query('method') method?: string,
+    @Query('concept') concept?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortDir') sortDir?: string,
+  ) {
+    return this.service.getPaymentsReport({
+      status, method, concept, dateFrom, dateTo,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      sortBy,
+      sortDir,
+    });
+  }
+
   @Get('stats')
   @Roles(RoleEnum.ADMIN, RoleEnum.COORDINATOR)
   getStats(
