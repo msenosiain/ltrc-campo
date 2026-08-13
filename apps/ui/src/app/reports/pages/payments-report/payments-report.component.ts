@@ -37,7 +37,10 @@ import {
   Tournament,
   Trip,
 } from '@ltrc-campo/shared-api-model';
-import { getCategoryLabel, getCategoryOptionsBySport } from '../../../common/category-options';
+import {
+  getCategoryLabel,
+  getCategoryOptionsBySport,
+} from '../../../common/category-options';
 import { API_CONFIG_TOKEN } from '../../../app.config';
 import { AuthService } from '../../../auth/auth.service';
 import {
@@ -96,6 +99,7 @@ export class PaymentsReportComponent implements OnInit {
   report = signal<GlobalPaymentsReport | null>(null);
   loading = signal(false);
   generatingPdf = signal(false);
+  generatingExcel = signal(false);
   page = signal(1);
   readonly pageSize = 50;
   sortBy = signal('date');
@@ -115,7 +119,9 @@ export class PaymentsReportComponent implements OnInit {
   concepts = signal<string[]>([]);
 
   private readonly selectedSport = toSignal(
-    this.filterForm.get('sport')!.valueChanges.pipe(startWith(null as SportEnum | null))
+    this.filterForm
+      .get('sport')!
+      .valueChanges.pipe(startWith(null as SportEnum | null))
   );
 
   readonly availableSports = computed(() => {
@@ -155,7 +161,16 @@ export class PaymentsReportComponent implements OnInit {
     return sport ? all.filter((t) => !t.sport || t.sport === sport) : all;
   });
 
-  readonly columns = ['date', 'player', 'sport', 'entity', 'concept', 'method', 'amount', 'status'];
+  readonly columns = [
+    'date',
+    'player',
+    'sport',
+    'entity',
+    'concept',
+    'method',
+    'amount',
+    'status',
+  ];
 
   readonly statusOptions = [
     { value: PaymentStatusEnum.APPROVED, label: 'Aprobado' },
@@ -175,11 +190,14 @@ export class PaymentsReportComponent implements OnInit {
     // Pre-seleccionar deporte si el usuario tiene solo uno asignado
     const sports = this.availableSports();
     if (sports.length === 1) {
-      this.filterForm.get('sport')!.setValue(sports[0].value, { emitEvent: false });
+      this.filterForm
+        .get('sport')!
+        .setValue(sports[0].value, { emitEvent: false });
     }
 
-    this.filterForm.get('sport')!.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.filterForm
+      .get('sport')!
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.filterForm.get('category')!.setValue(null, { emitEvent: false });
         this.filterForm.get('event')!.setValue(null, { emitEvent: false });
@@ -196,7 +214,8 @@ export class PaymentsReportComponent implements OnInit {
   }
 
   private loadConcepts() {
-    this.paymentsService.getFieldOptions()
+    this.paymentsService
+      .getFieldOptions()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: (opts) => this.concepts.set(opts.concepts) });
   }
@@ -205,7 +224,10 @@ export class PaymentsReportComponent implements OnInit {
     this.loadingTournaments.set(true);
     const params = new HttpParams().set('size', '200').set('page', '1');
     this.http
-      .get<PaginatedResponse<Tournament>>(`${this.config.baseUrl}/tournaments`, { params })
+      .get<PaginatedResponse<Tournament>>(
+        `${this.config.baseUrl}/tournaments`,
+        { params }
+      )
       .subscribe({
         next: (res) => {
           this.tournaments.set(res.items);
@@ -217,7 +239,11 @@ export class PaymentsReportComponent implements OnInit {
 
   private loadTrips() {
     this.loadingTrips.set(true);
-    const params = new HttpParams().set('size', '200').set('page', '1').set('sortBy', 'departureDate').set('sortDir', 'desc');
+    const params = new HttpParams()
+      .set('size', '200')
+      .set('page', '1')
+      .set('sortBy', 'departureDate')
+      .set('sortDir', 'desc');
     this.http
       .get<PaginatedResponse<Trip>>(`${this.config.baseUrl}/trips`, { params })
       .subscribe({
@@ -229,7 +255,10 @@ export class PaymentsReportComponent implements OnInit {
       });
   }
 
-  private parseEvent(event: string | null | undefined): { tournamentId?: string; tripId?: string } {
+  private parseEvent(event: string | null | undefined): {
+    tournamentId?: string;
+    tripId?: string;
+  } {
     if (!event) return {};
     const [type, id] = event.split(':');
     if (type === 'tournament') return { tournamentId: id };
@@ -271,10 +300,11 @@ export class PaymentsReportComponent implements OnInit {
     const event = this.filterForm.get('event')!.value;
     if (!event) return null;
     const [type, id] = event.split(':');
-    if (type === 'tournament') return this.tournaments().find((t) => t.id === id)?.name ?? null;
+    if (type === 'tournament')
+      return this.tournaments().find((t) => t.id === id)?.name ?? null;
     if (type === 'trip') {
       const trip = this.trips().find((t) => t.id === id);
-      return trip ? (trip.name || trip.destination || null) : null;
+      return trip ? trip.name || trip.destination || null : null;
     }
     return null;
   }
@@ -284,14 +314,20 @@ export class PaymentsReportComponent implements OnInit {
     this.loading.set(true);
 
     this.paymentsService
-      .getGlobalReport({ ...this.buildFilters(), page: this.page(), limit: this.pageSize })
+      .getGlobalReport({
+        ...this.buildFilters(),
+        page: this.page(),
+        limit: this.pageSize,
+      })
       .subscribe({
         next: (data) => {
           this.report.set(data);
           this.loading.set(false);
         },
         error: () => {
-          this.snackBar.open('Error al cargar los pagos', '', { duration: 3000 });
+          this.snackBar.open('Error al cargar los pagos', '', {
+            duration: 3000,
+          });
           this.loading.set(false);
         },
       });
@@ -318,19 +354,52 @@ export class PaymentsReportComponent implements OnInit {
           try {
             await this.pdfService.generate(allData, ctx);
           } catch {
-            this.snackBar.open('Error al generar el PDF', '', { duration: 3000 });
+            this.snackBar.open('Error al generar el PDF', '', {
+              duration: 3000,
+            });
           } finally {
             this.generatingPdf.set(false);
           }
         },
         error: () => {
-          this.snackBar.open('Error al cargar los datos para el PDF', '', { duration: 3000 });
+          this.snackBar.open('Error al cargar los datos para el PDF', '', {
+            duration: 3000,
+          });
           this.generatingPdf.set(false);
         },
       });
   }
 
-  private buildPdfContext(filters: GlobalReportFilters): PaymentsReportPdfContext {
+  downloadExcel() {
+    this.generatingExcel.set(true);
+    const filters = this.buildFilters();
+    this.paymentsService
+      .getGlobalReport({ ...filters, page: 1, limit: 1000 })
+      .subscribe({
+        next: (allData) => {
+          const ctx = this.buildPdfContext(filters);
+          try {
+            this.pdfService.generateExcel(allData, ctx);
+          } catch {
+            this.snackBar.open('Error al generar el Excel', '', {
+              duration: 3000,
+            });
+          } finally {
+            this.generatingExcel.set(false);
+          }
+        },
+        error: () => {
+          this.snackBar.open('Error al cargar los datos para el Excel', '', {
+            duration: 3000,
+          });
+          this.generatingExcel.set(false);
+        },
+      });
+  }
+
+  private buildPdfContext(
+    filters: GlobalReportFilters
+  ): PaymentsReportPdfContext {
     const v = this.filterForm.value;
     return {
       sport: v.sport ?? null,

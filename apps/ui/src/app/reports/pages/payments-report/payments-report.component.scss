@@ -79,6 +79,11 @@
   gap: 16px;
 }
 
+.export-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .summary-stat {
   display: flex;
   flex-direction: column;
@@ -196,11 +201,26 @@
     min-height: 22px !important;
     padding: 0 8px !important;
 
-    &--approved { background: #e8f5e9 !important; color: #2e7d32 !important; }
-    &--pending  { background: #fff3e0 !important; color: #e65100 !important; }
-    &--in_process { background: #e3f2fd !important; color: #1565c0 !important; }
-    &--rejected { background: #ffebee !important; color: #c62828 !important; }
-    &--cancelled { background: #f5f5f5 !important; color: #757575 !important; }
+    &--approved {
+      background: #e8f5e9 !important;
+      color: #2e7d32 !important;
+    }
+    &--pending {
+      background: #fff3e0 !important;
+      color: #e65100 !important;
+    }
+    &--in_process {
+      background: #e3f2fd !important;
+      color: #1565c0 !important;
+    }
+    &--rejected {
+      background: #ffebee !important;
+      color: #c62828 !important;
+    }
+    &--cancelled {
+      background: #f5f5f5 !important;
+      color: #757575 !important;
+    }
   }
 }
 

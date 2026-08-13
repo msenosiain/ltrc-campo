@@ -1,9 +1,16 @@
 import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx-js-style';
 import { CategoryEnum, PaymentMethodEnum } from '@ltrc-campo/shared-api-model';
-import { categoryOptions, getCategoryLabel } from '../../common/category-options';
-import { GlobalPaymentRow, GlobalPaymentsReport } from '../../payments/services/payments.service';
+import {
+  categoryOptions,
+  getCategoryLabel,
+} from '../../common/category-options';
+import {
+  GlobalPaymentRow,
+  GlobalPaymentsReport,
+} from '../../payments/services/payments.service';
 import {
   REPORT_PDF_COLORS,
   drawReportPdfContextRow,
@@ -19,6 +26,24 @@ export interface PlayerFeesReportPdfContext {
   dateTo?: string | null;
 }
 
+const XLSX_STYLE = {
+  title: { font: { bold: true, sz: 14 } },
+  info: { font: { sz: 10, italic: true, color: { rgb: '666666' } } },
+  groupHeader: {
+    font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
+    fill: { patternType: 'solid', fgColor: { rgb: '374763' } },
+  },
+  colHeader: {
+    font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
+    fill: { patternType: 'solid', fgColor: { rgb: '1E1E1E' } },
+  },
+  data: { font: { sz: 10 } },
+  total: {
+    font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
+    fill: { patternType: 'solid', fgColor: { rgb: '2E7D32' } },
+  },
+};
+
 @Injectable({ providedIn: 'root' })
 export class PlayerFeesReportPdfService {
   private readonly PRIMARY = REPORT_PDF_COLORS.primary;
@@ -26,35 +51,197 @@ export class PlayerFeesReportPdfService {
   private readonly SECTION_BG = REPORT_PDF_COLORS.sectionBg;
   private readonly GROUP_BG = REPORT_PDF_COLORS.groupBg;
 
-  async generate(report: GlobalPaymentsReport, ctx: PlayerFeesReportPdfContext): Promise<void> {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pageW = doc.internal.pageSize.getWidth();
-    const marginL = 14;
-
-    const y = await this.drawHeader(doc, report, ctx, pageW, marginL);
-
-    // Agrupar por categoría
-    const catOrder = new Map(categoryOptions.map((c, i) => [c.id as string, i]));
+  generateExcel(
+    report: GlobalPaymentsReport,
+    ctx: PlayerFeesReportPdfContext
+  ): void {
+    const COLS = 7;
+    const catOrder = new Map(
+      categoryOptions.map((c, i) => [c.id as string, i])
+    );
     const grouped = new Map<string, GlobalPaymentRow[]>();
     for (const p of report.data) {
       const key = p.playerCategory ?? '__none__';
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key)!.push(p);
     }
-    const sortedGroups = Array.from(grouped.entries())
-      .sort(([keyA], [keyB]) => (catOrder.get(keyA) ?? 999) - (catOrder.get(keyB) ?? 999));
+    const sortedGroups = Array.from(grouped.entries()).sort(
+      ([keyA], [keyB]) =>
+        (catOrder.get(keyA) ?? 999) - (catOrder.get(keyB) ?? 999)
+    );
+
+    const infoParts: string[] = [];
+    if (ctx.dateFrom || ctx.dateTo)
+      infoParts.push(`Período: ${ctx.dateFrom ?? '—'} al ${ctx.dateTo ?? '—'}`);
+    if (ctx.conceptLabel) infoParts.push(`Tipo de cobro: ${ctx.conceptLabel}`);
+    if (ctx.statusLabel) infoParts.push(`Estado: ${ctx.statusLabel}`);
+    if (ctx.methodLabel) infoParts.push(`Método: ${ctx.methodLabel}`);
+    infoParts.push(`Registros: ${report.total}`);
+
+    const aoa: unknown[][] = [
+      ['DERECHOS DE JUGADOR'],
+      [infoParts.join('   ·   ')],
+      [],
+      ['Fecha', 'Jugador', 'DNI', 'Tipo de cobro', 'Método', 'Monto', 'Estado'],
+    ];
+
+    const groupHeaderRows: number[] = [];
+    const dataRows: number[] = [];
+
+    for (const [catKey, payments] of sortedGroups) {
+      const catLabel =
+        catKey === '__none__'
+          ? 'Sin categoría'
+          : getCategoryLabel(catKey as CategoryEnum);
+      const approved = payments.filter((p) => p.status === 'approved');
+      const approvedTotal = approved.reduce((s, p) => s + p.amount, 0);
+
+      groupHeaderRows.push(aoa.length);
+      aoa.push([
+        `${catLabel}  —  ${approved.length}/${
+          payments.length
+        } aprobado(s)  —  ${this.formatMoney(approvedTotal)}`,
+      ]);
+
+      for (const p of payments) {
+        dataRows.push(aoa.length);
+        aoa.push([
+          this.formatDate(p.date),
+          p.playerName,
+          p.playerDni,
+          p.concept,
+          this.methodLabel(p.method),
+          p.amount,
+          this.statusLabel(p.status),
+        ]);
+      }
+    }
+
+    const totalRow = aoa.length;
+    aoa.push([
+      `TOTAL APROBADO — ${report.total} registro(s)`,
+      '',
+      '',
+      '',
+      '',
+      report.totalApproved,
+      '',
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: COLS - 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: COLS - 1 } },
+      ...groupHeaderRows.map((r) => ({
+        s: { r, c: 0 },
+        e: { r, c: COLS - 1 },
+      })),
+      { s: { r: totalRow, c: 0 }, e: { r: totalRow, c: 4 } },
+      { s: { r: totalRow, c: 5 }, e: { r: totalRow, c: 6 } },
+    ];
+    ws['!cols'] = [
+      { wch: 12 },
+      { wch: 28 },
+      { wch: 14 },
+      { wch: 24 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+    ];
+
+    this.applyXlsxStyle(ws, 'A1', XLSX_STYLE.title);
+    this.applyXlsxStyle(ws, 'A2', XLSX_STYLE.info);
+    for (let c = 0; c < COLS; c++) {
+      this.applyXlsxStyle(
+        ws,
+        XLSX.utils.encode_cell({ r: 3, c }),
+        XLSX_STYLE.colHeader
+      );
+    }
+    for (const r of groupHeaderRows) {
+      this.applyXlsxStyle(
+        ws,
+        XLSX.utils.encode_cell({ r, c: 0 }),
+        XLSX_STYLE.groupHeader
+      );
+    }
+    for (const r of dataRows) {
+      for (let c = 0; c < COLS; c++) {
+        this.applyXlsxStyle(
+          ws,
+          XLSX.utils.encode_cell({ r, c }),
+          XLSX_STYLE.data
+        );
+      }
+    }
+    for (let c = 0; c < COLS; c++) {
+      this.applyXlsxStyle(
+        ws,
+        XLSX.utils.encode_cell({ r: totalRow, c }),
+        XLSX_STYLE.total
+      );
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Derechos');
+    const today = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
+    XLSX.writeFile(wb, `derechos-de-jugador-${today}.xlsx`);
+  }
+
+  private applyXlsxStyle(
+    ws: XLSX.WorkSheet,
+    addr: string,
+    style: object
+  ): void {
+    if (ws[addr]) (ws[addr] as any).s = style;
+  }
+
+  async generate(
+    report: GlobalPaymentsReport,
+    ctx: PlayerFeesReportPdfContext
+  ): Promise<void> {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+    const pageW = doc.internal.pageSize.getWidth();
+    const marginL = 14;
+
+    const y = await this.drawHeader(doc, report, ctx, pageW, marginL);
+
+    // Agrupar por categoría
+    const catOrder = new Map(
+      categoryOptions.map((c, i) => [c.id as string, i])
+    );
+    const grouped = new Map<string, GlobalPaymentRow[]>();
+    for (const p of report.data) {
+      const key = p.playerCategory ?? '__none__';
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(p);
+    }
+    const sortedGroups = Array.from(grouped.entries()).sort(
+      ([keyA], [keyB]) =>
+        (catOrder.get(keyA) ?? 999) - (catOrder.get(keyB) ?? 999)
+    );
 
     const COLS = 7;
     const body: import('jspdf-autotable').RowInput[] = [];
 
     for (const [catKey, payments] of sortedGroups) {
-      const catLabel = catKey === '__none__' ? 'Sin categoría' : getCategoryLabel(catKey as CategoryEnum);
+      const catLabel =
+        catKey === '__none__'
+          ? 'Sin categoría'
+          : getCategoryLabel(catKey as CategoryEnum);
       const approved = payments.filter((p) => p.status === 'approved');
       const approvedTotal = approved.reduce((s, p) => s + p.amount, 0);
 
       body.push([
         {
-          content: `${catLabel}  —  ${approved.length}/${payments.length} aprobado(s)  —  ${this.formatMoney(approvedTotal)}`,
+          content: `${catLabel}  —  ${approved.length}/${
+            payments.length
+          } aprobado(s)  —  ${this.formatMoney(approvedTotal)}`,
           colSpan: COLS,
           styles: {
             fillColor: this.GROUP_BG,
@@ -81,7 +268,17 @@ export class PlayerFeesReportPdfService {
 
     autoTable(doc, {
       startY: y,
-      head: [['Fecha', 'Jugador', 'DNI', 'Tipo de cobro', 'Método', 'Monto', 'Estado']],
+      head: [
+        [
+          'Fecha',
+          'Jugador',
+          'DNI',
+          'Tipo de cobro',
+          'Método',
+          'Monto',
+          'Estado',
+        ],
+      ],
       body,
       theme: 'grid',
       headStyles: {
@@ -99,13 +296,13 @@ export class PlayerFeesReportPdfService {
       },
       alternateRowStyles: { fillColor: this.SECTION_BG },
       columnStyles: {
-        0: { cellWidth: 18, halign: 'center' },  // Fecha
-        1: { cellWidth: 'auto' },                 // Jugador
-        2: { cellWidth: 22, halign: 'center' },   // DNI
-        3: { cellWidth: 32 },                      // Tipo de cobro
-        4: { cellWidth: 24, halign: 'center' },   // Método
-        5: { cellWidth: 20, halign: 'right' },    // Monto
-        6: { cellWidth: 20, halign: 'center' },   // Estado
+        0: { cellWidth: 18, halign: 'center' }, // Fecha
+        1: { cellWidth: 'auto' }, // Jugador
+        2: { cellWidth: 22, halign: 'center' }, // DNI
+        3: { cellWidth: 32 }, // Tipo de cobro
+        4: { cellWidth: 24, halign: 'center' }, // Método
+        5: { cellWidth: 20, halign: 'right' }, // Monto
+        6: { cellWidth: 20, halign: 'center' }, // Estado
       },
       margin: { left: marginL, right: marginL },
       didDrawPage: () => drawReportPdfPageFooter(doc, pageW, marginL),
@@ -118,8 +315,17 @@ export class PlayerFeesReportPdfService {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text(`TOTAL APROBADO — ${report.total} registro(s)`, marginL + 3, finalY + 5.5);
-    doc.text(this.formatMoney(report.totalApproved), pageW - marginL - 3, finalY + 5.5, { align: 'right' });
+    doc.text(
+      `TOTAL APROBADO — ${report.total} registro(s)`,
+      marginL + 3,
+      finalY + 5.5
+    );
+    doc.text(
+      this.formatMoney(report.totalApproved),
+      pageW - marginL - 3,
+      finalY + 5.5,
+      { align: 'right' }
+    );
 
     const today = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
     doc.save(`derechos-de-jugador-${today}.pdf`);
@@ -132,17 +338,27 @@ export class PlayerFeesReportPdfService {
     pageW: number,
     marginL: number
   ): Promise<number> {
-    const y0 = await drawReportPdfHeader(doc, { pageW, marginL, subtitle: 'DERECHOS DE JUGADOR' });
+    const y0 = await drawReportPdfHeader(doc, {
+      pageW,
+      marginL,
+      subtitle: 'DERECHOS DE JUGADOR',
+    });
 
     const col1x = marginL;
     const col2x = pageW / 2;
     let y = y0;
     const lineH = 6;
 
-    const row = (label: string, value: string, x: number, yy: number) => drawReportPdfContextRow(doc, label, value, x, yy);
+    const row = (label: string, value: string, x: number, yy: number) =>
+      drawReportPdfContextRow(doc, label, value, x, yy);
 
     if (ctx.dateFrom || ctx.dateTo) {
-      row('Período', `${ctx.dateFrom ?? '—'} al ${ctx.dateTo ?? '—'}`, col1x, y);
+      row(
+        'Período',
+        `${ctx.dateFrom ?? '—'} al ${ctx.dateTo ?? '—'}`,
+        col1x,
+        y
+      );
       y += lineH;
     }
 
@@ -169,7 +385,13 @@ export class PlayerFeesReportPdfService {
   }
 
   private formatMoney(amount: number): string {
-    return '$' + amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (
+      '$' +
+      amount.toLocaleString('es-AR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    );
   }
 
   private formatDate(date: string | Date): string {

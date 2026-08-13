@@ -1,4 +1,11 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -24,7 +31,11 @@ import {
   PaymentStatusEnum,
 } from '@ltrc-campo/shared-api-model';
 import { getCategoryLabel } from '../../../common/category-options';
-import { GlobalPaymentsReport, GlobalReportFilters, PaymentsService } from '../../../payments/services/payments.service';
+import {
+  GlobalPaymentsReport,
+  GlobalReportFilters,
+  PaymentsService,
+} from '../../../payments/services/payments.service';
 import { PlayerFeesAdminService } from '../../../player-fees/services/player-fees-admin.service';
 import {
   PlayerFeesReportPdfContext,
@@ -64,33 +75,42 @@ export class PlayerFeesReportComponent implements OnInit {
   report = signal<GlobalPaymentsReport | null>(null);
   loading = signal(false);
   generatingPdf = signal(false);
+  generatingExcel = signal(false);
   page = signal(1);
   readonly pageSize = 50;
   sortBy = signal('date');
   sortDir = signal<'asc' | 'desc'>('desc');
 
   readonly filterForm = new FormGroup({
-    concept:  new FormControl<string[]>([]),
-    status:   new FormControl<PaymentStatusEnum[]>([]),
-    method:   new FormControl<PaymentMethodEnum[]>([]),
+    concept: new FormControl<string[]>([]),
+    status: new FormControl<PaymentStatusEnum[]>([]),
+    method: new FormControl<PaymentMethodEnum[]>([]),
     dateFrom: new FormControl<Date | null>(null),
-    dateTo:   new FormControl<Date | null>(null),
+    dateTo: new FormControl<Date | null>(null),
   });
 
   readonly statusOptions = [
-    { value: PaymentStatusEnum.APPROVED,   label: 'Aprobado' },
-    { value: PaymentStatusEnum.PENDING,    label: 'Pendiente' },
-    { value: PaymentStatusEnum.REJECTED,   label: 'Rechazado' },
-    { value: PaymentStatusEnum.CANCELLED,  label: 'Cancelado' },
+    { value: PaymentStatusEnum.APPROVED, label: 'Aprobado' },
+    { value: PaymentStatusEnum.PENDING, label: 'Pendiente' },
+    { value: PaymentStatusEnum.REJECTED, label: 'Rechazado' },
+    { value: PaymentStatusEnum.CANCELLED, label: 'Cancelado' },
   ];
 
   readonly methodOptions: Record<string, string> = {
     [PaymentMethodEnum.MERCADOPAGO]: 'Mercado Pago',
-    [PaymentMethodEnum.CASH]:        'Efectivo',
-    [PaymentMethodEnum.TRANSFER]:    'Transferencia',
+    [PaymentMethodEnum.CASH]: 'Efectivo',
+    [PaymentMethodEnum.TRANSFER]: 'Transferencia',
   };
 
-  readonly columns = ['date', 'player', 'category', 'concept', 'method', 'amount', 'status'];
+  readonly columns = [
+    'date',
+    'player',
+    'category',
+    'concept',
+    'method',
+    'amount',
+    'status',
+  ];
 
   readonly activeFilterCount = computed(() => {
     const v = this.filterForm.value;
@@ -104,7 +124,8 @@ export class PlayerFeesReportComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.feesAdminService.getConfigs()
+    this.feesAdminService
+      .getConfigs()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: (cs: IPlayerFeeConfig[]) => this.configs.set(cs) });
 
@@ -119,13 +140,13 @@ export class PlayerFeesReportComponent implements OnInit {
     const v = this.filterForm.value;
     return {
       entityType: PaymentEntityTypeEnum.PLAYER_FEE,
-      concept:    v.concept?.length  ? v.concept.join(',')  : undefined,
-      status:     v.status?.length   ? v.status.join(',')   : undefined,
-      method:     v.method?.length   ? v.method.join(',')   : undefined,
-      dateFrom:   v.dateFrom ? format(v.dateFrom, 'yyyy-MM-dd') : undefined,
-      dateTo:     v.dateTo   ? format(v.dateTo,   'yyyy-MM-dd') : undefined,
-      sortBy:     this.sortBy(),
-      sortDir:    this.sortDir(),
+      concept: v.concept?.length ? v.concept.join(',') : undefined,
+      status: v.status?.length ? v.status.join(',') : undefined,
+      method: v.method?.length ? v.method.join(',') : undefined,
+      dateFrom: v.dateFrom ? format(v.dateFrom, 'yyyy-MM-dd') : undefined,
+      dateTo: v.dateTo ? format(v.dateTo, 'yyyy-MM-dd') : undefined,
+      sortBy: this.sortBy(),
+      sortDir: this.sortDir(),
     };
   }
 
@@ -133,15 +154,22 @@ export class PlayerFeesReportComponent implements OnInit {
     if (resetPage) this.page.set(1);
     this.loading.set(true);
 
-    this.paymentsService.getGlobalReport({
-      ...this.buildFilters(),
-      page:  this.page(),
-      limit: this.pageSize,
-    }).pipe(takeUntilDestroyed(this.destroyRef))
+    this.paymentsService
+      .getGlobalReport({
+        ...this.buildFilters(),
+        page: this.page(),
+        limit: this.pageSize,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next:  (r) => { this.report.set(r); this.loading.set(false); },
+        next: (r) => {
+          this.report.set(r);
+          this.loading.set(false);
+        },
         error: () => {
-          this.snackBar.open('Error al cargar el reporte', '', { duration: 3000 });
+          this.snackBar.open('Error al cargar el reporte', '', {
+            duration: 3000,
+          });
           this.loading.set(false);
         },
       });
@@ -158,24 +186,61 @@ export class PlayerFeesReportComponent implements OnInit {
           try {
             await this.pdfService.generate(allData, ctx);
           } catch {
-            this.snackBar.open('Error al generar el PDF', '', { duration: 3000 });
+            this.snackBar.open('Error al generar el PDF', '', {
+              duration: 3000,
+            });
           } finally {
             this.generatingPdf.set(false);
           }
         },
         error: () => {
-          this.snackBar.open('Error al cargar los datos para el PDF', '', { duration: 3000 });
+          this.snackBar.open('Error al cargar los datos para el PDF', '', {
+            duration: 3000,
+          });
           this.generatingPdf.set(false);
         },
       });
   }
 
-  private buildPdfContext(filters: GlobalReportFilters): PlayerFeesReportPdfContext {
+  downloadExcel(): void {
+    this.generatingExcel.set(true);
+    const filters = this.buildFilters();
+    this.paymentsService
+      .getGlobalReport({ ...filters, page: 1, limit: 1000 })
+      .subscribe({
+        next: (allData) => {
+          const ctx = this.buildPdfContext(filters);
+          try {
+            this.pdfService.generateExcel(allData, ctx);
+          } catch {
+            this.snackBar.open('Error al generar el Excel', '', {
+              duration: 3000,
+            });
+          } finally {
+            this.generatingExcel.set(false);
+          }
+        },
+        error: () => {
+          this.snackBar.open('Error al cargar los datos para el Excel', '', {
+            duration: 3000,
+          });
+          this.generatingExcel.set(false);
+        },
+      });
+  }
+
+  private buildPdfContext(
+    filters: GlobalReportFilters
+  ): PlayerFeesReportPdfContext {
     const v = this.filterForm.value;
     return {
       conceptLabel: v.concept?.length ? v.concept.join(', ') : null,
-      statusLabel: v.status?.length ? v.status.map((s) => this.statusLabel(s)).join(', ') : null,
-      methodLabel: v.method?.length ? v.method.map((m) => this.methodLabel(m)).join(', ') : null,
+      statusLabel: v.status?.length
+        ? v.status.map((s) => this.statusLabel(s)).join(', ')
+        : null,
+      methodLabel: v.method?.length
+        ? v.method.map((m) => this.methodLabel(m)).join(', ')
+        : null,
       dateFrom: filters.dateFrom ?? null,
       dateTo: filters.dateTo ?? null,
     };
